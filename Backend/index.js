@@ -1,13 +1,19 @@
 import express from "express";
-import routes from "./routes.js"
+import routes from "./routes.js";
+import dotenv from "dotenv";
+import connectMongoDB from "./config/mongodb.js";
+
+dotenv.config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(express.json());
+
+await connectMongoDB();
 
 app.use("/", routes);
 
 app.listen(port, () => {
-    console.log("Server Listening on Port 3000.")
-})
+  console.log(`Server running on port ${port}`);
+});
