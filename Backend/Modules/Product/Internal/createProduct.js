@@ -5,7 +5,7 @@ export const createProductInternal = async (data) => {
     const product = await createProductQuery(data);
     return product;
   } catch (error) {
-    console.error("productInternal error:", error);
+    console.error("createProductInternal error:", error);
     throw error;
   }
 };

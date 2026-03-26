@@ -1,11 +1,11 @@
 import { Product } from "../../../MongoDB/models.js";
 
 export const createProductQuery = async (data) => {
-  try {
-    const product = await Product.create(data);
-    return product;
-  } catch (error) {
-    console.error("productQuery error:", error);
-    throw error;
-  }
+  return await Product.create(data);
+};
+
+export const findProductQuery = async (name) => {
+  return await Product.findOne({
+    name: { $regex: `^${name}$`, $options: "i" }
+  });
 };

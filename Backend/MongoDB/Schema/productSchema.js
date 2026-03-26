@@ -5,6 +5,7 @@ const productSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      unique: true,
       trim: true,
       index: true
     },
@@ -15,11 +16,13 @@ const productSchema = new mongoose.Schema(
     },
 
     stylingTips: {
-      type: String
+      type: String,
+      required: true
     },
 
     fabricCare: {
-      type: String
+      type: String,
+      required: true
     },
 
     category: {
