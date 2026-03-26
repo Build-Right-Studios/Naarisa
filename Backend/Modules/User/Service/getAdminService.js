@@ -1,4 +1,4 @@
-import { getAdminInternal } from "../Internal/getAdminInternal";
+import { getAdminInternal } from "../Internal/getAdminInternal.js";
 
 export const getAdminService = async (userData) => {
     try {

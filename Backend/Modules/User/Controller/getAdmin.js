@@ -1,4 +1,4 @@
-import { getAdminService } from "../Service/getAdminService";
+import { getAdminService } from "../Service/getAdminService.js";
 
 export const getAdmin = async (req, res) => {
     try {
@@ -13,6 +13,13 @@ export const getAdmin = async (req, res) => {
 
         const adminProfile = await getAdminService({ id });
 
+        // const safeData = {
+        //     _id: adminProfile._id,
+        //     name: adminProfile.name,
+        //     email: adminProfile.email,
+        //     role: adminProfile.role
+        // };
+
         if (!adminProfile) {
             return res.status(404).json({
                 success: false,
@@ -24,6 +31,7 @@ export const getAdmin = async (req, res) => {
             success: true,
             message: "Admin fetched.",
             data: adminProfile
+            // data: safeData
         })
 
     } catch (error) {
