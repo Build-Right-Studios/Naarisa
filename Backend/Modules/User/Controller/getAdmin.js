@@ -13,13 +13,6 @@ export const getAdmin = async (req, res) => {
 
         const adminProfile = await getAdminService({ id });
 
-        // const safeData = {
-        //     _id: adminProfile._id,
-        //     name: adminProfile.name,
-        //     email: adminProfile.email,
-        //     role: adminProfile.role
-        // };
-
         if (!adminProfile) {
             return res.status(404).json({
                 success: false,
@@ -31,12 +24,11 @@ export const getAdmin = async (req, res) => {
             success: true,
             message: "Admin fetched.",
             data: adminProfile
-            // data: safeData
         })
 
     } catch (error) {
         console.error("getAdmin Error:", error);
-        res.status(error.status || 500).json({
+        return res.status(error.status || 500).json({
             success: false,
             message: error.message || "Internal server error",
         });
