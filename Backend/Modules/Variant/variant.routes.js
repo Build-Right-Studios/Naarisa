@@ -1,8 +1,8 @@
 import express from "express";
 import { addNewVariant } from "./Controller/addNewVariant.js";
 import { updateVariant } from "./Controller/updateVariant.js";
+import { deactivateVariant } from "./Controller/deactivateVariant.js"
 import { isAdmin } from "../../Middleware/isAdmin.js";
-import { findProductInternal } from "../Product/Internal/findProduct.js";
 
 const router = express.Router();
 

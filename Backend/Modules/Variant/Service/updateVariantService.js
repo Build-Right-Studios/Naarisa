@@ -1,3 +1,5 @@
+import { updateVariantInternal } from "../Internal/updateVariantInternal.js";
+
 export const updateVariantService = async (data) => {
   try {
     const {id, updates} = data;

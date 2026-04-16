@@ -1,3 +1,5 @@
+import { updateVariantService } from "../Service/updateVariantService.js";
+
 export const updateVariant = async (req, res) => {
   try {
     const { id } = req.params;

@@ -1,3 +1,5 @@
+import { updateVariantQuery } from "../Query/updateVariantQuery.js";
+
 export const updateVariantInternal = async (data) => {
     try {
         const {id, updates} = data;
