@@ -8,7 +8,8 @@ import { isAdmin } from "../../Middleware/isAdmin.js";
 const router = express.Router();
 
 router.post("/add-product", isAdmin, addProduct);
-router.get("/get-products",isAdmin, getProducts);
+// router.get("/get-products",isAdmin, getProducts);
+router.get("/get-products", getProducts);
 router.get("/products", getAllProducts);
 router.get("/:slug", getProductBySlug);
 

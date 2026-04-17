@@ -36,6 +36,7 @@ export const getAllProductsService = async (data) => {
                 sortOption.createdAt = -1;
         }
 
+
         // 🔥 Fetch Data
         const { variants, total } = await getAllProductsInternal({
             filter,
