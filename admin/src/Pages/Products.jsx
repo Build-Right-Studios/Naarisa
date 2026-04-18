@@ -22,7 +22,7 @@ const ProductTable = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("/api/product/get-products", {
+        const res = await fetch("http://localhost:5000/api/product/get-products", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
