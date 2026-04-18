@@ -1,7 +1,5 @@
-import {
-  resolveAddress, buildOrderItems, applyCoupon,
-  createRazorpayOrder, deductStockForItems, saveOrder
-} from "../Service/placeOrderService.js";
+import mongoose from "mongoose";
+import { placeOrderService } from "../Service/placeOrderService.js";
 
 export const placeOrder = async (req, res) => {
   try {
@@ -12,51 +10,57 @@ export const placeOrder = async (req, res) => {
       return res.status(400).json({ message: "No items in order" });
     }
 
-    if(!address) {
-        return res.status(400).json({ message: "Address is mising" });
+    if (!address) {
+      return res.status(400).json({ message: "Address is mising" });
     }
+    const user = req.user || {
+      _id: new mongoose.Types.ObjectId(),
+      name: "Test User",
+      email: "test@example.com"
+    };
 
-    // const placedOrder = await
+    const placedOrder = await placeOrderService({ user, items, address, addressId, couponCode })
 
     // Resolve address
-    const deliveryAddress = resolveAddress(req.user, address, addressId);
+    // const deliveryAddress = resolveAddress(req.user, address, addressId);
 
     // Validate items + build order items
-    const { orderItems, subtotal } = await buildOrderItems(items);
+    // const { orderItems, subtotal } = await buildOrderItems(items);
 
     // Apply coupon
-    const { discount, appliedCoupon } = await applyCoupon(couponCode, subtotal);
+    // const { discount, appliedCoupon } = await applyCoupon(couponCode, subtotal);
 
-    const total = subtotal - discount;
+    // const total = subtotal - discount;
 
     // Create Razorpay order
-    const razorpayOrder = await createRazorpayOrder(total);
+    // const razorpayOrder = await createRazorpayOrder(total);
 
     // Deduct stock
-    await deductStockForItems(items);
+    // await deductStockForItems(items);
 
     // Save order to DB
-    const order = await saveOrder({
-      userId: req.user._id,
-      orderItems,
-      appliedCoupon,
-      pricing: { subtotal, discount, total },
-      deliveryAddress,
-      razorpayOrderId: razorpayOrder.id
-    });
+    // const order = await saveOrder({
+    //   userId: req.user._id,
+    //   orderItems,
+    //   appliedCoupon,
+    //   pricing: { subtotal, discount, total },
+    //   deliveryAddress,
+    //   razorpayOrderId: razorpayOrder.id
+    // });
 
     // Respond to frontend
+
     return res.status(201).json({
       message: "Order created successfully",
-      orderId: order._id,
-      razorpayOrderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: razorpayOrder.currency,
-      pricing: { subtotal, discount, total }
+      ...placedOrder
+      // orderId: order._id,
+      // razorpayOrderId: razorpayOrder.id,
+      // amount: razorpayOrder.amount,
+      // currency: razorpayOrder.currency,
+      // pricing: { subtotal, discount, total }
     });
 
   } catch (error) {
-    // Handle thrown service errors
     if (error.status) {
       return res.status(error.status).json({ message: error.message });
     }
