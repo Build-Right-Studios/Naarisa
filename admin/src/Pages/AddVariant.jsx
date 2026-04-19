@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+import api from "../services/api";
+import { PRODUCT } from "../Constants/apiroutes.js";
 
 const sizesList = ["XS", "S", "M", "L", "XL", "XXL"];
 
 const AddVariant = () => {
-  const token = "YOUR_TOKEN_HERE";
+  const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const [selectedProduct, setSelectedProduct] = useState("");
+  const [color, setColor] = useState("");
+  const [colorCode, setColorCode] = useState("#7c3aed");
+  const [discountPrice, setDiscountPrice] = useState("");
+  const [images, setImages] = useState([]);
 
   const [sizes, setSizes] = useState(
     sizesList.map((size) => ({
@@ -16,188 +28,223 @@ const AddVariant = () => {
     }))
   );
 
-  const [color, setColor] = useState("");
-  const [discountPrice, setDiscountPrice] = useState("");
+  const fetchProducts = async () => {
+    try {
+      setLoadingProducts(true);
 
-  const [images, setImages] = useState([]);
+      const response = await api.get(PRODUCT.GET_PRODUCTS);
+
+      if (response.data.success) {
+        setProducts(response.data.data || []);
+      }
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to load products"
+      );
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch("/api/product/add-new-variant", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          setProducts(data.data);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
     fetchProducts();
   }, []);
 
-  // HANDLE SIZE TOGGLE
   const toggleSize = (index) => {
     const updated = [...sizes];
     updated[index].enabled = !updated[index].enabled;
     setSizes(updated);
   };
 
-  // HANDLE STOCK CHANGE
   const handleStockChange = (index, value) => {
     const updated = [...sizes];
     updated[index].stock = value;
     setSizes(updated);
   };
 
-  // IMAGE UPLOAD
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    setImages([...images, ...files]);
+    setImages((prev) => [...prev, ...files]);
   };
 
-  // SUBMIT
   const handleSubmit = async () => {
-    const selectedSizes = sizes
-      .filter((s) => s.enabled)
-      .map((s) => ({
-        size: s.size,
-        stock: Number(s.stock || 0),
-      }));
+    try {
+      setSubmitLoading(true);
+      setError("");
 
-    const payload = {
-      productId: selectedProduct,
-      sizes: selectedSizes,
-      color,
-      discountPrice: Number(discountPrice || 0),
-    };
+      const selectedSizes = sizes
+        .filter((item) => item.enabled)
+        .map((item) => ({
+          size: item.size,
+          stock: Number(item.stock || 0),
+        }));
 
-    console.log(payload);
+      const payload = {
+        productId: selectedProduct,
+        sizes: selectedSizes,
+        color,
+        colorCode,
+        discountPrice: Number(discountPrice || 0),
+      };
 
-    // 👉 connect your API here
+      const response = await api.post(
+        PRODUCT.ADD_NEW_VARIANT,
+        payload
+      );
+
+      if (response.data.success) {
+        alert("Variant Added Successfully ✅");
+        navigate("/products");
+      } else {
+        setError(response.data.message || "Failed to add variant");
+      }
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Something went wrong"
+      );
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   return (
     <div className="bg-gray-50 min-h-screen p-6">
-
-      {/* HEADER */}
       <h1 className="text-3xl font-bold mb-2">Add New Variant</h1>
+
       <p className="text-gray-500 mb-6">
-        Define visual and stock parameters for product variations.
+        Define stock, size, price, and visual settings.
       </p>
 
-      <div className="grid grid-cols-3 gap-6">
+      {error && (
+        <div className="mb-5 bg-red-100 border border-red-300 text-red-600 px-4 py-3 rounded-xl">
+          {error}
+        </div>
+      )}
 
-        {/* LEFT */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-6">
-
-          {/* IMAGE UPLOAD */}
           <div className="bg-white p-6 rounded-2xl border">
             <h2 className="font-semibold mb-4">Variant Media</h2>
 
-            <label className="border-2 border-dashed rounded-xl h-48 flex flex-col items-center justify-center text-gray-400 cursor-pointer">
+            <label className="border-2 border-dashed rounded-xl h-48 flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:border-purple-400">
               <input
                 type="file"
                 multiple
                 onChange={handleImageUpload}
                 className="hidden"
               />
+
               <p>Drop images here</p>
-              <span className="text-xs">JPG, PNG (Max 5MB)</span>
-              <button className="mt-3 px-4 py-1 bg-gray-200 rounded-lg text-sm">
+              <span className="text-xs">JPG / PNG</span>
+
+              <button
+                type="button"
+                className="mt-3 px-4 py-1 bg-gray-200 rounded-lg text-sm"
+              >
                 Browse Files
               </button>
             </label>
 
-            {/* PREVIEW */}
-            <div className="flex gap-3 mt-4">
+            <div className="flex gap-3 mt-4 flex-wrap">
               {images.map((img, i) => (
                 <img
                   key={i}
                   src={URL.createObjectURL(img)}
                   alt="preview"
-                  className="w-14 h-14 object-cover rounded-lg"
+                  className="w-14 h-14 rounded-lg object-cover"
                 />
               ))}
             </div>
           </div>
 
-          {/* COLOR + PRICE */}
           <div className="bg-white p-6 rounded-2xl border space-y-4">
             <h2 className="font-semibold">Color Profile</h2>
 
             <div className="flex gap-3">
               <input
                 type="text"
-                placeholder="e.g. Midnight Purple"
+                placeholder="Midnight Purple"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="flex-1 p-2 border rounded-lg"
+                className="flex-1 p-3 border rounded-lg"
               />
+
               <input
                 type="color"
-                className="w-12 h-10 border rounded-lg"
+                value={colorCode}
+                onChange={(e) => setColorCode(e.target.value)}
+                className="w-14 h-12 border rounded-lg"
               />
             </div>
 
             <div>
               <label className="text-sm text-gray-500">
-                Discount Price ($)
+                Discount Price (₹)
               </label>
+
               <input
                 type="number"
                 value={discountPrice}
-                onChange={(e) => setDiscountPrice(e.target.value)}
-                className="w-full mt-1 p-2 border rounded-lg"
+                onChange={(e) =>
+                  setDiscountPrice(e.target.value)
+                }
+                className="w-full mt-2 p-3 border rounded-lg"
               />
             </div>
           </div>
         </div>
 
-        {/* RIGHT */}
-        <div className="col-span-2 space-y-6">
-
-          {/* PRODUCT SELECT */}
+        <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-6 rounded-2xl border">
-            <h2 className="font-semibold mb-4">Product Association</h2>
+            <h2 className="font-semibold mb-4">
+              Product Association
+            </h2>
 
             <select
               value={selectedProduct}
-              onChange={(e) => setSelectedProduct(e.target.value)}
+              onChange={(e) =>
+                setSelectedProduct(e.target.value)
+              }
               className="w-full p-3 border rounded-lg"
             >
-              <option value="">Select Product</option>
-              {products.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.name}
+              <option value="">
+                {loadingProducts
+                  ? "Loading Products..."
+                  : "Select Product"}
+              </option>
+
+              {products.map((item) => (
+                <option key={item._id} value={item._id}>
+                  {item.name}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* SIZE STOCK */}
           <div className="bg-white p-6 rounded-2xl border">
             <h2 className="font-semibold mb-4">
               Size & Stock Management
             </h2>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {sizes.map((item, index) => (
                 <div
                   key={item.size}
                   className={`border rounded-xl p-4 ${
-                    item.enabled ? "border-purple-500" : ""
+                    item.enabled
+                      ? "border-purple-500 bg-purple-50"
+                      : ""
                   }`}
                 >
                   <div className="flex justify-between mb-2">
-                    <span className="font-semibold">{item.size}</span>
+                    <span className="font-semibold">
+                      {item.size}
+                    </span>
+
                     <input
                       type="checkbox"
                       checked={item.enabled}
@@ -207,11 +254,14 @@ const AddVariant = () => {
 
                   <input
                     type="number"
-                    placeholder="Stock Qty"
                     disabled={!item.enabled}
+                    placeholder="Stock Qty"
                     value={item.stock}
                     onChange={(e) =>
-                      handleStockChange(index, e.target.value)
+                      handleStockChange(
+                        index,
+                        e.target.value
+                      )
                     }
                     className="w-full p-2 border rounded-lg text-sm"
                   />
@@ -220,22 +270,27 @@ const AddVariant = () => {
             </div>
           </div>
 
-          {/* FOOTER */}
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-500">
-              All changes are saved as drafts until submission.
+              Draft remains unsaved until submission.
             </p>
 
             <div className="flex gap-3">
-              <button className="px-4 py-2 border rounded-lg">
-                Discard
+              <button
+                onClick={() => navigate("/products")}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Cancel
               </button>
 
               <button
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-purple-600 text-white rounded-xl shadow"
+                disabled={submitLoading}
+                className="px-6 py-2 bg-purple-600 text-white rounded-xl shadow disabled:opacity-50"
               >
-                Submit Variant
+                {submitLoading
+                  ? "Submitting..."
+                  : "Submit Variant"}
               </button>
             </div>
           </div>
