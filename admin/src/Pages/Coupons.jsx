@@ -14,11 +14,11 @@ const initialForm = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatDiscount(type, value) {
-    return type === "percentage" ? `${value}% Off` : `$${value} Off`;
+    return type === "percentage" ? `${value}% Off` : `₹${value} Off`;
 }
 function formatMinOrder(value) {
     if (!value || Number(value) === 0) return "No Minimum";
-    return `$${Number(value).toFixed(2)}`;
+    return `₹${Number(value).toFixed(2)}`;
 }
 function formatDate(dateStr, short = false) {
     if (!dateStr) return "—";
@@ -63,6 +63,7 @@ export default function Coupons() {
     const fetchCoupons = async () => {
         setLoading(true);
         try {
+
             const res = await fetch(`${BASE_URL}${COUPON.GET}`, {
                 credentials: "include",
                 headers: {
@@ -316,7 +317,7 @@ export default function Coupons() {
 
                             <Field label="Minimum Order Value">
                                 <div style={S.inputWithPrefix}>
-                                    <span style={S.prefix}>$</span>
+                                    <span style={S.prefix}>₹</span>
                                     <input style={{ ...S.input, paddingLeft: 28 }}
                                         type="number" min={0} placeholder="0"
                                         value={form.minOrderValue}
