@@ -12,7 +12,7 @@ router.use("/api/auth", authRoutes);
 router.use("/api/user", userRoutes);
 router.use("/api/product", productRoutes);
 router.use("/api/variant", variantRoutes);
-router.use("/api/order", orderRoutes)
+router.use("/api/order", orderRoutes);
 router.use("/api/coupons", couponsRoutes);
 
 export default router;
