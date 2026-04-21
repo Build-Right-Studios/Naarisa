@@ -2,7 +2,7 @@ import { addCouponService } from "../Service/addCouponService.js";
 
 export const addCoupon = async (req, res) => {
     try {
-        const { code, discountType, discountValue, minOrderValue, expiryDate } = req.body;
+        const { code, discountType, discountValue, minOrderValue, expiryDate, couponType } = req.body;
 
         if (!code) {
             return res.status(400).json({
@@ -39,9 +39,13 @@ export const addCoupon = async (req, res) => {
             });
         }
 
+        if (!["website", "social"].includes(couponType)) {
+            return res.status(400).json({ success: false, message: "Invalid coupon type" });
+        }
+
         const normalizedCode = code.trim().toUpperCase();
 
-        const newCoupon = await addCouponService({ code: normalizedCode, discountType, discountValue, minOrderValue, expiryDate });
+        const newCoupon = await addCouponService({ code: normalizedCode, discountType, discountValue, minOrderValue, expiryDate, couponType });
 
         return res.status(201).json({
             success: true,

@@ -28,6 +28,13 @@ const couponSchema = new mongoose.Schema(
       min: 0
     },
 
+    couponType: {
+      type: String,
+      required: true,
+      enum: ["website", "social"],
+      default: "website"
+    },
+
     expiryDate: {
       type: Date,
       required: true

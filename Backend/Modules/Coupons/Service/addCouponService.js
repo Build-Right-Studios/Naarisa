@@ -1,7 +1,7 @@
 import { addCouponQuery, findCouponByCodeQuery } from "../Query/addCouponQuery.js";
 
 export const addCouponService = async (couponData) => {
-    const { code, discountType, discountValue, minOrderValue, expiryDate } = couponData;
+    const { code, discountType, discountValue, minOrderValue, expiryDate, couponType } = couponData;
 
     const existing = await findCouponByCodeQuery(code);
     if (existing) {
