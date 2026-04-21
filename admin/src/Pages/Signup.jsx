@@ -18,22 +18,18 @@ const AdminSignup = () => {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
-
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
-  
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setError("");
-
     const { name, value } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -50,9 +46,7 @@ const AdminSignup = () => {
       const response = await api.post(AUTH.SIGNUP, formData);
 
       if (response.data.success) {
-        localStorage.setItem("token", response.data.token);
-
-        navigate("/dashboard");
+        navigate("/login", { state: { message: "Account created! Please login." } });
       } else {
         setError(response.data.message || "Signup failed");
       }
@@ -61,7 +55,6 @@ const AdminSignup = () => {
         error.response?.data?.message ||
         error.message ||
         "Server connection failed";
-
       setError(message);
     } finally {
       setLoading(false);
@@ -90,22 +83,20 @@ const AdminSignup = () => {
         <form onSubmit={handleSignup} className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-              Name
+              Full Name
             </label>
-
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
                 <User size={18} />
               </span>
-
               <input
                 type="text"
                 name="name"
                 required
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Aryansh"
-                className="w-full bg-[#1a2234] border border-gray-700 text-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                placeholder="Admin"
+                className="w-full bg-[#1a2234] border border-gray-700 text-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
               />
             </div>
           </div>
@@ -114,12 +105,10 @@ const AdminSignup = () => {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
               Email Address
             </label>
-
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
                 <Mail size={18} />
               </span>
-
               <input
                 type="email"
                 name="email"
@@ -127,7 +116,7 @@ const AdminSignup = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="admin@gmail.com"
-                className="w-full bg-[#1a2234] border border-gray-700 text-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                className="w-full bg-[#1a2234] border border-gray-700 text-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
               />
             </div>
           </div>
@@ -136,12 +125,10 @@ const AdminSignup = () => {
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
               Password
             </label>
-
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
                 <Lock size={18} />
               </span>
-
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
@@ -149,9 +136,8 @@ const AdminSignup = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className="w-full bg-[#1a2234] border border-gray-700 text-gray-300 rounded-lg pl-10 pr-10 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                className="w-full bg-[#1a2234] border border-gray-700 text-gray-300 rounded-lg pl-10 pr-10 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
               />
-
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -163,18 +149,33 @@ const AdminSignup = () => {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500 text-red-400 text-sm px-4 py-3 rounded-lg">
+            <div className="bg-red-500/10 border border-red-500 text-red-400 text-sm px-4 py-3 rounded-lg animate-pulse">
               {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-purple-900/20 transition-all active:scale-[0.98] disabled:opacity-50"
-          >
-            {loading ? "Creating Account..." : "Sign Up"}
-          </button>
+          <div className="space-y-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-purple-900/20 transition-all active:scale-[0.98] disabled:opacity-50"
+            >
+              {loading ? "Creating Account..." : "Sign Up"}
+            </button>
+
+            <div className="text-center">
+              <p className="text-sm text-gray-500">
+                Already have an account?{" "}
+                <button 
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="text-purple-500 hover:text-purple-400 font-semibold transition-colors"
+                >
+                  Login here
+                </button>
+              </p>
+            </div>
+          </div>
         </form>
 
         <div className="mt-8 pt-6 border-t border-gray-800">
@@ -188,7 +189,6 @@ const AdminSignup = () => {
 
           <div className="bg-[#0f172a] border border-gray-800 rounded-xl p-4 flex gap-4">
             <ShieldAlert className="text-purple-500 shrink-0" size={20} />
-
             <p className="text-[11px] text-gray-400 leading-relaxed">
               This is a secure administrative console. Access is logged and
               unauthorized attempts are monitored.
@@ -201,11 +201,9 @@ const AdminSignup = () => {
         <button className="flex items-center gap-1 hover:text-gray-300">
           <LifeBuoy size={14} /> Support
         </button>
-
         <button className="flex items-center gap-1 hover:text-gray-300">
           <ShieldCheck size={14} /> Privacy
         </button>
-
         <span className="text-gray-700">v2.4.0 Stable</span>
       </div>
     </div>

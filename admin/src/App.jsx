@@ -1,5 +1,5 @@
 import "./App.css";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import AdminLogin from "./Pages/Login";
 import AdminSignup from "./Pages/Signup";
@@ -11,21 +11,36 @@ import Orders from "./Pages/Orders";
 import Coupons from "./Pages/Coupons";
 import Banner from "./Pages/Banner";
 import Dashboard from "./Pages/Dashboard";
+import ProductPage from "./Pages/ProductPage";
+import Navbar from "./Pages/Navbar";
+
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  const location = useLocation();
+
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
 
 function AdminLayout() {
   return (
     <div className="flex">
       <Sidebar />
-
-      <div className="ml-64 w-full min-h-screen bg-gray-100 p-6">
+      <div className="ml-64 w-full min-h-screen bg-gray-100">
+        <Navbar />
         <Routes>
           <Route path="/products" element={<ProductTable />} />
           <Route path="/add-product" element={<AddProduct />} />
+          <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/add-variant" element={<AddVariant />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/coupons" element={<Coupons />} />
           <Route path="/banner" element={<Banner />} />
+          <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </div>
     </div>
@@ -38,9 +53,16 @@ function App() {
       <Route path="/login" element={<AdminLogin />} />
       <Route path="/signup" element={<AdminSignup />} />
 
-      <Route path="/*" element={<AdminLayout />} />
+      <Route 
+        path="/*" 
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        } 
+      />
 
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );
 }

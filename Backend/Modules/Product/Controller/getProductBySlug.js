@@ -1,17 +1,19 @@
 import { getProductBySlugService } from "../Service/getProductBySlugService.js"
 
 export const getProductBySlug = async (req, res) => {
+    console.log("--- Route Hit! ---");
+    console.log("Params received:", req.params);
     try {
         const { slug } = req.params;
 
-        if(!slug) {
+        if (!slug) {
             return res.status(400).json({
                 success: false,
-                message:"Slug is required"
+                message: "Slug is required"
             })
         }
 
-        const { product, currentVariant, allVariants } = await getProductBySlugService({slug});
+        const { product, currentVariant, allVariants } = await getProductBySlugService({ slug });
 
         res.status(200).json({
             success: true,

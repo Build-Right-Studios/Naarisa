@@ -166,6 +166,19 @@ const AdminLogin = () => {
             {loading ? "Processing..." : "Login"}
           </button>
         </form>
+        
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-500">
+            Don't have an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/signup")}
+              className="text-purple-500 hover:text-purple-400 font-semibold transition-colors"
+            >
+              Create Account
+            </button>
+          </p>
+        </div>
 
         <div className="mt-8 pt-6 border-t border-gray-800">
           <div className="flex items-center gap-2 mb-4">

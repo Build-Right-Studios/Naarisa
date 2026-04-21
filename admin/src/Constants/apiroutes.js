@@ -11,6 +11,7 @@ export const BASE = {
     GET_PRODUCTS: "/api/product/get-products",
     ADD_PRODUCT: "/api/product/add-product",
     ADD_NEW_VARIANT: "/api/product/add-new-variant",
+    GET_SINGLE_PRODUCT: (id) => `/api/product/${id}`,
   };
   
   export const VARIANT = {
