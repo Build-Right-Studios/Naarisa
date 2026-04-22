@@ -13,6 +13,7 @@ import Banner from "./Pages/Banner";
 import Dashboard from "./Pages/Dashboard";
 import ProductPage from "./Pages/ProductPage";
 import Navbar from "./Pages/Navbar";
+import EditVariantPage from "./Pages/EditVariantPage";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -36,6 +37,7 @@ function AdminLayout() {
           <Route path="/add-product" element={<AddProduct />} />
           <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/add-variant" element={<AddVariant />} />
+          <Route path="/update-varient/:id" element={<EditVariantPage />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/coupons" element={<Coupons />} />
@@ -53,13 +55,13 @@ function App() {
       <Route path="/login" element={<AdminLogin />} />
       <Route path="/signup" element={<AdminSignup />} />
 
-      <Route 
-        path="/*" 
+      <Route
+        path="/*"
         element={
           <ProtectedRoute>
             <AdminLayout />
           </ProtectedRoute>
-        } 
+        }
       />
 
       <Route path="*" element={<Navigate to="/login" />} />

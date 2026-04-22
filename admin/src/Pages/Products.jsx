@@ -94,7 +94,7 @@ const ProductTable = () => {
 
   const handleView = (id) => navigate(`/product/${id}`);
 
-  const handleEdit = (id) => navigate(`/edit-product/${id}`);
+  const handleEdit = (id) => navigate(`/update-varient/${id}`);
 
   if (loading) {
     return (

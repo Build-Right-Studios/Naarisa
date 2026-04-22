@@ -16,6 +16,7 @@ export const PRODUCT = {
 
 export const VARIANT = {
   DEACTIVATE: (id) => `/api/variant/${id}/deactivate`,
+  UPDATE: (id) => `/api/variant/${id}`,
 };
 
 export const COUPON = {

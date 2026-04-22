@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { BASE, PRODUCT } from '../Constants/apiroutes.js';
 
 const ProductPage = () => {
-  const { id } = useParams(); // This 'id' from the URL is treated as 'slug' by your backend
+  const { id } = useParams(); 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +18,6 @@ const ProductPage = () => {
         const result = await response.json();
 
         if (result.success) {
-          // Since your controller returns { product, currentVariant, allVariants }
           setData(result); 
         } else {
           console.error("Backend error:", result.message);
@@ -40,13 +39,10 @@ const ProductPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6 flex flex-col md:flex-row gap-10">
-      {/* Product Image Section */}
       <div className="w-full md:w-1/2 bg-gray-100 rounded-xl aspect-square flex items-center justify-center">
-        {/* If you have images in your variant, use currentVariant.images[0] */}
         <p className="text-gray-400 font-medium">Product Image Placeholder</p>
       </div>
 
-      {/* Product Info Section */}
       <div className="w-full md:w-1/2 space-y-6">
         <div>
           <span className="text-blue-600 font-bold text-xs uppercase tracking-widest">
@@ -73,7 +69,6 @@ const ProductPage = () => {
           <p className="text-gray-600 text-sm mt-1">{product.fabricCare}</p>
         </div>
 
-        {/* Tags */}
         <div className="flex flex-wrap gap-2">
           {product.tags?.map((tag, i) => (
             <span key={i} className="bg-gray-200 px-3 py-1 rounded-full text-xs text-gray-700">
