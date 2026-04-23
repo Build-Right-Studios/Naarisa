@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import api from "../services/api";
-import { PRODUCT } from "../Constants/apiroutes.js";
+import api from "../../services/api";
+import { PRODUCT } from "../../Constants/apiroutes.js";
 
 const sizesList = ["XS", "S", "M", "L", "XL", "XXL"];
 

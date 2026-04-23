@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { BASE, PRODUCT } from '../Constants/apiroutes.js';
+import { BASE, PRODUCT } from '../../Constants/apiroutes.js';
 
 const ProductPage = () => {
   const { id } = useParams(); 

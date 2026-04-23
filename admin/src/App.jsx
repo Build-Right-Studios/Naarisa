@@ -1,19 +1,19 @@
 import "./App.css";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
-import AdminLogin from "./Pages/Login";
-import AdminSignup from "./Pages/Signup";
-import ProductTable from "./Pages/Products";
-import AddProduct from "./Pages/AddProduct";
-import AddVariant from "./Pages/AddVariant";
-import Sidebar from "./Pages/Sidebar";
-import Orders from "./Pages/Orders";
-import Coupons from "./Pages/Coupons";
-import Banner from "./Pages/Banner";
-import Dashboard from "./Pages/Dashboard";
-import ProductPage from "./Pages/ProductPage";
-import Navbar from "./Pages/Navbar";
-import EditVariantPage from "./Pages/EditVariantPage";
+import AdminLogin from "./Pages/Auth/Login";
+import AdminSignup from "./Pages/Auth/Signup";
+import ProductTable from "./Pages/Products/Products";
+import AddProduct from "./Pages/Products/AddProduct";
+import AddVariant from "./Pages/Products/AddVariant";
+import Sidebar from "./Pages/Components/Sidebar";
+import Orders from "./Pages/Orders/Orders";
+import Coupons from "./Pages/Coupons/Coupons";
+import Banner from "./Pages/Banner/Banner"
+import Dashboard from "./Pages/Dashboard/Dashboard";
+import ProductPage from "./Pages/Products/ProductPage";
+import Navbar from "./Pages/Components/Navbar";
+import EditVariantPage from "./Pages/Products/EditVariantPage";
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");

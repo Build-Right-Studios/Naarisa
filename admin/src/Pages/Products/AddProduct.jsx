@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import api from "../services/api";
-import { PRODUCT } from "../Constants/apiroutes.js";
+import api from "../../services/api";
+import { PRODUCT } from "../../Constants/apiroutes.js";
 
 const AddProduct = () => {
   const navigate = useNavigate();
