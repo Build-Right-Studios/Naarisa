@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BASE, ORDER } from "../Constants/apiroutes.js";
+import { BASE, ORDER } from "../../Constants/apiroutes.js";
 
 const BASE_URL = BASE.ROUTE;
 

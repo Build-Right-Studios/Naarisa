@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BASE, PRODUCT } from "../Constants/apiroutes.js";
+import api from "../../services/api";
+import { BASE,PRODUCT, VARIANT } from "../../Constants/apiroutes.js";
 
 const BASE_URL = BASE.ROUTE;
 
@@ -65,14 +66,39 @@ export default function Products() {
     } catch { showToast("Delete failed.", "error"); }
   };
 
-  const filtered = products.filter((p) => {
-    const matchSearch = p.name?.toLowerCase().includes(search.toLowerCase()) ||
-                        p.sku?.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "all" ||
-                        (filter === "published" && p.isActive) ||
-                        (filter === "draft" && !p.isActive);
-    return matchSearch && matchFilter;
-  });
+  const handleNewProduct = () => navigate("/add-product");
+
+  const handleView = (id) => navigate(`/product/${id}`);
+
+  const handleEdit = (id) => navigate(`/update-varient/${id}`);
+
+  const filtered = (products || []).filter((p) => {
+  const searchText = search.toLowerCase();
+
+  const matchesSearch =
+    p.name?.toLowerCase().includes(searchText) ||
+    p.category?.toLowerCase().includes(searchText) ||
+    p.sku?.toLowerCase().includes(searchText);
+
+  const matchesFilter =
+    filter === "all"
+      ? true
+      : filter === "published"
+      ? p.isActive !== false
+      : filter === "draft"
+      ? p.isActive === false
+      : true;
+
+  return matchesSearch && matchesFilter;
+});
+
+  if (loading) {
+    return (
+      <div className="p-10 text-center text-gray-500 text-lg">
+        Loading Products...
+      </div>
+    );
+  }
 
   return (
     <div style={{ ...S.page, padding: pagePadding }}>
@@ -110,11 +136,11 @@ export default function Products() {
           width: isMobile ? "100%" : "auto",
         }}>
           <button style={{ ...S.variantBtn, width: isMobile ? "100%" : "auto" }}
-            onClick={() => navigate("/products/variant/add")}>
+            onClick={() => navigate("/add-variant")}>
             <span style={{ fontSize: 16 }}>+</span> Add New Variant
           </button>
           <button style={{ ...S.newProductBtn, width: isMobile ? "100%" : "auto" }}
-            onClick={() => navigate("/products/add")}>
+            onClick={() => navigate("/add-product")}>
             <span style={{ fontSize: 16 }}>+</span> New Product
           </button>
         </div>

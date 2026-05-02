@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import { BASE, ADMIN_USERS } from "../Constants/apiroutes.js";
+import { BASE, ADMIN_USERS } from "../../Constants/apiroutes.js";
 
 const statusConfig = {
   payment_pending: { label: "Pending",   bg: "#F1EFE8", color: "#5F5E5A" },

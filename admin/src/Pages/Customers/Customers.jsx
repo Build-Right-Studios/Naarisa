@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import axios from "axios";
-import { BASE, ADMIN_USERS } from "../Constants/apiroutes.js";
+import { BASE, ADMIN_USERS } from "../../Constants/apiroutes.js";
 
 const getInitials = (name) => {
     if (!name) return "?";

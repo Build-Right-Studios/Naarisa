@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BASE, COUPON } from "../Constants/apiroutes.js";
+import { BASE, COUPON } from "../../Constants/apiroutes.js";
 
 const BASE_URL = BASE.ROUTE;
 

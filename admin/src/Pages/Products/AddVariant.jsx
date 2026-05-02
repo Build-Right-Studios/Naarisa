@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { BASE, PRODUCT } from "../Constants/apiroutes.js";
-
-const BASE_URL = BASE.ROUTE;
+import api from "../../services/api";
+import { PRODUCT } from "../../Constants/apiroutes.js";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 

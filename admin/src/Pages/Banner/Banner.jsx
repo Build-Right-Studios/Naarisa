@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import AddBannerModal from "../Components/Banner/AddBannerModal";
-import { BASE, BANNER } from "../Constants/apiroutes";
+import AddBannerModal from "../../Components/Banner/AddBannerModal";
+import { BASE, BANNER } from "../../Constants/apiroutes.js";
 
 const BASE_URL = BASE.ROUTE;
 

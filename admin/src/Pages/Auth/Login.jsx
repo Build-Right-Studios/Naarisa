@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  User,
   Mail,
   Lock,
   Eye,
@@ -11,20 +10,18 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import api from "../services/api";
-import { AUTH } from "../Constants/apiroutes.js";
+import api from "../../services/api";
+import { AUTH } from "../../Constants/apiroutes.js";
 
-const AdminSignup = () => {
+const AdminLogin = () => {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
     password: "",
   });
-  
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -40,27 +37,27 @@ const AdminSignup = () => {
     }));
   };
 
-  const handleSignup = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
       setLoading(true);
       setError("");
 
-      const response = await api.post(AUTH.SIGNUP, formData);
+      const response = await api.post(AUTH.LOGIN, formData);
 
-      if (response.data.success) {
+      if (response.data.success && response.data.token) {
         localStorage.setItem("token", response.data.token);
 
         navigate("/dashboard");
       } else {
-        setError(response.data.message || "Signup failed");
+        setError(response.data.message || "Login failed");
       }
     } catch (error) {
       const message =
         error.response?.data?.message ||
         error.message ||
-        "Server connection failed";
+        "Connection failed";
 
       setError(message);
     } finally {
@@ -78,38 +75,16 @@ const AdminSignup = () => {
         </div>
 
         <h1 className="text-3xl font-bold text-white tracking-tight">
-          Get Started With Us
+          Naarisa
         </h1>
 
         <p className="text-gray-400 text-sm mt-1">
-          Enter your credentials to become an Admin
+          Enter your credentials to access the console
         </p>
       </div>
 
       <div className="w-full max-w-md bg-[#111827] border border-gray-800 rounded-2xl p-8 shadow-2xl">
-        <form onSubmit={handleSignup} className="space-y-6">
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-              Name
-            </label>
-
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
-                <User size={18} />
-              </span>
-
-              <input
-                type="text"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Aryansh"
-                className="w-full bg-[#1a2234] border border-gray-700 text-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-              />
-            </div>
-          </div>
-
+        <form onSubmit={handleLogin} className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
               Email Address
@@ -133,9 +108,18 @@ const AdminSignup = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-              Password
-            </label>
+            <div className="flex justify-between mb-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">
+                Password
+              </label>
+
+              <button
+                type="button"
+                className="text-xs text-purple-500 hover:text-purple-400 font-medium"
+              >
+                Forgot Password?
+              </button>
+            </div>
 
             <div className="relative">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">
@@ -154,10 +138,16 @@ const AdminSignup = () => {
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() =>
+                  setShowPassword(!showPassword)
+                }
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? (
+                  <EyeOff size={18} />
+                ) : (
+                  <Eye size={18} />
+                )}
               </button>
             </div>
           </div>
@@ -173,25 +163,44 @@ const AdminSignup = () => {
             disabled={loading}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-purple-900/20 transition-all active:scale-[0.98] disabled:opacity-50"
           >
-            {loading ? "Creating Account..." : "Sign Up"}
+            {loading ? "Processing..." : "Login"}
           </button>
         </form>
+        
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-500">
+            Don't have an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate("/signup")}
+              className="text-purple-500 hover:text-purple-400 font-semibold transition-colors"
+            >
+              Create Account
+            </button>
+          </p>
+        </div>
 
         <div className="mt-8 pt-6 border-t border-gray-800">
           <div className="flex items-center gap-2 mb-4">
             <div className="h-px bg-gray-800 flex-grow"></div>
+
             <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">
               Security Note
             </span>
+
             <div className="h-px bg-gray-800 flex-grow"></div>
           </div>
 
-          <div className="bg-[#0f172a] border border-gray-800 rounded-xl p-4 flex gap-4">
-            <ShieldAlert className="text-purple-500 shrink-0" size={20} />
+          <div className="bg-[#0f172a] border border-gray-800/50 rounded-xl p-4 flex gap-4">
+            <ShieldAlert
+              className="text-purple-500 shrink-0"
+              size={20}
+            />
 
             <p className="text-[11px] text-gray-400 leading-relaxed">
-              This is a secure administrative console. Access is logged and
-              unauthorized attempts are monitored.
+              This is a secure administrative console.
+              Access is logged and unauthorized attempts
+              are monitored.
             </p>
           </div>
         </div>
@@ -206,10 +215,12 @@ const AdminSignup = () => {
           <ShieldCheck size={14} /> Privacy
         </button>
 
-        <span className="text-gray-700">v2.4.0 Stable</span>
+        <span className="text-gray-700">
+          v2.4.0 Stable
+        </span>
       </div>
     </div>
   );
 };
 
-export default AdminSignup;
+export default AdminLogin;
