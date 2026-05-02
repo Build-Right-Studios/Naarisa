@@ -253,6 +253,7 @@ export default function NarisaLanding() {
           <p className="fade-up-3 text-[#5a6a48] text-base font-light leading-relaxed mb-10 max-w-sm">
             A new era of effortless ethnic wear for the modern woman is almost here.
             Join the inner circle for early access and exclusive previews.
+            Let's get started.
           </p>
 
           {/* Countdown */}
