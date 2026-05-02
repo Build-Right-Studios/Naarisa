@@ -6,7 +6,7 @@ export const getAllProductsQuery = async (data) => {
     const [variants, total] = await Promise.all([
       Variant.find(filter)
         .populate("productId", "name category")
-        .select("slug color images discountPrice createdAt")
+        .select("_id slug color images discountPrice createdAt")
         .sort(sortOption)
         .skip(skip)
         .limit(limit),

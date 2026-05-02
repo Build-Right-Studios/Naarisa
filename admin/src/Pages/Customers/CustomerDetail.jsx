@@ -4,17 +4,17 @@ import axios from "axios";
 import { BASE, ADMIN_USERS } from "../../Constants/apiroutes.js";
 
 const statusConfig = {
-  payment_pending: { label: "Pending",   bg: "#F1EFE8", color: "#5F5E5A" },
-  confirmed:       { label: "Confirmed", bg: "#E6F1FB", color: "#185FA5" },
-  dispatched:      { label: "Dispatched",bg: "#FAEEDA", color: "#854F0B" },
-  delivered:       { label: "Delivered", bg: "#EAF3DE", color: "#3B6D11" },
-  cancelled:       { label: "Cancelled", bg: "#FCEBEB", color: "#A32D2D" },
+  payment_pending: { label: "Pending",    bg: "#F1EFE8", color: "#5F5E5A" },
+  confirmed:       { label: "Confirmed",  bg: "#E6F1FB", color: "#185FA5" },
+  dispatched:      { label: "Dispatched", bg: "#FAEEDA", color: "#854F0B" },
+  delivered:       { label: "Delivered",  bg: "#EAF3DE", color: "#3B6D11" },
+  cancelled:       { label: "Cancelled",  bg: "#FCEBEB", color: "#A32D2D" },
 };
 
 const paymentConfig = {
-  paid:    { label: "Paid",    bg: "#EAF3DE", color: "#3B6D11" },
-  pending: { label: "Pending", bg: "#F1EFE8", color: "#5F5E5A" },
-  failed:  { label: "Refunded",bg: "#FCEBEB", color: "#A32D2D" },
+  paid:    { label: "Paid",     bg: "#EAF3DE", color: "#3B6D11" },
+  pending: { label: "Pending",  bg: "#F1EFE8", color: "#5F5E5A" },
+  failed:  { label: "Refunded", bg: "#FCEBEB", color: "#A32D2D" },
 };
 
 const MetricCard = ({ label, value, purple }) => (
@@ -41,24 +41,44 @@ const CustomerDetail = () => {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await axios.get(`${BASE.ROUTE}${ADMIN_USERS.GET_BY_ID(id)}`);
+        const url = `${BASE.ROUTE}${ADMIN_USERS.GET_BY_ID(id)}`;
+        console.log("Fetching:", url);
+
+        const res = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        console.log("Response:", res.data);
         setData(res.data.data);
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
+
+      } catch (err) {
+        console.error("Status:", err.response?.status);
+        console.error("Data:", err.response?.data);
+        setError(err.response?.data?.message || "Failed to load customer");
       } finally {
         setLoading(false);
       }
     };
+
     fetchUser();
   }, [id]);
 
   if (loading) return (
     <div style={{ padding: "2rem", color: "var(--color-text-secondary)", fontSize: "14px" }}>
       Loading customer...
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ padding: "2rem", color: "var(--color-text-danger)", fontSize: "14px" }}>
+      Error: {error}
     </div>
   );
 
@@ -77,16 +97,10 @@ const CustomerDetail = () => {
       <button
         onClick={() => navigate("/customers")}
         style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          color: "var(--color-text-secondary)",
-          fontSize: "13px",
-          marginBottom: "1.5rem",
-          padding: 0
+          background: "none", border: "none", cursor: "pointer",
+          display: "flex", alignItems: "center", gap: "6px",
+          color: "var(--color-text-secondary)", fontSize: "13px",
+          marginBottom: "1.5rem", padding: 0
         }}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -124,8 +138,7 @@ const CustomerDetail = () => {
         <h2 style={{ fontSize: "18px", fontWeight: 500, margin: "0 0 1rem", color: "var(--color-text-primary)" }}>
           Saved addresses
         </h2>
-
-        {user.addresses?.length === 0 ? (
+        {!user.addresses || user.addresses.length === 0 ? (
           <p style={{ fontSize: "13px", color: "var(--color-text-secondary)" }}>No saved addresses</p>
         ) : (
           <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
@@ -133,10 +146,8 @@ const CustomerDetail = () => {
               <div key={addr._id} style={{
                 background: "var(--color-background-primary)",
                 border: "0.5px solid var(--color-border-tertiary)",
-                borderRadius: "12px",
-                padding: "1rem 1.25rem",
-                minWidth: "260px",
-                maxWidth: "320px"
+                borderRadius: "12px", padding: "1rem 1.25rem",
+                minWidth: "260px", maxWidth: "320px"
               }}>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
                   <span style={{
@@ -176,28 +187,23 @@ const CustomerDetail = () => {
         <h2 style={{ fontSize: "18px", fontWeight: 500, margin: "0 0 1rem", color: "var(--color-text-primary)" }}>
           Order history
         </h2>
-
-        {orders?.length === 0 ? (
+        {!orders || orders.length === 0 ? (
           <p style={{ fontSize: "13px", color: "var(--color-text-secondary)" }}>No orders yet</p>
         ) : (
           <div style={{
             background: "var(--color-background-primary)",
             border: "0.5px solid var(--color-border-tertiary)",
-            borderRadius: "12px",
-            overflow: "hidden"
+            borderRadius: "12px", overflow: "hidden"
           }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "0.5px solid var(--color-border-tertiary)" }}>
                   {["Order ID", "Date", "Items", "Total", "Payment Status", "Order Status"].map(col => (
                     <th key={col} style={{
-                      padding: "12px 16px",
-                      textAlign: "left",
-                      fontSize: "11px",
-                      fontWeight: 500,
+                      padding: "12px 16px", textAlign: "left",
+                      fontSize: "11px", fontWeight: 500,
                       color: "var(--color-text-tertiary)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em"
+                      textTransform: "uppercase", letterSpacing: "0.04em"
                     }}>
                       {col}
                     </th>
@@ -234,9 +240,7 @@ const CustomerDetail = () => {
                       <td style={{ padding: "14px 16px" }}>
                         <span style={{
                           fontSize: "11px", fontWeight: 500, padding: "4px 10px",
-                          borderRadius: "20px",
-                          background: payStatus.bg,
-                          color: payStatus.color
+                          borderRadius: "20px", background: payStatus.bg, color: payStatus.color
                         }}>
                           {payStatus.label.toUpperCase()}
                         </span>
@@ -245,8 +249,7 @@ const CustomerDetail = () => {
                         <span style={{
                           fontSize: "11px", fontWeight: 500, padding: "4px 10px",
                           borderRadius: "20px", display: "inline-flex", alignItems: "center", gap: "5px",
-                          background: orderStatus.bg,
-                          color: orderStatus.color
+                          background: orderStatus.bg, color: orderStatus.color
                         }}>
                           <span style={{
                             width: "6px", height: "6px", borderRadius: "50%",

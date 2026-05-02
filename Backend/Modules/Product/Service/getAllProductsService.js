@@ -56,6 +56,7 @@ export const getAllProductsService = async (data) => {
 
         // 🔥 Response Mapping
         const products = filteredVariants.map(v => ({
+            id: v._id,
             name: v.productId.name,
             category: v.productId.category,
             slug: v.slug,

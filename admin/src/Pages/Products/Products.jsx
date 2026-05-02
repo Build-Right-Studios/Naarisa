@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
-import { BASE,PRODUCT, VARIANT } from "../../Constants/apiroutes.js";
+import { BASE, PRODUCT } from "../../Constants/apiroutes.js";
 
 const BASE_URL = BASE.ROUTE;
 
@@ -18,10 +17,10 @@ function useWindowWidth() {
 export default function Products() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState("");
-  const [filter, setFilter]     = useState("all");
-  const [toast, setToast]       = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [toast, setToast] = useState(null);
 
   const token = localStorage.getItem("token");
   const width = useWindowWidth();
@@ -33,14 +32,27 @@ export default function Products() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res  = await fetch(`${BASE_URL}${PRODUCT.GET_PRODUCTS}`, {
+      const res = await fetch(`${BASE_URL}${PRODUCT.GET_ALL}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) setProducts(data.data || data.products || []);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+      console.log("API response:", data);
+      if (data.success) {
+        // Handle both response shapes
+        const list =
+          data.data?.products ||
+          data.data ||
+          data.products ||
+          [];
+        setProducts(list);
+        console.log(list)
+      }
+    } catch (e) {
+      console.error("Fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchProducts(); }, []);
@@ -50,47 +62,41 @@ export default function Products() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete "${name}"?`)) return;
+  const handleDeactivate = async (id, name) => {
+    if (!window.confirm(`Deactivate "${name}"?`)) return;
     try {
-      const res  = await fetch(`${BASE_URL}/api/product/${id}`, {
-        method: "DELETE",
+      const res = await fetch(`${BASE_URL}/api/variant/${id}/deactivate`, {
+        method: "PATCH",
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.success) {
-        setProducts((prev) => prev.filter((p) => p._id !== id));
-        showToast(`"${name}" deleted.`);
-      } else showToast(data.message, "error");
-    } catch { showToast("Delete failed.", "error"); }
+        setProducts(prev => prev.map(p => p.id === id ? { ...p, isActive: false } : p));
+        showToast(`"${name}" deactivated.`);
+      } else {
+        showToast(data.message || "Failed.", "error");
+      }
+    } catch {
+      showToast("Action failed.", "error");
+    }
   };
 
-  const handleNewProduct = () => navigate("/add-product");
-
-  const handleView = (id) => navigate(`/product/${id}`);
-
-  const handleEdit = (id) => navigate(`/update-varient/${id}`);
-
   const filtered = (products || []).filter((p) => {
-  const searchText = search.toLowerCase();
+    const searchText = search.toLowerCase();
+    const matchesSearch =
+      (p.productName || p.name || "").toLowerCase().includes(searchText) ||
+      (p.category || "").toLowerCase().includes(searchText) ||
+      (p.color?.name || "").toLowerCase().includes(searchText);
 
-  const matchesSearch =
-    p.name?.toLowerCase().includes(searchText) ||
-    p.category?.toLowerCase().includes(searchText) ||
-    p.sku?.toLowerCase().includes(searchText);
-
-  const matchesFilter =
-    filter === "all"
-      ? true
-      : filter === "published"
-      ? p.isActive !== false
-      : filter === "draft"
-      ? p.isActive === false
+    const matchesFilter =
+      filter === "all" ? true
+      : filter === "published" ? p.isActive !== false
+      : filter === "draft" ? p.isActive === false
       : true;
 
-  return matchesSearch && matchesFilter;
-});
+    return matchesSearch && matchesFilter;
+  });
 
   if (loading) {
     return (
@@ -108,7 +114,8 @@ export default function Products() {
         <div style={{
           ...S.toast,
           background: toast.type === "error" ? "#ef4444" : "#22c55e",
-          top: isMobile ? 12 : 24, right: isMobile ? 12 : 24,
+          top: isMobile ? 12 : 24,
+          right: isMobile ? 12 : 24,
         }}>
           {toast.msg}
         </div>
@@ -118,29 +125,30 @@ export default function Products() {
       <div style={{
         display: "flex",
         justifyContent: "space-between",
-        alignItems: isMobile ? "flex-start" : "flex-start",
         flexDirection: isMobile ? "column" : "row",
         gap: isMobile ? 16 : 0,
         marginBottom: 20,
       }}>
         <div>
-          <h1 style={{ ...S.title, fontSize: isMobile ? 26 : isMonitor ? 36 : 32 }}>Products</h1>
-          <div style={{ display: "flex", gap: 20, marginTop: 6 }}>
-            <span style={S.headerLink}><SearchSmIcon /> Manage Comments</span>
-            <span style={S.headerLink}><SortIcon /> Library Sorting</span>
-          </div>
+          <h1 style={{ ...S.title, fontSize: isMobile ? 26 : isMonitor ? 36 : 32 }}>
+            Products
+          </h1>
         </div>
         <div style={{
           display: "flex", gap: 10,
           flexDirection: isMobile ? "column" : "row",
           width: isMobile ? "100%" : "auto",
         }}>
-          <button style={{ ...S.variantBtn, width: isMobile ? "100%" : "auto" }}
-            onClick={() => navigate("/add-variant")}>
+          <button
+            style={{ ...S.variantBtn, width: isMobile ? "100%" : "auto" }}
+            onClick={() => navigate("/add-variant")}
+          >
             <span style={{ fontSize: 16 }}>+</span> Add New Variant
           </button>
-          <button style={{ ...S.newProductBtn, width: isMobile ? "100%" : "auto" }}
-            onClick={() => navigate("/add-product")}>
+          <button
+            style={{ ...S.newProductBtn, width: isMobile ? "100%" : "auto" }}
+            onClick={() => navigate("/add-product")}
+          >
             <span style={{ fontSize: 16 }}>+</span> New Product
           </button>
         </div>
@@ -159,16 +167,20 @@ export default function Products() {
           <SearchSmIcon color="#aaa" />
           <input
             style={S.searchInput}
-            placeholder="Search"
+            placeholder="Search by name or color..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div style={S.filterWrapper}>
-          <select style={S.filterSelect} value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="all">All Products</option>
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
+          <select
+            style={S.filterSelect}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          >
+            <option value="all">All Variants</option>
+            <option value="published">Active</option>
+            <option value="draft">Inactive</option>
           </select>
           <span style={S.filterArrow}>▾</span>
         </div>
@@ -180,80 +192,122 @@ export default function Products() {
           <table style={{ ...S.table, minWidth: isMobile ? 520 : "100%" }}>
             <thead>
               <tr>
-                <th style={S.th}>Products</th>
+                <th style={S.th}>Product</th>
+                <th style={S.th}>Color</th>
                 <th style={S.th}>Status</th>
                 <th style={S.th}>Price</th>
-                {!isMobile && <th style={S.th}>Customers</th>}
                 <th style={S.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={isMobile ? 4 : 5} style={S.emptyCell}>Loading products…</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={isMobile ? 4 : 5} style={S.emptyCell}>No products found.</td></tr>
-              ) : filtered.map((p) => (
-                <tr key={p._id} style={S.tr}>
-                  {/* Product */}
-                  <td style={S.td}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                      <div style={S.productImg}>
-                        {p.image || p.images?.[0] ? (
-                          <img src={p.image || p.images[0]} alt={p.name}
-                            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }} />
-                        ) : (
-                          <BoxIcon />
-                        )}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{p.name}</div>
-                        <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>
-                          {[p.category, p.type, "Open", p.sku ? `SKU: ${p.sku}` : null]
-                            .filter(Boolean).join(" • ")}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Status */}
-                  <td style={S.td}>
-                    <span style={{
-                      ...S.statusBadge,
-                      background: p.isActive !== false ? "#dcfce7" : "#f3f4f6",
-                      color:      p.isActive !== false ? "#16a34a" : "#888",
-                    }}>
-                      {p.isActive !== false ? "✓ Published" : "Draft"}
-                    </span>
-                  </td>
-
-                  {/* Price */}
-                  <td style={{ ...S.td, fontWeight: 700, fontSize: 15 }}>
-                    ₹{Number(p.basePrice || p.price || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                  </td>
-
-                  {/* Customers */}
-                  {!isMobile && (
-                    <td style={{ ...S.td, fontSize: 15, color: "#333" }}>
-                      {(p.totalOrders || p.customers || 0).toLocaleString()}
-                    </td>
-                  )}
-
-                  {/* Actions */}
-                  <td style={S.td}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <ActionBtn title="Edit" onClick={() => navigate(`/products/edit/${p._id}`)}>
-                        <PencilIcon />
-                      </ActionBtn>
-                      <ActionBtn title="View" onClick={() => navigate(`/products/${p._id}`)}>
-                        <EyeIcon />
-                      </ActionBtn>
-                      <ActionBtn title="Delete" onClick={() => handleDelete(p._id, p.name)}>
-                        <TrashIcon />
-                      </ActionBtn>
-                    </div>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={S.emptyCell}>
+                    No variants found.
                   </td>
                 </tr>
-              ))}
+              ) : filtered.map((p) => {
+                // Resolve image — variant can have images array or image string
+                const imageUrl =
+                  (Array.isArray(p.images) && p.images.length > 0)
+                    ? p.images[0]
+                    : p.image || null;
+
+                // Resolve name — from variant response mapping
+                const displayName = p.productName || p.name || "—";
+
+                // Resolve price
+                const displayPrice = p.price ?? p.discountPrice ?? 0;
+
+                return (
+                  <tr key={p.id} style={S.tr}>
+
+                    {/* Product */}
+                    <td style={S.td}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        <div style={S.productImg}>
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={displayName}
+                              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }}
+                              onError={(e) => { e.target.style.display = "none"; }}
+                            />
+                          ) : (
+                            <BoxIcon />
+                          )}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>
+                            {displayName}
+                          </div>
+                          <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>
+                            {p.category || "—"}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Color */}
+                    <td style={S.td}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {p.color?.hex && (
+                          <div style={{
+                            width: 14, height: 14,
+                            borderRadius: "50%",
+                            background: p.color.hex,
+                            border: "1px solid #e5e7eb",
+                            flexShrink: 0
+                          }} />
+                        )}
+                        <span style={{ fontSize: 13, textTransform: "capitalize" }}>
+                          {p.color?.name || "—"}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Status */}
+                    <td style={S.td}>
+                      <span style={{
+                        ...S.statusBadge,
+                        background: p.isActive !== false ? "#dcfce7" : "#f3f4f6",
+                        color: p.isActive !== false ? "#16a34a" : "#888",
+                      }}>
+                        {p.isActive !== false ? "✓ Active" : "Inactive"}
+                      </span>
+                    </td>
+
+                    {/* Price */}
+                    <td style={{ ...S.td, fontWeight: 700, fontSize: 15 }}>
+                      ₹{Number(displayPrice).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                    </td>
+
+                    {/* Actions */}
+                    <td style={S.td}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <ActionBtn
+                          title="Edit"
+                          onClick={() => navigate(`/update-varient/${p.id}`)}
+                        >
+                          <PencilIcon />
+                        </ActionBtn>
+                        <ActionBtn
+                          title="View"
+                          onClick={() => navigate(`/products/${p.id}`)}
+                        >
+                          <EyeIcon />
+                        </ActionBtn>
+                        <ActionBtn
+                          title="Deactivate"
+                          onClick={() => handleDeactivate(p.id, displayName)}
+                        >
+                          <TrashIcon />
+                        </ActionBtn>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -270,7 +324,6 @@ function ActionBtn({ children, onClick, title }) {
     </button>
   );
 }
-
 function SearchSmIcon({ color = "#666" }) {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -283,7 +336,8 @@ function SortIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="#666" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="15" y2="12"/>
       <line x1="3" y1="18" x2="9" y2="18"/>
     </svg>
   );
@@ -328,164 +382,23 @@ function BoxIcon() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const S = {
-  page: {
-    background: "#f5f5f7",
-    minHeight: "100vh",
-    fontFamily: "'Segoe UI', sans-serif",
-    boxSizing: "border-box",
-  },
-  title: {
-    fontWeight: 800,
-    color: "#111",
-    margin: 0,
-    letterSpacing: "-0.5px",
-  },
-  headerLink: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 5,
-    fontSize: 13,
-    color: "#555",
-    cursor: "pointer",
-    fontWeight: 500,
-  },
-  variantBtn: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    background: "#fff",
-    color: "#7c3aed",
-    border: "1.5px solid #7c3aed",
-    borderRadius: 10,
-    padding: "10px 18px",
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-  },
-  newProductBtn: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    background: "#7c3aed",
-    color: "#fff",
-    border: "none",
-    borderRadius: 10,
-    padding: "10px 18px",
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    boxShadow: "0 4px 14px rgba(124,58,237,0.3)",
-  },
-  searchBox: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: 10,
-    padding: "9px 14px",
-    minWidth: 220,
-    flex: 1,
-    maxWidth: 360,
-  },
-  searchInput: {
-    border: "none",
-    outline: "none",
-    fontSize: 14,
-    color: "#111",
-    width: "100%",
-    background: "transparent",
-    fontFamily: "'Segoe UI', sans-serif",
-  },
+  page: { background: "#f5f5f7", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", boxSizing: "border-box" },
+  title: { fontWeight: 800, color: "#111", margin: 0, letterSpacing: "-0.5px" },
+  variantBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "#fff", color: "#7c3aed", border: "1.5px solid #7c3aed", borderRadius: 10, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
+  newProductBtn: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 4px 14px rgba(124,58,237,0.3)" },
+  searchBox: { display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "9px 14px", minWidth: 220, flex: 1, maxWidth: 360 },
+  searchInput: { border: "none", outline: "none", fontSize: 14, color: "#111", width: "100%", background: "transparent", fontFamily: "'Segoe UI', sans-serif" },
   filterWrapper: { position: "relative" },
-  filterSelect: {
-    padding: "9px 36px 9px 14px",
-    borderRadius: 10,
-    border: "1px solid #e5e7eb",
-    background: "#fff",
-    fontSize: 14,
-    color: "#333",
-    outline: "none",
-    cursor: "pointer",
-    appearance: "none",
-    WebkitAppearance: "none",
-    fontFamily: "'Segoe UI', sans-serif",
-    fontWeight: 500,
-  },
-  filterArrow: {
-    position: "absolute",
-    right: 12,
-    top: "50%",
-    transform: "translateY(-50%)",
-    color: "#888",
-    fontSize: 12,
-    pointerEvents: "none",
-  },
-  tableCard: {
-    background: "#fff",
-    borderRadius: 16,
-    overflow: "hidden",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-  },
+  filterSelect: { padding: "9px 36px 9px 14px", borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", fontSize: 14, color: "#333", outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none", fontFamily: "'Segoe UI', sans-serif", fontWeight: 500 },
+  filterArrow: { position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#888", fontSize: 12, pointerEvents: "none" },
+  tableCard: { background: "#fff", borderRadius: 16, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" },
   table: { width: "100%", borderCollapse: "collapse" },
-  th: {
-    textAlign: "left",
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: "0.08em",
-    color: "#888",
-    padding: "14px 20px",
-    background: "#fafafa",
-    borderBottom: "1px solid #eee",
-    textTransform: "uppercase",
-    whiteSpace: "nowrap",
-  },
+  th: { textAlign: "left", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", color: "#888", padding: "14px 20px", background: "#fafafa", borderBottom: "1px solid #eee", textTransform: "uppercase", whiteSpace: "nowrap" },
   tr: { borderBottom: "1px solid #f0f0f0" },
   td: { padding: "18px 20px", verticalAlign: "middle", color: "#111" },
-  productImg: {
-    width: 52, height: 52,
-    borderRadius: 8,
-    background: "#f3f4f6",
-    overflow: "hidden",
-    flexShrink: 0,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statusBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 4,
-    padding: "5px 12px",
-    borderRadius: 20,
-    fontSize: 12,
-    fontWeight: 600,
-    whiteSpace: "nowrap",
-  },
-  actionBtn: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: "#555",
-    padding: 6,
-    borderRadius: 6,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  productImg: { width: 52, height: 52, borderRadius: 8, background: "#f3f4f6", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
+  statusBadge: { display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" },
+  actionBtn: { background: "none", border: "none", cursor: "pointer", color: "#555", padding: 6, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" },
   emptyCell: { textAlign: "center", padding: 48, color: "#aaa", fontSize: 14 },
-  toast: {
-    position: "fixed",
-    color: "#fff",
-    padding: "12px 20px",
-    borderRadius: 10,
-    fontSize: 14,
-    fontWeight: 600,
-    zIndex: 2000,
-    boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-  },
+  toast: { position: "fixed", color: "#fff", padding: "12px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, zIndex: 2000, boxShadow: "0 4px 16px rgba(0,0,0,0.15)" },
 };

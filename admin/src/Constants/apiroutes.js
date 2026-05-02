@@ -11,10 +11,12 @@ export const PRODUCT = {
   GET_PRODUCTS: "/api/product/get-products",
   ADD_PRODUCT: "/api/product/add-product",
   ADD_NEW_VARIANT: "/api/product/add-new-variant",
-  GET_SINGLE_PRODUCT: (id) => `/api/product/${id}`,
+  GET_ALL: "/api/product/products",
+  // GET_SINGLE_PRODUCT: (id) => `/api/product/${id}`,
 };
 
 export const VARIANT = {
+  GET_BY_ID:   (id) => `/api/variant/${id}`,
   UPDATE: (id) => `/api/variant/${id}`,
   DEACTIVATE: (id) => `/api/variant/${id}/deactivate`,
   UPDATE: (id) => `/api/variant/${id}`,

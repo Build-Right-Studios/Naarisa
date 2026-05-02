@@ -9,11 +9,10 @@ const client = twilio(
 );
 
 export const sendSMS = async (to, message) => {
-  console.log("SID:", process.env.TWILIO_ACCOUNT_SID);
-  console.log("TOKEN:", process.env.TWILIO_AUTH_TOKEN);
-  return await client.messages.create({
+  const sms = await client.messages.create({
     body: message,
     from: process.env.TWILIO_PHONE_NUMBER,
     to: `+91${to}`
   });
+  return sms;
 };

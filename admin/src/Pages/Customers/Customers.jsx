@@ -32,12 +32,14 @@ const Customers = () => {
     const [loading, setLoading] = useState(true);
     const limit = 10;
 
+    const token = localStorage.getItem("token");
+
     const fetchUsers = async () => {
         try {
             setLoading(true);
             const { data } = await axios.get(
                 `${BASE.ROUTE}${ADMIN_USERS.GET_ALL}`,
-                { params: { page, limit } }
+                { params: { page, limit }, headers: { Authorization: `Bearer ${token}` } }
             );
             setUsers(data.users);
             setPagination(data.pagination);
