@@ -6,6 +6,7 @@ import {
   ShoppingCart,
   Tag,
   Image as ImageIcon,
+  UserCircle,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -16,6 +17,7 @@ const menu = [
   { name: "Orders", path: "/orders", icon: ShoppingCart },
   { name: "Coupons", path: "/coupons", icon: Tag },
   { name: "Banners", path: "/banner", icon: ImageIcon },
+  { name: "Customers", path: "/customers", icon: UserCircle },
 ];
 
 function Sidebar() {

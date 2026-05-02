@@ -3,7 +3,9 @@ import { getVariantBySlugInternal, getProductByIdInternal, getVariantsByProductI
 export const getProductBySlugService = async (productData) => {
     try {
         const { slug } = productData;
+        console.log(slug)
         const currentVariant = await getVariantBySlugInternal({ slug });
+        console.log(currentVariant)
 
         if (!currentVariant) {
             throw new Error("Product not found");

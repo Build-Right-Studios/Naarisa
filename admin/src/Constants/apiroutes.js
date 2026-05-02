@@ -14,6 +14,7 @@ export const PRODUCT = {
 };
 
 export const VARIANT = {
+  UPDATE: (id) => `/api/variant/${id}`,
   DEACTIVATE: (id) => `/api/variant/${id}/deactivate`,
 };
 
@@ -21,4 +22,21 @@ export const COUPON = {
   ADD: "/api/coupons/add-coupon",
   GET: "/api/coupons/get-coupon",
   DELETE: (id) => `/api/coupons/${id}`,
+};
+
+export const ORDER = {
+  ACTIVE:    "/api/order/active",
+  DELIVERED: "/api/order/delivered",
+  BY_ID:     (id) => `/api/order/${id}`,
+};
+
+export const BANNER = {
+  ADD: "/api/banners/upload",
+  GET: "/api/banners/get-banners",
+  DELETE: (id) => `/api/banners/${id}`,
+}
+
+export const ADMIN_USERS = {
+  GET_ALL:  "/api/user",
+  GET_BY_ID: (id) => `/api/user/${id}`,
 };

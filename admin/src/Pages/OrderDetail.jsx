@@ -1,0 +1,451 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { BASE } from "../Constants/apiroutes.js";
+
+const BASE_URL = BASE.ROUTE;
+
+const ORDER = {
+  BY_ID: (id) => `/api/order/${id}`,
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    month: "long", day: "numeric", year: "numeric",
+  });
+}
+function formatDateTime(dateStr) {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return d.toLocaleString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
+function formatRupees(val) {
+  return `₹${Number(val || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
+}
+
+const STATUS_STYLES = {
+  pending:    { background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" },
+  processing: { background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ddd6fe" },
+  shipped:    { background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" },
+  delivered:  { background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" },
+  cancelled:  { background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca" },
+};
+
+function StatusBadge({ status }) {
+  const s = STATUS_STYLES[status?.toLowerCase()] || STATUS_STYLES.pending;
+  return (
+    <span style={{
+      ...s,
+      padding: "5px 14px",
+      borderRadius: 20,
+      fontSize: 12,
+      fontWeight: 700,
+      letterSpacing: "0.06em",
+      textTransform: "uppercase",
+    }}>
+      {status}
+    </span>
+  );
+}
+
+function useWindowWidth() {
+  const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 1280);
+  useEffect(() => {
+    const h = () => setW(window.innerWidth);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return w;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+export default function OrderDetail() {
+  const { id }       = useParams();
+  const navigate     = useNavigate();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState("");
+
+  const width     = useWindowWidth();
+  const isMobile  = width < 640;
+  const isTablet  = width >= 640 && width < 1024;
+  const isMonitor = width >= 1440;
+
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetch_ = async () => {
+      setLoading(true);
+      try {
+        const res  = await fetch(`${BASE_URL}${ORDER.BY_ID(id)}`, {
+          credentials: "include",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (data.success) setOrder(data.data);
+        else setError(data.message || "Failed to load order.");
+      } catch { setError("Something went wrong."); }
+      finally { setLoading(false); }
+    };
+    fetch_();
+  }, [id]);
+
+  const pagePadding = isMobile ? "24px 16px" : isTablet ? "28px 28px" : isMonitor ? "48px 64px" : "40px 48px";
+
+  if (loading) return (
+    <div style={{ ...D.page, padding: pagePadding, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={D.loadingText}>Loading order…</div>
+    </div>
+  );
+
+  if (error || !order) return (
+    <div style={{ ...D.page, padding: pagePadding }}>
+      <button style={D.backBtn} onClick={() => navigate("/orders")}>← Back to Orders</button>
+      <p style={{ color: "#ef4444", marginTop: 32 }}>{error || "Order not found."}</p>
+    </div>
+  );
+
+  const customer  = order.user || {};
+  const items     = order.items || [];
+  const address   = order.address || {};
+  const pricing   = order.pricing || {};
+  const payment   = order.payment || {};
+  const delivery  = order.delivery || {};
+  const coupon    = order.coupon || null;
+  const subtotal  = pricing.subtotal || items.reduce((sum, i) => sum + (i.priceAtOrder * i.quantity), 0);
+  const discount  = pricing.discount || 0;
+  const total     = pricing.total || subtotal;
+
+  return (
+    <div style={{ ...D.page, padding: pagePadding }}>
+
+      {/* Back + Header */}
+      <button style={D.backBtn} onClick={() => navigate("/orders")}>
+        ← Back to Orders
+      </button>
+
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: isMobile ? "flex-start" : "center",
+        flexDirection: isMobile ? "column" : "row",
+        gap: isMobile ? 12 : 0,
+        margin: "20px 0 28px",
+      }}>
+        <div>
+          <h1 style={{ ...D.title, fontSize: isMobile ? 22 : 28 }}>
+            Order #{order.orderId || id.slice(-6).toUpperCase()}
+          </h1>
+          <p style={D.subtitle}>Placed on {formatDateTime(order.createdAt)}</p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <StatusBadge status={order.status} />
+          <button style={D.shipmentBtn} onClick={() => { /* TODO: wire up shipment API tomorrow */ }}>
+            <TruckIcon /> Create Shipment
+          </button>
+        </div>
+      </div>
+
+      {/* Grid layout: 2 cols on laptop+, 1 col on mobile/tablet */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: isMobile || isTablet ? "1fr" : "1fr 340px",
+        gap: 20,
+      }}>
+
+        {/* LEFT COLUMN */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* Order Items */}
+          <div style={D.card}>
+            <h2 style={D.cardTitle}>Order Items</h2>
+            <div style={{ overflowX: "auto" }}>
+              <table style={D.table}>
+                <thead>
+                  <tr>
+                    <th style={D.th}>Product</th>
+                    <th style={{ ...D.th, textAlign: "right" }}>Qty</th>
+                    <th style={{ ...D.th, textAlign: "right" }}>Price</th>
+                    <th style={{ ...D.th, textAlign: "right" }}>Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length === 0 ? (
+                    <tr><td colSpan={4} style={D.emptyCell}>No items found.</td></tr>
+                  ) : items.map((item, i) => (
+                    <tr key={i} style={D.tr}>
+                      <td style={D.td}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          {item.image ? (
+                            <img src={item.image} alt={item.name}
+                              style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", background: "#f3f4f6" }} />
+                          ) : (
+                            <div style={D.imgPlaceholder}>
+                              <BoxIcon />
+                            </div>
+                          )}
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
+                              {item.productName || "Product"}
+                            </div>
+                            {(item.variantName || item.size) && (
+                              <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+                                {[item.variantName, item.size].filter(Boolean).join(" · ")}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ ...D.td, textAlign: "right", fontSize: 14 }}>{item.quantity}</td>
+                      <td style={{ ...D.td, textAlign: "right", fontSize: 14 }}>{formatRupees(item.priceAtOrder)}</td>
+                      <td style={{ ...D.td, textAlign: "right", fontSize: 14, fontWeight: 600 }}>
+                        {formatRupees(item.priceAtOrder * item.quantity)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Price summary */}
+            <div style={D.priceSummary}>
+              <PriceLine label="Subtotal"  value={formatRupees(subtotal)} />
+              {discount > 0 && <PriceLine label={coupon ? `Discount (${coupon.code})` : "Discount"} value={`- ${formatRupees(discount)}`} valueColor="#16a34a" />}
+              
+              <div style={D.divider} />
+              <PriceLine label="Total" value={formatRupees(total)} bold />
+            </div>
+          </div>
+
+          {/* Payment Info */}
+          {payment.razorpayOrderId && (
+            <div style={D.card}>
+              <h2 style={D.cardTitle}>Payment</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <InfoRow label="Method" value="Razorpay" />
+                <InfoRow label="Status" value={payment.status || "—"} />
+                {payment.razorpayOrderId && <InfoRow label="Order ID" value={payment.razorpayOrderId} mono />}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* Customer */}
+          <div style={D.card}>
+            <h2 style={D.cardTitle}>Customer</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{
+                ...D.avatar,
+                background: avatarColor(customer.name || "U"),
+              }}>
+                {(customer.name || "U").split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>
+                  {customer.name || "—"}
+                </div>
+                <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>
+                  {customer.email || "—"}
+                </div>
+              </div>
+            </div>
+            {customer.phone && <InfoRow label="Phone" value={customer.phone} />}
+          </div>
+
+          {/* Shipping Address */}
+          {Object.keys(address).length > 0 && (
+            <div style={D.card}>
+              <h2 style={D.cardTitle}>Shipping Address</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {address.name     && <InfoRow label="Name"    value={address.name} />}
+                {address.line1    && <InfoRow label="Address" value={address.line1} />}
+                {address.line2    && <InfoRow label=""        value={address.line2} />}
+                {address.city     && <InfoRow label="City"    value={address.city} />}
+                {address.state    && <InfoRow label="State"   value={address.state} />}
+                {address.pincode  && <InfoRow label="Pincode" value={address.pincode} />}
+                {address.country  && <InfoRow label="Country" value={address.country} />}
+                {address.phone    && <InfoRow label="Phone"   value={address.phone} />}
+              </div>
+            </div>
+          )}
+
+          {/* Order Meta */}
+          <div style={D.card}>
+            <h2 style={D.cardTitle}>Order Info</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <InfoRow label="Order ID"   value={`#${order.orderId || id.slice(-6).toUpperCase()}`} />
+              <InfoRow label="Placed"     value={formatDate(order.createdAt)} />
+              {order.updatedAt && <InfoRow label="Updated" value={formatDate(order.updatedAt)} />}
+              <InfoRow label="Delivery" value={delivery.status?.replace(/_/g, " ") || "—"} />
+              {coupon && <InfoRow label="Coupon" value={`${coupon.code} (-₹${coupon.discountAmount})`} />}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+function PriceLine({ label, value, bold, valueColor }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
+      <span style={{ fontSize: 14, color: bold ? "#111" : "#666", fontWeight: bold ? 700 : 400 }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: bold ? 700 : 500, color: valueColor || (bold ? "#111" : "#333") }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function InfoRow({ label, value, mono }) {
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+      {label ? (
+        <span style={{ fontSize: 12, color: "#888", minWidth: 80, fontWeight: 600,
+          textTransform: "uppercase", letterSpacing: "0.05em", paddingTop: 1 }}>
+          {label}
+        </span>
+      ) : <span style={{ minWidth: 80 }} />}
+      <span style={{ fontSize: 14, color: "#111", fontFamily: mono ? "monospace" : "inherit", wordBreak: "break-all" }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function BoxIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="#aaa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+    </svg>
+  );
+}
+
+function TruckIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="3" width="15" height="13" rx="1"/>
+      <path d="M16 8h4l3 4v5h-7V8z"/>
+      <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+    </svg>
+  );
+}
+
+const AVATAR_COLORS = ["#7c3aed","#2563eb","#059669","#d97706","#dc2626","#0891b2"];
+function avatarColor(name = "") {
+  return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const D = {
+  page: {
+    background: "#f5f5f7",
+    minHeight: "100vh",
+    fontFamily: "'Segoe UI', sans-serif",
+    boxSizing: "border-box",
+  },
+  backBtn: {
+    background: "none",
+    border: "none",
+    color: "#7c3aed",
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    padding: 0,
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  },
+  title: {
+    fontWeight: 800,
+    color: "#111",
+    margin: 0,
+    letterSpacing: "-0.4px",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#888",
+    marginTop: 4,
+  },
+  card: {
+    background: "#fff",
+    borderRadius: 16,
+    padding: "24px",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#111",
+    margin: "0 0 16px",
+    letterSpacing: "-0.2px",
+  },
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
+    minWidth: 380,
+  },
+  th: {
+    textAlign: "left",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.07em",
+    color: "#888",
+    textTransform: "uppercase",
+    padding: "8px 12px",
+    borderBottom: "1px solid #eee",
+    background: "#fafafa",
+  },
+  tr: { borderBottom: "1px solid #f4f4f4" },
+  td: { padding: "14px 12px", verticalAlign: "middle", color: "#111" },
+  emptyCell: { textAlign: "center", padding: 32, color: "#aaa", fontSize: 14 },
+  imgPlaceholder: {
+    width: 44, height: 44, borderRadius: 8,
+    background: "#f3f4f6",
+    display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  priceSummary: {
+    marginTop: 20,
+    padding: "16px 0 0",
+    borderTop: "1px solid #f0f0f0",
+  },
+  divider: {
+    height: 1,
+    background: "#e5e7eb",
+    margin: "8px 0",
+  },
+  avatar: {
+    width: 40, height: 40,
+    borderRadius: "50%",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    color: "#fff", fontSize: 13, fontWeight: 700, flexShrink: 0,
+  },
+  loadingText: {
+    fontSize: 15, color: "#888",
+  },
+  shipmentBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#111",
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    padding: "10px 18px",
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+  },
+};

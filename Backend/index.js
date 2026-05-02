@@ -3,6 +3,7 @@ import routes from "./routes.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectMongoDB from "./config/mongodb.js";
+import { cleanupExpiredOtps } from "./Utils/cleanupExpiredOtps.js";
 
 dotenv.config();
 
@@ -25,3 +26,5 @@ app.use("/", routes);
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+cleanupExpiredOtps();

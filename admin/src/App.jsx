@@ -6,10 +6,14 @@ import AdminSignup from "./Pages/Signup";
 import ProductTable from "./Pages/Products";
 import AddProduct from "./Pages/AddProduct";
 import AddVariant from "./Pages/AddVariant";
+import EditProduct from "./Pages/EditProduct";
 import Sidebar from "./Pages/Sidebar";
 import Orders from "./Pages/Orders";
+import OrderDetail from "./Pages/OrderDetail";
 import Coupons from "./Pages/Coupons";
 import Banner from "./Pages/Banner";
+import Customers from "./Pages/Customers";
+import CustomerDetail from "./Pages/CustomerDetail";
 import Dashboard from "./Pages/Dashboard";
 
 function AdminLayout() {
@@ -19,13 +23,17 @@ function AdminLayout() {
 
       <div className="ml-64 w-full min-h-screen bg-gray-100 p-6">
         <Routes>
-          <Route path="/products" element={<ProductTable />} />
-          <Route path="/add-product" element={<AddProduct />} />
-          <Route path="/add-variant" element={<AddVariant />} />
-          <Route path="/orders" element={<Orders />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/coupons" element={<Coupons />} />
-          <Route path="/banner" element={<Banner />} />
+          <Route path="products" element={<ProductTable />} />
+          <Route path="products/add" element={<AddProduct />} />
+          <Route path="products/variant/add" element={<AddVariant />} />
+          <Route path="products/edit/:id" element={<EditProduct />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="orders/:id" element={<OrderDetail />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="coupons" element={<Coupons />} />
+          <Route path="banner" element={<Banner />} />
+          <Route path="customers" element={<Customers />} />
+          <Route path="customers/:id" element={<CustomerDetail />} />
         </Routes>
       </div>
     </div>

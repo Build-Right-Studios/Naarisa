@@ -2,17 +2,18 @@ import mongoose from "mongoose";
 
 const addressSchema = new mongoose.Schema({
   label: {
-    type: String,  // "Home", "Work", "Other"
+    type: String,
+    enum: ["Home", "Work", "Other"],
     default: "Home"
   },
-  name: String,
-  phone: String,
-  line1: String,
-  line2: String,   // optional
-  city: String,
-  state: String,
-  pincode: String,
-  country: String,
+  name:    { type: String, required: true },
+  phone:   { type: String, required: true },
+  line1:   { type: String, required: true },
+  line2:   { type: String },
+  city:    { type: String, required: true },
+  state:   { type: String, required: true },
+  pincode: { type: String, required: true },
+  country: { type: String, required: true, default: "India" },
   isDefault: {
     type: Boolean,
     default: false
@@ -22,21 +23,26 @@ const addressSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   phone: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true
   },
   email: {
     type: String,
-    sparse: true    // optional but unique if provided
+    sparse: true,
+    unique: true,
+    trim: true,
+    lowercase: true
   },
   addresses: [addressSchema],
 
   otp: {
-    code: String,
+    code: String,       // will store hashed OTP
     expiresAt: Date
   },
 

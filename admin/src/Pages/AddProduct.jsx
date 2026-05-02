@@ -1,185 +1,431 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { BASE, PRODUCT } from "../Constants/apiroutes.js";
 
-import api from "../services/api";
-import { PRODUCT } from "../Constants/apiroutes.js";
+const BASE_URL = BASE.ROUTE;
 
-const AddProduct = () => {
+const CATEGORIES = [
+  "T-Shirts", "Shirts", "Dresses", "Trousers", "Jeans",
+  "Jackets", "Sweaters", "Shorts", "Skirts", "Ethnic Wear",
+  "Activewear", "Accessories",
+];
+
+const initialForm = {
+  name: "",
+  description: "",
+  category: "",
+  basePrice: "",
+  stylingTips: "",
+  fabricCare: "",
+};
+
+// ─── Breakpoint hook ──────────────────────────────────────────────────────────
+function useWindowWidth() {
+  const [w, setW] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280
+  );
+
+  useEffect(() => {
+    const h = () => setW(window.innerWidth);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+
+  return w;
+}
+
+export default function AddProduct() {
   const navigate = useNavigate();
+  const [form, setForm]         = useState(initialForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]       = useState("");
+  const [toast, setToast]       = useState(null);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const token = localStorage.getItem("token");
+  const width = useWindowWidth();
+  const isMobile  = width < 640;
+  const isTablet  = width >= 640 && width < 1024;
+  const isMonitor = width >= 1440;
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    stylingTips: "",
-    fabricCare: "",
-    category: "",
-    basePrice: "",
-    tags: "",
-  });
+  const pagePadding = isMobile ? "24px 16px" : isTablet ? "28px 28px" : isMonitor ? "48px 64px" : "40px 48px";
 
-  const handleChange = (e) => {
-    setError("");
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
   const handleSubmit = async () => {
+    setError("");
+    if (!form.name.trim())    return setError("Product name is required.");
+    if (!form.category)       return setError("Please select a category.");
+    if (!form.basePrice)      return setError("Base price is required.");
+
+    setSubmitting(true);
     try {
-      setLoading(true);
-      setError("");
-
-      const payload = {
-        ...formData,
-        basePrice: Number(formData.basePrice),
-        tags: formData.tags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-      };
-
-      const response = await api.post(PRODUCT.ADD_PRODUCT, payload);
-
-      console.log("TOKEN:", localStorage.getItem("token"));
-
-
-      if (response.data.success) {
-        alert("Product Created Successfully ✅");
-        navigate("/products");
+      const res  = await fetch(`${BASE_URL}${PRODUCT.ADD_PRODUCT}`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name:        form.name.trim(),
+          description: form.description.trim(),
+          category:    form.category,
+          basePrice:   Number(form.basePrice),
+          stylingTips: form.stylingTips.trim(),
+          fabricCare:  form.fabricCare.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast("Product published successfully!");
+        setTimeout(() => navigate("/products"), 1200);
       } else {
-        setError(response.data.message || "Failed to create product");
+        setError(data.message || "Failed to publish product.");
       }
-    } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        error.message ||
-        "Server error while creating product";
-
-      setError(message);
+    } catch {
+      setError("Something went wrong.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
+  const twoCol = !isMobile;
+
   return (
-    <div className="bg-gray-50 min-h-screen p-6">
-      <h1 className="text-3xl font-bold mb-6">Create New Product</h1>
+    <div style={{ ...S.page, padding: pagePadding }}>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-2xl border shadow-sm">
-            <h2 className="font-semibold mb-4 text-lg">
-              General Information
-            </h2>
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          ...S.toast,
+          background: toast.type === "error" ? "#ef4444" : "#22c55e",
+          top: isMobile ? 12 : 24,
+          right: isMobile ? 12 : 24,
+        }}>
+          {toast.msg}
+        </div>
+      )}
 
-            <div className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Product Name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500"
-              />
+      {/* Breadcrumb */}
+      <div style={S.breadcrumb}>
+        <span style={S.breadcrumbLink} onClick={() => navigate("/products")}>INVENTORY</span>
+        <span style={S.breadcrumbSep}>›</span>
+        <span style={S.breadcrumbCurrent}>ADD NEW PRODUCT</span>
+      </div>
 
-              <textarea
-                name="description"
-                placeholder="Description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg h-28 outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
+      {/* Title */}
+      <h1 style={{ ...S.title, fontSize: isMobile ? 24 : 32, marginBottom: 28 }}>
+        Create New Product
+      </h1>
+
+      {/* Row 1: General Info + Specifications */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: twoCol ? "1fr 320px" : "1fr",
+        gap: 20,
+        marginBottom: 20,
+      }}>
+        {/* General Information */}
+        <div style={S.card}>
+          <div style={S.cardHeader}>
+            <EditIcon />
+            <h2 style={S.cardTitle}>General Information</h2>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border shadow-sm">
-            <h2 className="font-semibold mb-4 text-lg">
-              Editorial Details
-            </h2>
+          <Field label="Product Name">
+            <input
+              style={S.input}
+              placeholder="e.g. Classic Silk Midi Dress"
+              value={form.name}
+              onChange={set("name")}
+            />
+          </Field>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <textarea
-                name="stylingTips"
-                placeholder="Styling Tips"
-                value={formData.stylingTips}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg h-32 outline-none focus:ring-2 focus:ring-purple-500"
-              />
-
-              <textarea
-                name="fabricCare"
-                placeholder="Fabric Care"
-                value={formData.fabricCare}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg h-32 outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-          </div>
+          <Field label="Description">
+            <textarea
+              style={{ ...S.input, ...S.textarea }}
+              placeholder="Briefly describe the product's aesthetic and fit..."
+              value={form.description}
+              onChange={set("description")}
+            />
+          </Field>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border shadow-sm">
-            <h2 className="font-semibold mb-4 text-lg">Specifications</h2>
-
-            <div className="space-y-4">
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">Select Category</option>
-                <option value="Work">Work</option>
-                <option value="College">College</option>
-              </select>
-
-
-              <input
-                type="number"
-                name="basePrice"
-                placeholder="Base Price (₹)"
-                value={formData.basePrice}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500"
-              />
-
-              <input
-                type="text"
-                name="tags"
-                placeholder="Tags (comma separated)"
-                value={formData.tags}
-                onChange={handleChange}
-                className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
+        {/* Specifications */}
+        <div style={S.card}>
+          <div style={S.cardHeader}>
+            <TagIcon />
+            <h2 style={S.cardTitle}>Specifications</h2>
           </div>
 
-          {error && (
-            <div className="bg-red-100 border border-red-300 text-red-600 px-4 py-3 rounded-xl">
-              {error}
+          <Field label="Category">
+            <div style={S.selectWrapper}>
+              <select style={S.select} value={form.category} onChange={set("category")}>
+                <option value="">Select Category</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <span style={S.selectArrow}>▾</span>
             </div>
-          )}
+          </Field>
+
+          <Field label="Base Price (INR)">
+            <div style={S.inputWithPrefix}>
+              <span style={S.prefix}>₹</span>
+              <input
+                style={{ ...S.input, paddingLeft: 28 }}
+                type="number"
+                min={0}
+                placeholder="0.00"
+                value={form.basePrice}
+                onChange={set("basePrice")}
+              />
+            </div>
+          </Field>
         </div>
       </div>
 
-      <div className="flex justify-center mt-10">
+      {/* Row 2: Editorial Details */}
+      <div style={{ ...S.card, marginBottom: 32 }}>
+        <div style={S.cardHeader}>
+          <BookIcon />
+          <h2 style={S.cardTitle}>Editorial Details</h2>
+        </div>
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: twoCol ? "1fr 1fr" : "1fr",
+          gap: 20,
+        }}>
+          <Field label="Styling Tips">
+            <textarea
+              style={{ ...S.input, ...S.textarea }}
+              placeholder="Provide detailed advice on how to wear this piece..."
+              value={form.stylingTips}
+              onChange={set("stylingTips")}
+            />
+          </Field>
+
+          <Field label="Fabric Care">
+            <textarea
+              style={{ ...S.input, ...S.textarea }}
+              placeholder="Elaborate maintenance and cleaning instructions..."
+              value={form.fabricCare}
+              onChange={set("fabricCare")}
+            />
+          </Field>
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && <p style={{ ...S.errorText, textAlign: "center", marginBottom: 16 }}>{error}</p>}
+
+      {/* Publish Button */}
+      <div style={{ display: "flex", justifyContent: "center", paddingBottom: 40 }}>
         <button
+          style={{
+            ...S.publishBtn,
+            width: isMobile ? "100%" : 340,
+            opacity: submitting ? 0.7 : 1,
+          }}
           onClick={handleSubmit}
-          disabled={loading}
-          className="px-10 py-3 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-xl shadow-lg hover:opacity-90 disabled:opacity-50"
+          disabled={submitting}
         >
-          {loading ? "Publishing..." : "Publish Product →"}
+          {submitting ? "Publishing…" : "PUBLISH PRODUCT"} <span style={{ fontSize: 18 }}>➤</span>
         </button>
       </div>
     </div>
   );
-};
+}
 
-export default AddProduct;
+// ─── Sub-components ───────────────────────────────────────────────────────────
+function Field({ label, children }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={S.label}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  );
+}
+function TagIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+      <line x1="7" y1="7" x2="7.01" y2="7"/>
+    </svg>
+  );
+}
+function BookIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </svg>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const S = {
+  page: {
+    background: "#f5f5f7",
+    minHeight: "100vh",
+    fontFamily: "'Segoe UI', sans-serif",
+    boxSizing: "border-box",
+  },
+  breadcrumb: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+  },
+  breadcrumbLink: {
+    color: "#888",
+    cursor: "pointer",
+    textTransform: "uppercase",
+  },
+  breadcrumbSep: { color: "#bbb" },
+  breadcrumbCurrent: {
+    color: "#7c3aed",
+    textTransform: "uppercase",
+  },
+  title: {
+    fontWeight: 800,
+    color: "#111",
+    margin: 0,
+    letterSpacing: "-0.5px",
+  },
+  card: {
+    background: "#fff",
+    borderRadius: 16,
+    padding: "28px",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+  },
+  cardHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 24,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 700,
+    color: "#111",
+    margin: 0,
+    letterSpacing: "-0.2px",
+  },
+  label: {
+    display: "block",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "#555",
+    marginBottom: 8,
+  },
+  input: {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 10,
+    border: "none",
+    background: "#f2f2f5",
+    fontSize: 15,
+    color: "#111",
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "'Segoe UI', sans-serif",
+  },
+  textarea: {
+    resize: "vertical",
+    minHeight: 130,
+    lineHeight: 1.6,
+  },
+  selectWrapper: { position: "relative" },
+  select: {
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 10,
+    border: "none",
+    background: "#f2f2f5",
+    fontSize: 15,
+    color: "#111",
+    outline: "none",
+    cursor: "pointer",
+    appearance: "none",
+    WebkitAppearance: "none",
+    boxSizing: "border-box",
+    fontFamily: "'Segoe UI', sans-serif",
+  },
+  selectArrow: {
+    position: "absolute",
+    right: 14,
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#888",
+    fontSize: 12,
+    pointerEvents: "none",
+  },
+  inputWithPrefix: { position: "relative" },
+  prefix: {
+    position: "absolute",
+    left: 12,
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#555",
+    fontSize: 15,
+    fontWeight: 600,
+    pointerEvents: "none",
+    zIndex: 1,
+  },
+  publishBtn: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    background: "#7c3aed",
+    color: "#fff",
+    border: "none",
+    borderRadius: 14,
+    padding: "18px 32px",
+    fontSize: 15,
+    fontWeight: 800,
+    letterSpacing: "0.1em",
+    cursor: "pointer",
+    boxShadow: "0 8px 24px rgba(124,58,237,0.4)",
+  },
+  errorText: {
+    color: "#ef4444",
+    fontSize: 13,
+    margin: 0,
+  },
+  toast: {
+    position: "fixed",
+    color: "#fff",
+    padding: "12px 20px",
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    zIndex: 2000,
+    boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+  },
+};
