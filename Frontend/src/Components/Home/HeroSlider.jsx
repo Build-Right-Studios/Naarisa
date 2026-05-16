@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { BASE, BANNER } from "../../Constants/apiroutes.js";
+import { BASE, BANNER } from "../../Constants/apiRoutes.js";
 
 const HeroSlider = () => {
   const [banners, setBanners]   = useState([]);
