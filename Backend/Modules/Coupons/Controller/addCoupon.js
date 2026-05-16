@@ -2,7 +2,7 @@ import { addCouponService } from "../Service/addCouponService.js";
 
 export const addCoupon = async (req, res) => {
     try {
-        const { code, discountType, discountValue, minOrderValue, expiryDate, couponType } = req.body;
+        const { code, discountType, discountValue, minOrderValue, maxDiscountAmount, maxUses, perUserLimit, expiryDate, couponType } = req.body;
 
         if (!code) {
             return res.status(400).json({
@@ -32,6 +32,13 @@ export const addCoupon = async (req, res) => {
             })
         }
 
+        if (maxDiscountAmount === undefined) {
+            return res.status(400).json({
+                success: false,
+                message: "Max Order Value is required."
+            })
+        }
+
         if (expiryDate && new Date(expiryDate) < new Date()) {
             return res.status(400).json({
                 success: false,
@@ -43,9 +50,30 @@ export const addCoupon = async (req, res) => {
             return res.status(400).json({ success: false, message: "Invalid coupon type" });
         }
 
+        if (discountType === "flat" && maxDiscountAmount) {
+            return res.status(400).json({
+                success: false,
+                message: "Flat coupons cannot have max discount amount"
+            });
+        }
+
+        if (maxUses !== undefined && Number(maxUses) < 1) {
+            return res.status(400).json({
+                success: false,
+                message: "Max uses must be at least 1"
+            });
+        }
+
+        if (perUserLimit !== undefined && Number(perUserLimit) < 1) {
+            return res.status(400).json({
+                success: false,
+                message: "Per user limit must be at least 1"
+            });
+        }
+
         const normalizedCode = code.trim().toUpperCase();
 
-        const newCoupon = await addCouponService({ code: normalizedCode, discountType, discountValue, minOrderValue, expiryDate, couponType });
+        const newCoupon = await addCouponService({ code: normalizedCode, discountType, discountValue, minOrderValue, maxDiscountAmount, maxUses, perUserLimit, expiryDate, couponType });
 
         return res.status(201).json({
             success: true,

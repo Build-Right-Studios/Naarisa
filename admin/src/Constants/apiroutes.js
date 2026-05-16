@@ -1,6 +1,6 @@
 export const BASE = {
-  // ROUTE: "http://localhost:5000",
-  ROUTE: "https://naarisa.onrender.com"
+  ROUTE: "http://localhost:5000",
+  // ROUTE: "https://naarisa.onrender.com"
 };
 
 export const AUTH = {
@@ -11,7 +11,7 @@ export const AUTH = {
 export const PRODUCT = {
   GET_PRODUCTS: "/api/product/get-products",
   ADD_PRODUCT: "/api/product/add-product",
-  ADD_NEW_VARIANT: "/api/product/add-new-variant",
+  ADD_NEW_VARIANT: "/api/variant/add-new-variant",
   GET_ALL: "/api/product/products",
   // GET_SINGLE_PRODUCT: (id) => `/api/product/${id}`,
 };
@@ -20,7 +20,6 @@ export const VARIANT = {
   GET_BY_ID:   (id) => `/api/variant/${id}`,
   UPDATE: (id) => `/api/variant/${id}`,
   DEACTIVATE: (id) => `/api/variant/${id}/deactivate`,
-  UPDATE: (id) => `/api/variant/${id}`,
 };
 
 export const COUPON = {
@@ -44,4 +43,5 @@ export const BANNER = {
 export const ADMIN_USERS = {
   GET_ALL:  "/api/user",
   GET_BY_ID: (id) => `/api/user/${id}`,
+  EXPORT: "/api/user/export-users",
 };

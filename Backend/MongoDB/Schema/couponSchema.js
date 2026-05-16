@@ -28,6 +28,29 @@ const couponSchema = new mongoose.Schema(
       min: 0
     },
 
+    maxDiscountAmount: {
+      type: Number,
+      default: null,
+      min: 0
+    },
+
+    maxUses: {
+      type: Number,
+      default: null
+    },
+
+    // ✅ NEW
+    usedCount: {
+      type: Number,
+      default: 0
+    },
+
+    // ✅ NEW
+    perUserLimit: {
+      type: Number,
+      default: 1
+    },
+
     couponType: {
       type: String,
       required: true,
@@ -43,12 +66,20 @@ const couponSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
-    }
+    },
 
+    // ✅ Soft delete fields
+    isDeleted: {
+      type: Boolean,
+      default: false
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null
+    }
   },
-  {
-    timestamps: true
-  }
+  { timestamps: true }
 );
 
 export default couponSchema;

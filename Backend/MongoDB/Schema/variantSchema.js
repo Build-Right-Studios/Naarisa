@@ -26,10 +26,10 @@ const variantSchema = new mongoose.Schema({
       unique: true,
       index: true
     },
-    images: {
-      type: [String],
-      required: true
-    },
+    images: [{
+      url: String,
+      public_id: String
+    }],
     sizes: {
       type: [sizeSchema],
       required: true

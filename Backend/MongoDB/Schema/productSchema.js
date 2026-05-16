@@ -28,7 +28,7 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["Work", "College"],
+      trim: true,
       index: true
     },
 

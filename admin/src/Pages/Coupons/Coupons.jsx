@@ -7,14 +7,24 @@ const initialForm = {
     code: "",
     discountValue: "",
     discountType: "percentage",
+    maxDiscountAmount: "",
     minOrderValue: "",
+    maxUses: "",
+    perUserLimit: 1,
     couponType: "website",
     expiryDate: "",
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-function formatDiscount(type, value) {
-    return type === "percentage" ? `${value}% Off` : `₹${value} Off`;
+function formatDiscount(type, value, maxDiscountAmount) {
+    if (type === "percentage") {
+        if (maxDiscountAmount) {
+            return `${value}% Off up to ₹${maxDiscountAmount}`;
+        }
+        return `${value}% Off`;
+    }
+
+    return `₹${value} Off`;
 }
 function formatMinOrder(value) {
     if (!value || Number(value) === 0) return "No Minimum";
@@ -118,7 +128,19 @@ export default function Coupons() {
                     code: form.code.trim().toUpperCase(),
                     discountType: form.discountType,
                     discountValue: Number(form.discountValue),
+
+                    maxDiscountAmount: form.maxDiscountAmount
+                        ? Number(form.maxDiscountAmount)
+                        : null,
+
                     minOrderValue: Number(form.minOrderValue) || 0,
+
+                    maxUses: form.maxUses
+                        ? Number(form.maxUses)
+                        : null,
+
+                    perUserLimit: Number(form.perUserLimit) || 1,
+
                     couponType: form.couponType,
                     expiryDate: form.expiryDate,
                 }),
@@ -141,7 +163,7 @@ export default function Coupons() {
     const tdPad = isMobile ? "14px 10px" : isTablet ? "16px 16px" : "20px 24px";
     const tdFont = isMobile ? 13 : 15;
     const showMinOrder = !isMobile;                        // hide col on phones
-    const colCount = showMinOrder ? 6 : 5;
+    const colCount = showMinOrder ? 7 : 5;
     const modalW = isMobile ? "calc(100vw - 32px)" : isTablet ? "90vw" : 520;
     const modalMaxW = isMobile ? "100%" : 520;
     const modalPad = isMobile ? "18px 16px" : "28px 32px";
@@ -197,7 +219,7 @@ export default function Coupons() {
                                 {[
                                     "Coupon Code",
                                     "Discount",
-                                    ...(showMinOrder ? ["Min Order"] : []),
+                                    ...(showMinOrder ? ["Min Order", "Uses Left"] : []),
                                     "Type",
                                     "Expiry Date",
                                     "Actions",
@@ -217,7 +239,7 @@ export default function Coupons() {
                                         <span style={{ ...S.codeBadge, fontSize: isMobile ? 11 : 13 }}>{c.code}</span>
                                     </td>
                                     <td style={{ ...S.td, padding: tdPad, fontSize: tdFont, fontWeight: 600 }}>
-                                        {formatDiscount(c.discountType, c.discountValue)}
+                                        {formatDiscount(c.discountType, c.discountValue, c.maxDiscountAmount)}
                                     </td>
                                     {showMinOrder && (
                                         <td style={{
@@ -228,6 +250,22 @@ export default function Coupons() {
                                             {formatMinOrder(c.minOrderValue)}
                                         </td>
                                     )}
+
+                                    {showMinOrder && (
+                                        <td
+                                            style={{
+                                                ...S.td,
+                                                padding: tdPad,
+                                                fontSize: tdFont,
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            {c.maxUses
+                                                ? `${c.maxUses - c.usedCount} / ${c.maxUses}`
+                                                : "Unlimited"}
+                                        </td>
+                                    )}
+
                                     <td style={{ ...S.td, padding: tdPad, fontSize: tdFont }}>
                                         <span style={{ ...S.typeBadge, fontSize: isMobile ? 10 : 11 }}>
                                             {c.couponType.toUpperCase()}
@@ -314,6 +352,60 @@ export default function Coupons() {
                                     </div>
                                 </Field>
                             </div>
+
+                            {form.discountType === "percentage" && (
+                                <Field label="Maximum Discount Amount (Optional)">
+                                    <div style={S.inputWithPrefix}>
+                                        <span style={S.prefix}>₹</span>
+
+                                        <input
+                                            style={{ ...S.input, paddingLeft: 28 }}
+                                            type="number"
+                                            min={0}
+                                            placeholder="500"
+                                            value={form.maxDiscountAmount}
+                                            onChange={(e) =>
+                                                setForm({
+                                                    ...form,
+                                                    maxDiscountAmount: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                </Field>
+                            )}
+
+                            <Field label="Maximum Coupon Uses">
+                                <input
+                                    style={S.input}
+                                    type="number"
+                                    min={1}
+                                    placeholder="100"
+                                    value={form.maxUses}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            maxUses: e.target.value,
+                                        })
+                                    }
+                                />
+                            </Field>
+
+                            <Field label="Per User Limit">
+                                <input
+                                    style={S.input}
+                                    type="number"
+                                    min={1}
+                                    placeholder="1"
+                                    value={form.perUserLimit}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            perUserLimit: e.target.value,
+                                        })
+                                    }
+                                />
+                            </Field>
 
                             <Field label="Minimum Order Value">
                                 <div style={S.inputWithPrefix}>

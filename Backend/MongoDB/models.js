@@ -6,13 +6,15 @@ import couponSchema from "./Schema/couponSchema.js";
 import userSchema from "./Schema/userSchema.js";
 import orderSchema from "./Schema/orderSchema.js";
 import bannerSchema from "./Schema/bannerSchema.js";
+import couponUsageSchema from "./Schema/couponUsageSchema.js";
 
 const Admin = mongoose.model("Admin", adminSchema);
 const Product = mongoose.model("Product", productSchema);
 const Variant = mongoose.model("Variant", variantSchema);
 const Coupon = mongoose.model("Coupon", couponSchema);
+const CouponUsage = mongoose.model("CouponUsage", couponUsageSchema)
 const User = mongoose.model("User", userSchema);
 const Order = mongoose.model("Order", orderSchema);
 const Banner = mongoose.model("Banner", bannerSchema);
 
-export { Admin, Product, Variant, Coupon, User, Order, Banner };
+export { Admin, Product, Variant, Coupon, CouponUsage, User, Order, Banner };

@@ -24,8 +24,8 @@ export default function Products() {
 
   const token = localStorage.getItem("token");
   const width = useWindowWidth();
-  const isMobile  = width < 640;
-  const isTablet  = width >= 640 && width < 1024;
+  const isMobile = width < 640;
+  const isTablet = width >= 640 && width < 1024;
   const isMonitor = width >= 1440;
   const pagePadding = isMobile ? "20px 16px" : isTablet ? "24px 28px" : isMonitor ? "40px 64px" : "32px 48px";
 
@@ -91,9 +91,9 @@ export default function Products() {
 
     const matchesFilter =
       filter === "all" ? true
-      : filter === "published" ? p.isActive !== false
-      : filter === "draft" ? p.isActive === false
-      : true;
+        : filter === "published" ? p.isActive !== false
+          : filter === "draft" ? p.isActive === false
+            : true;
 
     return matchesSearch && matchesFilter;
   });
@@ -209,9 +209,10 @@ export default function Products() {
               ) : filtered.map((p) => {
                 // Resolve image — variant can have images array or image string
                 const imageUrl =
-                  (Array.isArray(p.images) && p.images.length > 0)
-                    ? p.images[0]
-                    : p.image || null;
+                  p.images?.[0]?.url ||
+                  p.image?.url ||
+                  p.image ||
+                  null;
 
                 // Resolve name — from variant response mapping
                 const displayName = p.productName || p.name || "—";
@@ -328,7 +329,7 @@ function SearchSmIcon({ color = "#666" }) {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   );
 }
@@ -336,9 +337,9 @@ function SortIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="#666" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="6" x2="21" y2="6"/>
-      <line x1="3" y1="12" x2="15" y2="12"/>
-      <line x1="3" y1="18" x2="9" y2="18"/>
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="15" y2="12" />
+      <line x1="3" y1="18" x2="9" y2="18" />
     </svg>
   );
 }
@@ -346,8 +347,8 @@ function PencilIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
   );
 }
@@ -355,8 +356,8 @@ function EyeIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
@@ -364,10 +365,10 @@ function TrashIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6"/>
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-      <path d="M10 11v6M14 11v6"/>
-      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
     </svg>
   );
 }
@@ -375,7 +376,7 @@ function BoxIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
       stroke="#ccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
     </svg>
   );
 }

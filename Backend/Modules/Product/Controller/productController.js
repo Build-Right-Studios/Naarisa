@@ -26,7 +26,7 @@ export const addProduct = async (req, res) => {
       });
     }
 
-    if (!category) {
+    if (!category || !category.trim()) {
       return res.status(400).json({
         success: false,
         message: "Category is required",
@@ -45,7 +45,7 @@ export const addProduct = async (req, res) => {
       description,
       stylingTips,
       fabricCare,
-      category,
+      category: category.trim(),
       basePrice,
       tags
     });

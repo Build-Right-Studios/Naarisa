@@ -5,31 +5,78 @@ import multer from "multer";
 
 dotenv.config();
 
+/* -------------------------------------------------------------------------- */
+/*                               CLOUDINARY SETUP                             */
+/* -------------------------------------------------------------------------- */
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const storage = new CloudinaryStorage({
+/* -------------------------------------------------------------------------- */
+/*                               BANNER STORAGE                               */
+/* -------------------------------------------------------------------------- */
+
+const storage_banners = new CloudinaryStorage({
   cloudinary,
-  params: (req, file) => {
+
+  params: async (req, file) => {
+
     const isDesktop = file.fieldname === "desktopImage";
+
     return {
       folder: isDesktop
         ? "naarisa/banners/desktop"
         : "naarisa/banners/mobile",
+
       allowed_formats: ["jpg", "jpeg", "png", "webp"],
-      transformation: isDesktop
-        ? [{ width: 1440, height: 600, crop: "fill" }]
-        : [{ width: 768, height: 900, crop: "fill" }]
+
     };
   }
 });
 
-export const uploadBannerImages = multer({ storage }).fields([
+export const uploadBannerImages = multer({
+  storage: storage_banners,
+
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  }
+}).fields([
   { name: "desktopImage", maxCount: 1 },
   { name: "mobileImage", maxCount: 1 }
 ]);
+
+/* -------------------------------------------------------------------------- */
+/*                              VARIANT STORAGE                               */
+/* -------------------------------------------------------------------------- */
+
+const storage_variants = new CloudinaryStorage({
+  cloudinary,
+
+  params: async (req, file) => {
+
+    return {
+      folder: "naarisa/variants",
+
+      allowed_formats: ["jpg", "jpeg", "png", "webp"],
+
+      resource_type: "image"
+    };
+  }
+});
+
+export const uploadVariantImages = multer({
+  storage: storage_variants,
+
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  }
+}).array("images", 5);
+
+/* -------------------------------------------------------------------------- */
+/*                                   EXPORTS                                  */
+/* -------------------------------------------------------------------------- */
 
 export { cloudinary };

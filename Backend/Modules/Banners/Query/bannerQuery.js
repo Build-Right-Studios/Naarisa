@@ -5,15 +5,15 @@ export const createBannerQuery = async (data) => {
 };
 
 export const findAllBannersQuery = async () => {
-  return await Banner.find().sort({ order: 1 });
+  return await Banner.find({ isDeleted: false }).sort({ order: 1 }); // ✅ exclude soft deleted
 };
 
 export const findActiveBannersQuery = async () => {
-  return await Banner.find({ isActive: true }).sort({ order: 1 });
+  return await Banner.find({ isActive: true, isDeleted: false }).sort({ order: 1 }); // ✅
 };
 
 export const findBannerByIdQuery = async (id) => {
-  return await Banner.findById(id);
+  return await Banner.findOne({ _id: id, isDeleted: false }); // ✅ exclude soft deleted
 };
 
 export const updateBannerQuery = async (id, data) => {
@@ -21,5 +21,5 @@ export const updateBannerQuery = async (id, data) => {
 };
 
 export const deleteBannerQuery = async (id) => {
-  return await Banner.findByIdAndDelete(id);
+  return await Banner.findByIdAndUpdate(id, { isDeleted: true, deletedAt: new Date() }, { new: true }); // ✅ soft delete
 };

@@ -19,11 +19,13 @@ export const uploadBanner = async (req, res) => {
         console.log(desktopImage);
         console.log(mobileImage);
 
+        const cleanLink = link ? link.replace(/^"|"$/g, '') : null;
+
         const banner = await uploadBannerService({
             title,
             desktopImage,
             mobileImage,
-            link,
+            cleanLink,
             order: Number(order)
         });
 

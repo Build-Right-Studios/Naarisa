@@ -50,6 +50,43 @@ const Customers = () => {
         }
     };
 
+    const handleExportUsers = async () => {
+        try {
+
+            const response = await axios.get(
+                `${BASE.ROUTE}${ADMIN_USERS.EXPORT}`,
+                {
+                    responseType: "blob",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            const url = window.URL.createObjectURL(
+                new Blob([response.data])
+            );
+
+            const link = document.createElement("a");
+
+            link.href = url;
+
+            link.setAttribute(
+                "download",
+                "customers.xlsx"
+            );
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+        } catch (error) {
+            console.error("Export failed:", error);
+        }
+    };
+
     useEffect(() => {
         fetchUsers();
     }, [page]);
@@ -73,23 +110,51 @@ const Customers = () => {
             </div>
 
             {/* Search */}
-            <div className="mb-6">
+            {/* Search + Export */}
+            <div
+                className="mb-6"
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "12px",
+                    flexWrap: "wrap",
+                }}
+            >
                 <div className="relative w-80">
-                    {/* Icon */}
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                        size={18}
+                    />
 
-                    {/* Input */}
                     <input
                         type="text"
                         placeholder="Search by name or phone..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 
-                 focus:outline-none focus:ring-2 focus:ring-black/80 
-                 focus:border-transparent 
-                 shadow-sm hover:shadow-md transition-all duration-200"
+            focus:outline-none focus:ring-2 focus:ring-black/80 
+            focus:border-transparent 
+            shadow-sm hover:shadow-md transition-all duration-200"
                     />
                 </div>
+
+                <button
+                    onClick={handleExportUsers}
+                    style={{
+                        background: "#7C3AED",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "12px",
+                        padding: "10px 18px",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        boxShadow: "0 4px 14px rgba(124,58,237,0.25)",
+                    }}
+                >
+                    Export Users
+                </button>
             </div>
 
             {/* Table */}

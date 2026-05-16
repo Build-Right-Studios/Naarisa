@@ -2,48 +2,86 @@ import { addNewVariantService } from "../Service/addNewVariantService.js";
 
 export const addNewVariant = async (req, res) => {
     try {
-        const { productId, color, images, sizes, discountPrice } = req.body;
 
+        console.log(req.body);
+        console.log(req.files);
+
+        const {
+            productId,
+            colorName,
+            colorHex,
+            discountPrice
+        } = req.body;
+
+        // Safe JSON parse
+        let sizes = [];
+
+        try {
+            sizes = JSON.parse(req.body.sizes);
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid sizes format"
+            });
+        }
+
+        // Cloudinary uploaded files
+        const images = req.files?.map((file) => ({
+            url: file.path,
+            public_id: file.filename
+        }));
+
+        // Validations
         if (!productId) {
             return res.status(400).json({
                 success: false,
                 message: "Product Id is required."
-            })
+            });
         }
 
-        if (!color) {
+        if (!colorName) {
             return res.status(400).json({
                 success: false,
-                message: "Color is required."
-            })
+                message: "Color name is required."
+            });
         }
 
-        if (!images || images.length === 0 || images.length > 4) {
+        if (!images || images.length === 0 || images.length > 5) {
             return res.status(400).json({
                 success: false,
-                message: "Error Uploading images."
-            })
+                message: "Please upload 1 to 5 images."
+            });
         }
 
         if (!sizes || sizes.length === 0) {
             return res.status(400).json({
                 success: false,
                 message: "At least one size required"
-            })
+            });
         }
 
-        const newVariant = await addNewVariantService({ productId, color, images, sizes, discountPrice });
+        const newVariant = await addNewVariantService({
+            productId,
+            colorName,
+            colorHex,
+            images,
+            sizes,
+            discountPrice
+        });
 
         return res.status(201).json({
-            success:true,
+            success: true,
             message: "New Product Variant Added.",
             data: newVariant
-        })
+        });
+
     } catch (error) {
-        console.error("getAdmin Error:", error);
+
+        console.error("addNewVariant Error:", error);
+
         return res.status(error.status || 500).json({
             success: false,
             message: error.message || "Internal server error",
-        })
+        });
     }
-}
+};

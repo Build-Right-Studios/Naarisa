@@ -444,14 +444,15 @@ const S = {
     cardImgWrap: {
         position: "relative",
         width: "100%",
-        height: 160,
+        height: "auto",
         background: "#eee",
         overflow: "hidden",
     },
     cardImg: {
         width: "100%",
         height: "100%",
-        objectFit: "cover",
+        objectFit: "contain",
+        backgroundColor: "#f5f5f5",
         display: "block",
     },
     cardImgPlaceholder: {

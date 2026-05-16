@@ -9,22 +9,22 @@ const bannerSchema = new mongoose.Schema(
     },
 
     desktopImage: {
-      type: String,    // Cloudinary URL
+      type: String,
       required: true
     },
 
     mobileImage: {
-      type: String,    // Cloudinary URL
+      type: String,
       required: true
     },
 
     link: {
-      type: String,    // where banner redirects on click
+      type: String,
       default: null
     },
 
     order: {
-      type: Number,    // controls display sequence
+      type: Number,
       required: true,
       default: 0
     },
@@ -32,6 +32,17 @@ const bannerSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true
+    },
+
+    // ✅ Soft delete fields
+    isDeleted: {
+      type: Boolean,
+      default: false
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null
     }
   },
   { timestamps: true }

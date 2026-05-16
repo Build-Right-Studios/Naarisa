@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import { PRODUCT } from "../../Constants/apiroutes.js";
+import { BASE, PRODUCT } from "../../Constants/apiroutes.js";
 
 const CATEGORIES = [
   "T-Shirts", "Shirts", "Dresses", "Trousers", "Jeans",
@@ -17,6 +17,8 @@ const initialForm = {
   stylingTips: "",
   fabricCare: "",
 };
+
+const BASE_URL = BASE.ROUTE;
 
 // ─── Breakpoint hook ──────────────────────────────────────────────────────────
 function useWindowWidth() {
@@ -35,15 +37,15 @@ function useWindowWidth() {
 
 export default function AddProduct() {
   const navigate = useNavigate();
-  const [form, setForm]         = useState(initialForm);
+  const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError]       = useState("");
-  const [toast, setToast]       = useState(null);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
 
   const token = localStorage.getItem("token");
   const width = useWindowWidth();
-  const isMobile  = width < 640;
-  const isTablet  = width >= 640 && width < 1024;
+  const isMobile = width < 640;
+  const isTablet = width >= 640 && width < 1024;
   const isMonitor = width >= 1440;
 
   const pagePadding = isMobile ? "24px 16px" : isTablet ? "28px 28px" : isMonitor ? "48px 64px" : "40px 48px";
@@ -57,13 +59,13 @@ export default function AddProduct() {
 
   const handleSubmit = async () => {
     setError("");
-    if (!form.name.trim())    return setError("Product name is required.");
-    if (!form.category)       return setError("Please select a category.");
-    if (!form.basePrice)      return setError("Base price is required.");
+    if (!form.name.trim()) return setError("Product name is required.");
+    if (!form.category) return setError("Please select a category.");
+    if (!form.basePrice) return setError("Base price is required.");
 
     setSubmitting(true);
     try {
-      const res  = await fetch(`${BASE_URL}${PRODUCT.ADD_PRODUCT}`, {
+      const res = await fetch(`${BASE_URL}${PRODUCT.ADD_PRODUCT}`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -71,12 +73,12 @@ export default function AddProduct() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          name:        form.name.trim(),
+          name: form.name.trim(),
           description: form.description.trim(),
-          category:    form.category,
-          basePrice:   Number(form.basePrice),
+          category: form.category,
+          basePrice: Number(form.basePrice),
           stylingTips: form.stylingTips.trim(),
-          fabricCare:  form.fabricCare.trim(),
+          fabricCare: form.fabricCare.trim(),
         }),
       });
       const data = await res.json();
@@ -163,15 +165,13 @@ export default function AddProduct() {
           </div>
 
           <Field label="Category">
-            <div style={S.selectWrapper}>
-              <select style={S.select} value={form.category} onChange={set("category")}>
-                <option value="">Select Category</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              <span style={S.selectArrow}>▾</span>
-            </div>
+            <input
+              style={S.input}
+              type="text"
+              placeholder="e.g. Oversized T-Shirts"
+              value={form.category}
+              onChange={set("category")}
+            />
           </Field>
 
           <Field label="Base Price (INR)">
@@ -257,8 +257,8 @@ function EditIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
       stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
   );
 }
@@ -266,8 +266,8 @@ function TagIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
       stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
-      <line x1="7" y1="7" x2="7.01" y2="7"/>
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+      <line x1="7" y1="7" x2="7.01" y2="7" />
     </svg>
   );
 }
@@ -275,8 +275,8 @@ function BookIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
       stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
     </svg>
   );
 }

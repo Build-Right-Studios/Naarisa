@@ -6,6 +6,7 @@ const ProductPage = () => {
   const { id } = useParams();
   const [variant, setVariant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(0);
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -37,13 +38,42 @@ const ProductPage = () => {
     <div className="max-w-6xl mx-auto p-6 flex flex-col md:flex-row gap-10">
 
       {/* Image */}
-      <div className="w-full md:w-1/2 bg-gray-100 rounded-xl aspect-square overflow-hidden">
-        {variant.images?.[0] ? (
-          <img src={variant.images[0]} alt={product?.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-gray-400">No Image</p>
+      <div className="w-full md:w-1/2">
+
+        {/* Main Image */}
+        <div className="bg-gray-100 rounded-xl aspect-square overflow-hidden">
+          {variant.images?.[selectedImage]?.url ? (
+            <img
+              src={variant.images[selectedImage].url}
+              alt={product?.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-gray-400">No Image</p>
+            </div>
+          )}
+        </div>
+
+        {/* Thumbnail Gallery */}
+        {variant.images?.length > 1 && (
+          <div className="flex gap-3 mt-4 overflow-x-auto">
+            {variant.images.map((img, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedImage(index)}
+                className={`w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 ${selectedImage === index
+                    ? "border-black"
+                    : "border-gray-200"
+                  }`}
+              >
+                <img
+                  src={img.url}
+                  alt={`Product ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
           </div>
         )}
       </div>
