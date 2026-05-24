@@ -32,6 +32,23 @@ const productSchema = new mongoose.Schema(
       index: true
     },
 
+    isBestSeller: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+
+    isFeatured: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+
+    soldCount: {
+      type: Number,
+    default: 0
+    },
+
     basePrice: {
       type: Number,
       required: true,
