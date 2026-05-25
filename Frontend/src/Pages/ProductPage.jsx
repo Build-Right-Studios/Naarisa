@@ -180,15 +180,14 @@ const MobileImageSlider = ({ images, badge }) => {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const ProductPage = () => {
-  const { slug }  = useParams();
-  const navigate  = useNavigate();
+  const { slug } = useParams();
+  const navigate = useNavigate();
 
-  const [data, setData]                   = useState(null);
-  const [loading, setLoading]             = useState(true);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize]   = useState(null);
-  const [sizeError, setSizeError]         = useState(false);
-  const [isMobile, setIsMobile]           = useState(window.innerWidth < 1024);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [sizeError, setSizeError] = useState(false);
 
   const reviewsRef = useInView(0.1);
 
@@ -225,13 +224,13 @@ const ProductPage = () => {
   );
 
   const { product, currentVariant, allVariants } = data;
-  const images     = currentVariant?.images || [];
-  const sizes      = currentVariant?.sizes  || [];
-  const discount   = product.basePrice && currentVariant.discountPrice
+  const images = currentVariant?.images || [];
+  const sizes = currentVariant?.sizes || [];
+  const discount = product.basePrice && currentVariant.discountPrice
     ? Math.round(((product.basePrice - currentVariant.discountPrice) / product.basePrice) * 100)
     : null;
   const totalStock = sizes.reduce((sum, s) => sum + s.quantity, 0);
-  const lowStock   = totalStock > 0 && totalStock <= 5;
+  const lowStock = totalStock > 0 && totalStock <= 5;
 
   const handleAddToCart = () => {
     if (!selectedSize) {
@@ -265,9 +264,37 @@ const ProductPage = () => {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-16">
 
           {/* ── LEFT — Images ── */}
-          <div>
-            {/* Mobile — Slider */}
-            <div className="lg:hidden">
+          <div className="flex gap-3 lg:sticky lg:top-24 lg:self-start">
+
+            {/* Thumbnails */}
+            {images.length > 1 && (
+              <div className="hidden flex-col gap-2 sm:flex">
+                {images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImage(i)}
+                    className="overflow-hidden transition-all duration-200"
+                    style={{
+                      width: "68px",
+                      aspectRatio: "3/4",
+                      border: selectedImage === i
+                        ? "2px solid #C47B1E"
+                        : "2px solid transparent",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <img
+                      src={img.url}
+                      alt={`View ${i + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Main Image */}
+            <div className="relative flex-1 overflow-hidden" style={{ aspectRatio: "3/4" }}>
               {images.length > 0 ? (
                 <MobileImageSlider images={images} badge={currentVariant.isActive} />
               ) : (
@@ -400,9 +427,9 @@ const ProductPage = () => {
             {lowStock && (
               <div className="mb-4 flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4727A" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 <span className="text-[13px] font-semibold" style={{ fontFamily: "'Jost', sans-serif", color: "#C4727A" }}>
                   Only {totalStock} left in stock!
@@ -464,7 +491,11 @@ const ProductPage = () => {
                         fontWeight: isSelected ? 700 : 400,
                         backgroundColor: isSelected ? "#2B2112" : outOfStock ? "#F5E6D0" : "#fff",
                         color: isSelected ? "#fff" : outOfStock ? "#C4A882" : "#1f1b15",
-                        border: sizeError && !selectedSize ? "1px solid #C4727A" : isSelected ? "1px solid #2B2112" : "1px solid #E8DDD0",
+                        border: sizeError && !selectedSize
+                          ? "1px solid #C4727A"
+                          : isSelected
+                            ? "1px solid #2B2112"
+                            : "1px solid #E8DDD0",
                         textDecoration: outOfStock ? "line-through" : "none",
                         cursor: outOfStock ? "not-allowed" : "pointer",
                         transition: "all 0.2s",
@@ -522,8 +553,8 @@ const ProductPage = () => {
         <div
           className="mb-8 flex items-start justify-between transition-all duration-700"
           style={{
-            opacity: reviewsRef.inView ? 1 : 0,
-            transform: reviewsRef.inView ? "translateY(0)" : "translateY(20px)",
+            opacity: 1,
+            transform: "translateY(0)",
           }}
         >
           <div>
@@ -553,8 +584,8 @@ const ProductPage = () => {
               style={{
                 backgroundColor: "#fff",
                 border: "1px solid #E8DDD0",
-                opacity: reviewsRef.inView ? 1 : 0,
-                transform: reviewsRef.inView ? "translateY(0)" : "translateY(24px)",
+                opacity: 1,
+                transform: "translateY(0)",
                 transitionDelay: `${index * 100}ms`,
               }}
             >
@@ -620,7 +651,7 @@ const LoadingSkeleton = () => (
           <div className="h-6 w-1/3 animate-pulse rounded" style={{ backgroundColor: "#E8DDD0" }} />
           <div className="h-12 w-full animate-pulse rounded" style={{ backgroundColor: "#E8DDD0" }} />
           <div className="flex gap-2">
-            {[1,2,3,4,5].map(i => (
+            {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-12 w-12 animate-pulse" style={{ backgroundColor: "#E8DDD0" }} />
             ))}
           </div>

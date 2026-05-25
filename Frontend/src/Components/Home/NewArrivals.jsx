@@ -155,49 +155,46 @@ const ProductCard = ({ product, index, onClick }) => {
       onClick={onClick}
     >
       {/* Image */}
-      <div
-        className="relative overflow-hidden"
-        style={{ aspectRatio: "3/4", backgroundColor: "#F0E8DC" }}
+<div
+  className="relative overflow-hidden"
+  style={{ aspectRatio: "3/4", backgroundColor: "#F0E8DC" }}
+>
+  {product.image ? (
+    <img
+      src={typeof product.image === "object" ? product.image.url : product.image}
+      alt={product.name}
+      className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+      onError={(e) => { e.target.style.display = "none"; }}
+    />
+  ) : (
+    <div
+      className="flex h-full w-full items-center justify-center"
+      style={{ background: "linear-gradient(135deg, #F5E6D0, #C4A882)" }}
+    >
+      <span
+        className="text-[11px] font-bold uppercase tracking-widest"
+        style={{ color: "#8C7B6B" }}
       >
-        {product.image ? (
-          <img
-            src={product.image}
-            alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-          />
-        ) : (
-          <div
-            className="flex h-full w-full items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg, #F5E6D0, #C4A882)",
-            }}
-          >
-            <span
-              className="text-[11px] font-bold uppercase tracking-widest"
-              style={{ color: "#8C7B6B" }}
-            >
-              Naarisa
-            </span>
-          </div>
-        )}
-
-        {/* Sale badge */}
-        {isOnSale && (
-          <div
-            className="absolute left-0 top-3 px-2 py-1"
-            style={{
-              backgroundColor: "#C4727A",
-              fontFamily: "'Jost', sans-serif",
-              fontSize: "10px",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              color: "#fff",
-            }}
-          >
-            SALE
-          </div>
-        )}
-      </div>
+        Naarisa
+      </span>
+    </div>
+  )}
+  {isOnSale && (
+    <div
+      className="absolute left-0 top-3 px-2 py-1"
+      style={{
+        backgroundColor: "#C4727A",
+        fontFamily: "'Jost', sans-serif",
+        fontSize: "10px",
+        fontWeight: 700,
+        letterSpacing: "0.1em",
+        color: "#fff",
+      }}
+    >
+      SALE
+    </div>
+  )}
+</div>
 
       {/* Info */}
       <div className="pt-3">
