@@ -69,7 +69,7 @@ export default function AddVariant() {
   // ── Image handling ──
   const addImages = (files) => {
     const valid = Array.from(files).filter((f) =>
-      ["image/jpeg", "image/png", "image/webp"].includes(f.type) && f.size <= 5 * 1024 * 1024
+      ["image/jpeg", "image/png", "image/webp"].includes(f.type) && f.size <= 15 * 1024 * 1024
     );
     const previews = valid.map((file) => ({
       file,
@@ -213,7 +213,7 @@ export default function AddVariant() {
               />
               <div style={S.uploadIcon}><UploadIcon /></div>
               <p style={S.dropTitle}>Drop images here</p>
-              <p style={S.dropSubtitle}>Supports JPG, PNG, WEBP (Max 5MB)</p>
+              <p style={S.dropSubtitle}>Supports JPG, PNG, WEBP (Max 15MB)</p>
               <button
                 style={S.browseBtn}
                 onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}

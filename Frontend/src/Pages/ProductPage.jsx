@@ -79,14 +79,14 @@ const mockReviews = [
 
 // ── Main Component ────────────────────────────────────────────────────────────
 const ProductPage = () => {
-  const { slug }    = useParams();
-  const navigate    = useNavigate();
+  const { slug } = useParams();
+  const navigate = useNavigate();
 
-  const [data, setData]               = useState(null);
-  const [loading, setLoading]         = useState(true);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedSize, setSelectedSize]   = useState(null);
-  const [sizeError, setSizeError]         = useState(false);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [sizeError, setSizeError] = useState(false);
 
   const reviewsRef = useInView(0.1);
 
@@ -120,14 +120,14 @@ const ProductPage = () => {
   );
 
   const { product, currentVariant, allVariants } = data;
-  const images   = currentVariant?.images || [];
-  const sizes    = currentVariant?.sizes  || [];
+  const images = currentVariant?.images || [];
+  const sizes = currentVariant?.sizes || [];
   const discount = product.basePrice && currentVariant.discountPrice
     ? Math.round(((product.basePrice - currentVariant.discountPrice) / product.basePrice) * 100)
     : null;
 
   const totalStock = sizes.reduce((sum, s) => sum + s.quantity, 0);
-  const lowStock   = totalStock > 0 && totalStock <= 5;
+  const lowStock = totalStock > 0 && totalStock <= 5;
 
   const handleAddToCart = () => {
     if (!selectedSize) {
@@ -173,7 +173,7 @@ const ProductPage = () => {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
 
           {/* ── LEFT — Images ── */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 lg:sticky lg:top-24 lg:self-start">
 
             {/* Thumbnails */}
             {images.length > 1 && (
@@ -316,9 +316,9 @@ const ProductPage = () => {
             {lowStock && (
               <div className="mb-4 flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4727A" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 <span
                   className="text-[13px] font-semibold"
@@ -405,8 +405,8 @@ const ProductPage = () => {
                         border: sizeError && !selectedSize
                           ? "1px solid #C4727A"
                           : isSelected
-                          ? "1px solid #2B2112"
-                          : "1px solid #E8DDD0",
+                            ? "1px solid #2B2112"
+                            : "1px solid #E8DDD0",
                         textDecoration: outOfStock ? "line-through" : "none",
                         cursor: outOfStock ? "not-allowed" : "pointer",
                       }}
@@ -484,8 +484,8 @@ const ProductPage = () => {
         <div
           className="mb-8 flex items-start justify-between transition-all duration-700"
           style={{
-            opacity: reviewsRef.inView ? 1 : 0,
-            transform: reviewsRef.inView ? "translateY(0)" : "translateY(20px)",
+            opacity: 1,
+            transform: "translateY(0)",
           }}
         >
           <div>
@@ -535,8 +535,8 @@ const ProductPage = () => {
               style={{
                 backgroundColor: "#fff",
                 border: "1px solid #E8DDD0",
-                opacity: reviewsRef.inView ? 1 : 0,
-                transform: reviewsRef.inView ? "translateY(0)" : "translateY(24px)",
+                opacity: 1,
+                transform: "translateY(0)",
                 transitionDelay: `${index * 100}ms`,
               }}
             >
@@ -584,7 +584,7 @@ const LoadingSkeleton = () => (
           <div className="h-6 w-1/3 animate-pulse rounded" style={{ backgroundColor: "#E8DDD0" }} />
           <div className="h-12 w-full animate-pulse rounded" style={{ backgroundColor: "#E8DDD0" }} />
           <div className="flex gap-2">
-            {[1,2,3,4,5].map(i => (
+            {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="h-12 w-12 animate-pulse" style={{ backgroundColor: "#E8DDD0" }} />
             ))}
           </div>

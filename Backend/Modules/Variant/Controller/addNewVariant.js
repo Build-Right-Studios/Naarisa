@@ -3,8 +3,8 @@ import { addNewVariantService } from "../Service/addNewVariantService.js";
 export const addNewVariant = async (req, res) => {
     try {
 
-        console.log(req.body);
-        console.log(req.files);
+        console.log("Body :" , req.body);
+        console.log("Files :" , req.files);
 
         const {
             productId,

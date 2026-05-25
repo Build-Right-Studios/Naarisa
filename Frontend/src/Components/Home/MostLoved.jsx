@@ -6,9 +6,9 @@ import { BASE, PRODUCT } from "../../Constants/apiroutes.js";
 
 const MostLoved = () => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const header                   = useInView();
-  const navigate                 = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const header = useInView();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetch = async () => {
@@ -65,16 +65,16 @@ const MostLoved = () => {
       <div className="mx-auto grid w-full max-w-[1100px] grid-cols-2 gap-x-4 gap-y-8 px-4 sm:px-6 md:grid-cols-4 md:px-10 xl:px-12">
         {loading
           ? Array.from({ length: 8 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))
+            <SkeletonCard key={i} />
+          ))
           : products.map((product, index) => (
-              <GridProductCard
-                key={product.id}
-                product={product}
-                index={index}
-                onClick={() => navigate(`/product/${product.slug}`)}
-              />
-            ))}
+            <GridProductCard
+              key={product.id}
+              product={product}
+              index={index}
+              onClick={() => navigate(`/product/${product.slug}`)}
+            />
+          ))}
       </div>
 
       {/* View All CTA */}
@@ -129,16 +129,15 @@ const GridProductCard = ({ product, index, onClick }) => {
       >
         {product.image ? (
           <img
-            src={product.image}
+            src={typeof product.image === "object" ? product.image.url : product.image}
             alt={product.name}
             className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+            onError={(e) => { e.target.style.display = "none"; }}
           />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg, #F5E6D0, #C4A882)",
-            }}
+            style={{ background: "linear-gradient(135deg, #F5E6D0, #C4A882)" }}
           >
             <span
               className="text-[11px] font-bold uppercase tracking-widest"
@@ -148,8 +147,6 @@ const GridProductCard = ({ product, index, onClick }) => {
             </span>
           </div>
         )}
-
-        {/* Sale badge */}
         {isOnSale && (
           <div
             className="absolute left-0 top-3 px-2 py-1"
