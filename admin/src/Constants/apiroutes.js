@@ -1,6 +1,8 @@
 export const BASE = {
   // ROUTE: "http://localhost:5000",
-  ROUTE: "https://naarisa.onrender.com"
+  // ROUTE: "https://naarisa.onrender.com",
+  ROUTE: import.meta.env.VITE_BACKEND_URL
+
 };
 
 export const AUTH = {
