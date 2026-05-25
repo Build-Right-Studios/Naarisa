@@ -228,8 +228,8 @@ const EditVariantPage = () => {
 
       // Removed Images
       payload.append(
-        "removedImages",
-        JSON.stringify(removedImages)
+        "existingImages",
+        JSON.stringify(formData.images)
       );
 
       // New Images
