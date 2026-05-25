@@ -4,6 +4,7 @@ import axios from 'axios';
 import { BASE, VARIANT } from '../../Constants/apiroutes.js';
 
 const EditVariantPage = () => {
+
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -25,9 +26,16 @@ const EditVariantPage = () => {
     colorHex: '#000000'
   });
 
+  // ─────────────────────────────────────────────
+  // FETCH DATA
+  // ─────────────────────────────────────────────
+
   useEffect(() => {
+
     const fetchVariantData = async () => {
+
       try {
+
         setFetching(true);
 
         const token = localStorage.getItem("token");
@@ -44,19 +52,6 @@ const EditVariantPage = () => {
 
         const data = response.data.data;
 
-        const colorHexMap = {
-          black: "#000000",
-          white: "#ffffff",
-          green: "#22c55e",
-          red: "#ef4444",
-          blue: "#3b82f6",
-          yellow: "#eab308",
-          purple: "#8b5cf6",
-          pink: "#ec4899",
-          orange: "#f97316",
-          gray: "#6b7280"
-        };
-
         setFormData({
           name: data.productId?.name || '',
           description: data.productId?.description || '',
@@ -65,30 +60,45 @@ const EditVariantPage = () => {
           images: data.images || [],
           sizes: data.sizes || [],
           colorName: data.color?.name || '',
-          colorHex:
-            data.color?.hex ||
-            colorHexMap[data.color?.name?.toLowerCase()] ||
-            "#000000"
+          colorHex: data.color?.hex || '#000000'
         });
 
       } catch (error) {
-        console.error("Error extracting product data:", error);
+
+        console.error(error);
 
         alert(
           error.response?.data?.message ||
-          "Failed to load product details."
+          "Failed to load variant"
         );
 
       } finally {
+
         setFetching(false);
+
       }
     };
 
-    if (id) fetchVariantData();
+    if (id) {
+      fetchVariantData();
+    }
 
   }, [id]);
 
+  // ─────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────
+
+  const totalImages =
+    formData.images.length +
+    newImages.length;
+
+  // ─────────────────────────────────────────────
+  // INPUT CHANGE
+  // ─────────────────────────────────────────────
+
   const handleChange = (e) => {
+
     const { name, value } = e.target;
 
     setFormData((prev) => ({
@@ -97,8 +107,14 @@ const EditVariantPage = () => {
     }));
   };
 
+  // ─────────────────────────────────────────────
+  // STOCK CHANGE
+  // ─────────────────────────────────────────────
+
   const handleStockChange = (index, newQty) => {
+
     setFormData((prev) => {
+
       const updatedSizes = [...prev.sizes];
 
       updatedSizes[index] = {
@@ -113,23 +129,40 @@ const EditVariantPage = () => {
     });
   };
 
+  // ─────────────────────────────────────────────
+  // IMAGE UPLOAD
+  // ─────────────────────────────────────────────
+
   const handleImageUpload = (e) => {
+
     const files = Array.from(e.target.files);
 
-    const totalImages =
+    const currentCount =
       formData.images.length +
-      newImages.length +
-      files.length;
+      newImages.length;
 
-    if (totalImages > 5) {
+    const totalAfterUpload =
+      currentCount + files.length;
+
+    if (totalAfterUpload > 5) {
+
       alert("Maximum 5 images allowed");
+
       return;
     }
 
-    setNewImages((prev) => [...prev, ...files]);
+    setNewImages((prev) => [
+      ...prev,
+      ...files
+    ]);
   };
 
+  // ─────────────────────────────────────────────
+  // REMOVE EXISTING IMAGE
+  // ─────────────────────────────────────────────
+
   const handleRemoveExistingImage = (image) => {
+
     setRemovedImages((prev) => [
       ...prev,
       image.public_id
@@ -143,28 +176,32 @@ const EditVariantPage = () => {
     }));
   };
 
+  // ─────────────────────────────────────────────
+  // REMOVE NEW IMAGE
+  // ─────────────────────────────────────────────
+
   const handleRemoveNewImage = (index) => {
+
     setNewImages((prev) =>
       prev.filter((_, i) => i !== index)
     );
   };
 
-  const handleStockChange = (index, newQty) => {
-    setFormData(prev => {
-      const updatedSizes = [...prev.sizes];
-      updatedSizes[index] = { ...updatedSizes[index], quantity: Math.max(0, Number(newQty)) };
-      return { ...prev, sizes: updatedSizes };
-    });
-  };
+  // ─────────────────────────────────────────────
+  // SAVE
+  // ─────────────────────────────────────────────
 
   const handleSave = async () => {
+
     try {
+
       setLoading(true);
 
       const token = localStorage.getItem("token");
 
       const payload = new FormData();
 
+      // Discount Price
       payload.append(
         "discountPrice",
         formData.discountedPrice
@@ -172,24 +209,30 @@ const EditVariantPage = () => {
           : ""
       );
 
+      // Sizes
       payload.append(
         "sizes",
         JSON.stringify(formData.sizes)
       );
 
+      // Color
       payload.append(
         "color",
         JSON.stringify({
-          name: formData.colorName.trim().toLowerCase(),
+          name: formData.colorName
+            .trim()
+            .toLowerCase(),
           hex: formData.colorHex
         })
       );
 
+      // Removed Images
       payload.append(
         "removedImages",
         JSON.stringify(removedImages)
       );
 
+      // New Images
       newImages.forEach((file) => {
         payload.append("images", file);
       });
@@ -199,23 +242,27 @@ const EditVariantPage = () => {
         payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data"
+            Authorization: `Bearer ${token}`
           },
           withCredentials: true
         }
       );
 
       if (response.data.success) {
+
         setSaved(true);
 
         setTimeout(() => {
+
           setSaved(false);
+
           navigate(-1);
+
         }, 1200);
       }
 
     } catch (error) {
+
       console.error(error);
 
       alert(
@@ -224,9 +271,28 @@ const EditVariantPage = () => {
       );
 
     } finally {
+
       setLoading(false);
+
     }
   };
+
+  // ─────────────────────────────────────────────
+  // LOADING
+  // ─────────────────────────────────────────────
+
+  if (fetching) {
+
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────
+  // DISCOUNT
+  // ─────────────────────────────────────────────
 
   const discount =
     formData.basePrice &&
@@ -242,217 +308,219 @@ const EditVariantPage = () => {
         )
       : null;
 
-  if (fetching) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#FAFAFA]">
-        <div className="relative w-16 h-16">
-          <div className="absolute inset-0 rounded-full border-4 border-gray-100" />
-          <div className="absolute inset-0 rounded-full border-4 border-t-[#18181B] animate-spin" />
-        </div>
-        <p className="mt-5 text-sm font-semibold text-gray-400 tracking-widest uppercase">
-          Loading variant...
-        </p>
-      </div>
-    );
-  }
+  // ─────────────────────────────────────────────
+  // UI
+  // ─────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#F8F8F8] font-[Poppins,sans-serif] text-[#18181B]">
 
-      {/* Top Nav */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-[#F8F8F8] p-8">
 
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
-            >
-              ←
-            </button>
+      {/* HEADER */}
 
-            <div>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                Edit Variant · {id?.slice(-8)}
-              </p>
+      <div className="flex items-center justify-between mb-8">
 
-              <h1 className="text-base font-bold leading-tight">
-                {formData.name || "—"}
-              </h1>
-            </div>
-          </div>
+        <div>
 
-          <button
-            onClick={handleSave}
-            disabled={loading || saved}
-            className={`px-7 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm ${
-              saved
-                ? 'bg-emerald-500 text-white'
-                : 'bg-[#18181B] text-white'
-            }`}
-          >
-            {loading
+          <p className="text-xs text-gray-400 uppercase tracking-widest">
+            Edit Variant
+          </p>
+
+          <h1 className="text-2xl font-bold">
+            {formData.name}
+          </h1>
+
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={loading || saved}
+          className={`px-6 py-3 rounded-xl text-white font-semibold transition-all ${
+            saved
+              ? "bg-emerald-500"
+              : "bg-black"
+          }`}
+        >
+          {
+            loading
               ? "Saving..."
               : saved
               ? "Saved!"
-              : "Save Changes"}
-          </button>
+              : "Save Changes"
+          }
+        </button>
 
-        </div>
       </div>
 
-      {/* Main */}
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="grid grid-cols-3 gap-6">
 
-        <div className="grid grid-cols-3 gap-6">
+        {/* LEFT */}
 
-          {/* LEFT */}
-          <div className="col-span-2 space-y-6">
+        <div className="col-span-2 space-y-6">
 
-            {/* Images */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          {/* IMAGES */}
 
-              <div className="flex items-center justify-between mb-5">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Product Images
-                </p>
+          <div className="bg-white rounded-2xl p-6 border border-gray-100">
 
-                <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                  {formData.images.length + newImages.length} / 5
-                </span>
-              </div>
+            <div className="flex items-center justify-between mb-5">
 
-              <div className="flex gap-3 flex-wrap">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                Product Images
+              </p>
 
-                {/* Existing Images */}
-                {formData.images.map((img, index) => (
-                  <div
-                    key={index}
-                    className="relative w-28 h-36 rounded-xl overflow-hidden border-2 border-gray-100"
-                  >
-                    <img
-                      src={img.url}
-                      alt={`Product ${index}`}
-                      className="w-full h-full object-cover"
-                    />
+              <span className="text-xs font-semibold text-gray-500">
+                {totalImages} / 5
+              </span>
 
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExistingImage(img)}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-red-500 transition-all"
-                    >
-                      ✕
-                    </button>
-
-                    {index === 0 && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-[#18181B] text-white text-[9px] font-bold text-center py-1 tracking-widest uppercase">
-                        Cover
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {/* New Images */}
-                {newImages.map((file, index) => (
-                  <div
-                    key={`new-${index}`}
-                    className="relative w-28 h-36 rounded-xl overflow-hidden border-2 border-emerald-200"
-                  >
-                    <img
-                      src={URL.createObjectURL(file)}
-                      alt="New Upload"
-                      className="w-full h-full object-cover"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveNewImage(index)}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-red-500 transition-all"
-                    >
-                      ✕
-                    </button>
-
-                    <div className="absolute bottom-0 left-0 right-0 bg-emerald-500 text-white text-[9px] font-bold text-center py-1 tracking-widest uppercase">
-                      New
-                    </div>
-                  </div>
-                ))}
-
-                {/* Upload */}
-                {formData.images.length + newImages.length < 5 && (
-                  <label className="w-28 h-36 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-all gap-2 cursor-pointer">
-
-                    <span className="text-2xl">+</span>
-
-                    <span className="text-[10px] font-bold uppercase tracking-wide">
-                      Add
-                    </span>
-
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageUpload}
-                    />
-                  </label>
-                )}
-
-              </div>
             </div>
 
-            {/* Sizes */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div className="flex flex-wrap gap-4">
 
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Sizes & Stock
-                </p>
-              </div>
+              {/* EXISTING IMAGES */}
 
-              <div className="space-y-2">
+              {formData.images.map((img, index) => (
 
-                {formData.sizes.map((size, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3"
+                <div
+                  key={index}
+                  className="relative w-28 h-36 rounded-xl overflow-hidden border"
+                >
+
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleRemoveExistingImage(img)
+                    }
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-red-500 transition-all"
                   >
-                    <span className="font-bold">
-                      {size.size}
-                    </span>
+                    ✕
+                  </button>
 
-                    <input
-                      type="number"
-                      min={0}
-                      value={size.quantity}
-                      onChange={(e) =>
-                        handleStockChange(
-                          index,
-                          e.target.value
-                        )
-                      }
-                      className="w-20 text-center border border-gray-200 rounded-lg py-2"
-                    />
-                  </div>
-                ))}
+                </div>
+              ))}
 
-              </div>
+              {/* NEW IMAGES */}
+
+              {newImages.map((file, index) => (
+
+                <div
+                  key={index}
+                  className="relative w-28 h-36 rounded-xl overflow-hidden border border-emerald-300"
+                >
+
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleRemoveNewImage(index)
+                    }
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-red-500 transition-all"
+                  >
+                    ✕
+                  </button>
+
+                </div>
+              ))}
+
+              {/* UPLOAD */}
+
+              {totalImages < 5 && (
+
+                <label className="w-28 h-36 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-black transition-all">
+
+                  <span className="text-3xl">
+                    +
+                  </span>
+
+                  <span className="text-xs font-bold uppercase">
+                    Add
+                  </span>
+
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+
+                </label>
+              )}
+
             </div>
 
           </div>
 
-          {/* RIGHT */}
-          <div className="space-y-6">
+          {/* SIZES */}
 
-            {/* Pricing */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <div className="bg-white rounded-2xl p-6 border border-gray-100">
 
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                Pricing
-              </p>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">
+              Sizes & Stock
+            </p>
+
+            <div className="space-y-3">
+
+              {formData.sizes.map((size, index) => (
+
+                <div
+                  key={index}
+                  className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3"
+                >
+
+                  <span className="font-bold">
+                    {size.size}
+                  </span>
+
+                  <input
+                    type="number"
+                    min={0}
+                    value={size.quantity}
+                    onChange={(e) =>
+                      handleStockChange(
+                        index,
+                        e.target.value
+                      )
+                    }
+                    className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-center"
+                  />
+
+                </div>
+              ))}
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* RIGHT */}
+
+        <div className="space-y-6">
+
+          {/* PRICING */}
+
+          <div className="bg-white rounded-2xl p-6 border border-gray-100">
+
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-5">
+              Pricing
+            </p>
+
+            <div className="space-y-4">
 
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1.5">
+
+                <label className="text-sm font-medium text-gray-500 block mb-2">
                   Base Price
                 </label>
 
@@ -460,12 +528,14 @@ const EditVariantPage = () => {
                   value={formData.basePrice}
                   readOnly
                   disabled
-                  className="w-full p-3.5 bg-gray-50 rounded-xl"
+                  className="w-full p-3 bg-gray-100 rounded-xl"
                 />
+
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-gray-500 block mb-1.5">
+
+                <label className="text-sm font-medium text-gray-500 block mb-2">
                   Discount Price
                 </label>
 
@@ -474,23 +544,30 @@ const EditVariantPage = () => {
                   type="number"
                   value={formData.discountedPrice}
                   onChange={handleChange}
-                  className="w-full p-3.5 bg-gray-50 rounded-xl"
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl"
                 />
+
               </div>
 
               {discount !== null && (
+
                 <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+
                   <span className="text-sm font-bold text-emerald-700">
                     {discount}% OFF
                   </span>
+
                 </div>
               )}
+
             </div>
 
           </div>
 
         </div>
+
       </div>
+
     </div>
   );
 };
