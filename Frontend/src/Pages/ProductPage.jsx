@@ -29,7 +29,7 @@ const Accordion = ({ title, content }) => {
         </svg>
       </button>
       <div
-        className="overflow-hidden transition-all duration-400"
+        className="overflow-hidden transition-all duration-300"
         style={{ maxHeight: open ? "500px" : "0px" }}
       >
         <p
@@ -61,7 +61,6 @@ const StarRating = ({ rating = 4, size = 14 }) => (
   </div>
 );
 
-// ── Mock reviews (replace with API later) ────────────────────────────────────
 const mockReviews = [
   {
     id: 1, name: "Anjali K.", initials: "AK", rating: 5,
@@ -77,18 +76,127 @@ const mockReviews = [
   },
 ];
 
+// ── Mobile Image Slider ───────────────────────────────────────────────────────
+const MobileImageSlider = ({ images, badge }) => {
+  const [current, setCurrent] = useState(0);
+  const touchStartX = useRef(null);
+
+  const goPrev = () => setCurrent((p) => (p - 1 + images.length) % images.length);
+  const goNext = () => setCurrent((p) => (p + 1) % images.length);
+
+  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd   = (e) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) diff > 0 ? goNext() : goPrev();
+    touchStartX.current = null;
+  };
+
+  return (
+    <div
+      className="relative w-full overflow-hidden"
+      style={{ aspectRatio: "4/5" }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Slides */}
+      {images.map((img, i) => (
+        <div
+          key={i}
+          className="absolute inset-0 transition-opacity duration-500"
+          style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}
+        >
+          <img
+            src={img.url}
+            alt={`Product ${i + 1}`}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      ))}
+
+      {/* Badge */}
+      {badge && (
+        <div
+          className="absolute left-0 top-4 z-10 px-3 py-1.5"
+          style={{
+            backgroundColor: "#2B2112",
+            fontFamily: "'Jost', sans-serif",
+            fontSize: "10px",
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            color: "#F5E6D0",
+          }}
+        >
+          NEW COLLECTION
+        </div>
+      )}
+
+      {/* Arrows */}
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={goPrev}
+            className="absolute left-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center transition-all"
+            style={{ background: "rgba(43,33,18,0.4)", backdropFilter: "blur(4px)", color: "#fff" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <button
+            onClick={goNext}
+            className="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center transition-all"
+            style={{ background: "rgba(43,33,18,0.4)", backdropFilter: "blur(4px)", color: "#fff" }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </>
+      )}
+
+      {/* Dots */}
+      {images.length > 1 && (
+        <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              style={{
+                width: i === current ? "20px" : "6px",
+                height: "3px",
+                backgroundColor: i === current ? "#AB721E" : "rgba(255,255,255,0.6)",
+                border: "none",
+                padding: 0,
+                transition: "all 0.3s ease",
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Main Component ────────────────────────────────────────────────────────────
 const ProductPage = () => {
-  const { slug }    = useParams();
-  const navigate    = useNavigate();
+  const { slug }  = useParams();
+  const navigate  = useNavigate();
 
-  const [data, setData]               = useState(null);
-  const [loading, setLoading]         = useState(true);
+  const [data, setData]                   = useState(null);
+  const [loading, setLoading]             = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedSize, setSelectedSize]   = useState(null);
   const [sizeError, setSizeError]         = useState(false);
+  const [isMobile, setIsMobile]           = useState(window.innerWidth < 1024);
 
   const reviewsRef = useInView(0.1);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -97,7 +205,6 @@ const ProductPage = () => {
         const res = await axios.get(`${BASE.ROUTE}${PRODUCT.GET_BY_SLUG(slug)}`);
         if (res.data.success) {
           setData(res.data);
-          // Auto select first available size
           const firstAvailable = res.data.currentVariant?.sizes?.find(s => s.quantity > 0);
           if (firstAvailable) setSelectedSize(firstAvailable.size);
         }
@@ -113,19 +220,16 @@ const ProductPage = () => {
   if (loading) return <LoadingSkeleton />;
   if (!data) return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <p style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>
-        Product not found.
-      </p>
+      <p style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>Product not found.</p>
     </div>
   );
 
   const { product, currentVariant, allVariants } = data;
-  const images   = currentVariant?.images || [];
-  const sizes    = currentVariant?.sizes  || [];
-  const discount = product.basePrice && currentVariant.discountPrice
+  const images     = currentVariant?.images || [];
+  const sizes      = currentVariant?.sizes  || [];
+  const discount   = product.basePrice && currentVariant.discountPrice
     ? Math.round(((product.basePrice - currentVariant.discountPrice) / product.basePrice) * 100)
     : null;
-
   const totalStock = sizes.reduce((sum, s) => sum + s.quantity, 0);
   const lowStock   = totalStock > 0 && totalStock <= 5;
 
@@ -135,111 +239,107 @@ const ProductPage = () => {
       setTimeout(() => setSizeError(false), 2000);
       return;
     }
-    // TODO: connect cart
     alert(`Added ${product.name} (${selectedSize}) to cart!`);
   };
 
   return (
-    <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
+    // ✅ pb-24 on mobile to make room for sticky button
+    <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }} className="pb-24 lg:pb-0">
 
       {/* ── Breadcrumb ── */}
-      <div
-        className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:px-10 xl:px-12"
-      >
+      <div className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:px-10 xl:px-12">
         <p
           className="text-[11px] uppercase tracking-[0.14em]"
           style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
         >
-          <span
-            className="cursor-pointer hover:text-[#C47B1E] transition-colors"
-            onClick={() => navigate("/")}
-          >
-            Home
-          </span>
+          <span className="cursor-pointer hover:text-[#C47B1E] transition-colors" onClick={() => navigate("/")}>Home</span>
           <span className="mx-2">/</span>
-          <span
-            className="cursor-pointer hover:text-[#C47B1E] transition-colors"
-            onClick={() => navigate("/products")}
-          >
-            {product.category}
-          </span>
+          <span className="cursor-pointer hover:text-[#C47B1E] transition-colors" onClick={() => navigate("/products")}>{product.category}</span>
           <span className="mx-2">/</span>
           <span style={{ color: "#1f1b15" }}>{product.name}</span>
         </p>
       </div>
 
       {/* ── Main Product Section ── */}
-      <div className="mx-auto max-w-[1200px] px-4 py-8 sm:px-6 md:px-10 xl:px-12">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
+      <div className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 md:px-10 xl:px-12">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-16">
 
           {/* ── LEFT — Images ── */}
-          <div className="flex gap-3">
-
-            {/* Thumbnails */}
-            {images.length > 1 && (
-              <div className="hidden flex-col gap-2 sm:flex">
-                {images.map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedImage(i)}
-                    className="overflow-hidden transition-all duration-200"
-                    style={{
-                      width: "68px",
-                      aspectRatio: "3/4",
-                      border: selectedImage === i
-                        ? "2px solid #C47B1E"
-                        : "2px solid transparent",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <img
-                      src={img.url}
-                      alt={`View ${i + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Main Image */}
-            <div className="relative flex-1 overflow-hidden" style={{ aspectRatio: "3/4" }}>
+          <div>
+            {/* Mobile — Slider */}
+            <div className="lg:hidden">
               {images.length > 0 ? (
-                <img
-                  src={images[selectedImage]?.url}
-                  alt={product.name}
-                  className="h-full w-full object-cover"
-                />
+                <MobileImageSlider images={images} badge={currentVariant.isActive} />
               ) : (
                 <div
-                  className="flex h-full w-full items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, #F5E6D0, #C4A882)" }}
+                  className="w-full"
+                  style={{
+                    aspectRatio: "4/5",
+                    background: "linear-gradient(135deg, #F5E6D0, #C4A882)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  <span
-                    className="text-[13px] font-bold uppercase tracking-widest"
-                    style={{ color: "#8C7B6B" }}
-                  >
+                  <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "#8C7B6B" }}>
                     Naarisa
                   </span>
                 </div>
               )}
+            </div>
 
-              {/* New Collection badge */}
-              {currentVariant.isActive && (
-                <div
-                  className="absolute left-0 top-4 px-3 py-1.5"
-                  style={{
-                    backgroundColor: "#2B2112",
-                    fontFamily: "'Jost', sans-serif",
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    color: "#F5E6D0",
-                  }}
-                >
-                  NEW COLLECTION
+            {/* Desktop — Thumbnails + Main */}
+            <div className="hidden lg:flex gap-3">
+              {images.length > 1 && (
+                <div className="flex flex-col gap-2">
+                  {images.map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedImage(i)}
+                      className="overflow-hidden transition-all duration-200 flex-shrink-0"
+                      style={{
+                        width: "68px",
+                        aspectRatio: "3/4",
+                        border: selectedImage === i ? "2px solid #C47B1E" : "2px solid transparent",
+                      }}
+                    >
+                      <img src={img.url} alt={`View ${i + 1}`} className="h-full w-full object-cover" />
+                    </button>
+                  ))}
                 </div>
               )}
+
+              <div className="relative flex-1 overflow-hidden" style={{ aspectRatio: "3/4" }}>
+                {images.length > 0 ? (
+                  <img
+                    src={images[selectedImage]?.url}
+                    alt={product.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="flex h-full w-full items-center justify-center"
+                    style={{ background: "linear-gradient(135deg, #F5E6D0, #C4A882)" }}
+                  >
+                    <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "#8C7B6B" }}>Naarisa</span>
+                  </div>
+                )}
+                {currentVariant.isActive && (
+                  <div
+                    className="absolute left-0 top-4 px-3 py-1.5"
+                    style={{
+                      backgroundColor: "#2B2112",
+                      fontFamily: "'Jost', sans-serif",
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      letterSpacing: "0.12em",
+                      color: "#F5E6D0",
+                    }}
+                  >
+                    NEW COLLECTION
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -248,7 +348,7 @@ const ProductPage = () => {
 
             {/* Product Name */}
             <h1
-              className="mb-3 text-[28px] font-normal leading-tight sm:text-[32px] lg:text-[36px]"
+              className="mb-3 text-[24px] font-normal leading-tight sm:text-[28px] lg:text-[34px]"
               style={{ fontFamily: "'EB Garamond', serif", color: "#1f1b15" }}
             >
               {product.name}
@@ -257,27 +357,22 @@ const ProductPage = () => {
             {/* Price Row */}
             <div className="mb-4 flex items-center gap-3 flex-wrap">
               <span
-                className="text-[24px] font-semibold sm:text-[26px]"
+                className="text-[22px] font-semibold sm:text-[24px]"
                 style={{ fontFamily: "'Jost', sans-serif", color: "#1f1b15" }}
               >
                 ₹{currentVariant.discountPrice?.toLocaleString("en-IN") || product.basePrice?.toLocaleString("en-IN")}
               </span>
-
               {currentVariant.discountPrice && currentVariant.discountPrice < product.basePrice && (
                 <>
                   <span
-                    className="text-[16px] line-through"
+                    className="text-[15px] line-through"
                     style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
                   >
                     ₹{product.basePrice?.toLocaleString("en-IN")}
                   </span>
                   <span
                     className="px-2 py-0.5 text-[11px] font-bold"
-                    style={{
-                      fontFamily: "'Jost', sans-serif",
-                      backgroundColor: "#2D6B5A",
-                      color: "#fff",
-                    }}
+                    style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "#2D6B5A", color: "#fff" }}
                   >
                     SAVE {discount}%
                   </span>
@@ -288,31 +383,20 @@ const ProductPage = () => {
             {/* Offer strip */}
             <div
               className="mb-4 flex items-center justify-between px-4 py-3"
-              style={{
-                backgroundColor: "#F5E6D0",
-                border: "1px solid #E8DDD0",
-              }}
+              style={{ backgroundColor: "#F5E6D0", border: "1px solid #E8DDD0" }}
             >
-              <span
-                className="text-[12px] font-normal"
-                style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}
-              >
+              <span className="text-[12px] font-normal" style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}>
                 Flat discount on first order
               </span>
               <span
                 className="px-3 py-1 text-[11px] font-bold"
-                style={{
-                  fontFamily: "'Jost', sans-serif",
-                  backgroundColor: "#2B2112",
-                  color: "#F5E6D0",
-                  letterSpacing: "0.08em",
-                }}
+                style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "#2B2112", color: "#F5E6D0", letterSpacing: "0.08em" }}
               >
                 EXTRA 10% OFF
               </span>
             </div>
 
-            {/* Low stock warning */}
+            {/* Low stock */}
             {lowStock && (
               <div className="mb-4 flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4727A" strokeWidth="2">
@@ -320,10 +404,7 @@ const ProductPage = () => {
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <span
-                  className="text-[13px] font-semibold"
-                  style={{ fontFamily: "'Jost', sans-serif", color: "#C4727A" }}
-                >
+                <span className="text-[13px] font-semibold" style={{ fontFamily: "'Jost', sans-serif", color: "#C4727A" }}>
                   Only {totalStock} left in stock!
                 </span>
               </div>
@@ -332,13 +413,8 @@ const ProductPage = () => {
             {/* Color Variants */}
             {allVariants.length > 1 && (
               <div className="mb-5">
-                <p
-                  className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em]"
-                  style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
-                >
-                  Color: <span style={{ color: "#1f1b15", textTransform: "capitalize" }}>
-                    {currentVariant.color.name}
-                  </span>
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em]" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>
+                  Color: <span style={{ color: "#1f1b15", textTransform: "capitalize" }}>{currentVariant.color.name}</span>
                 </p>
                 <div className="flex gap-2">
                   {allVariants.map((v, i) => (
@@ -346,17 +422,15 @@ const ProductPage = () => {
                       key={i}
                       onClick={() => navigate(`/product/${v.slug}`)}
                       title={v.color.name}
-                      className="transition-all duration-200"
                       style={{
-                        width: "28px",
-                        height: "28px",
+                        width: "28px", height: "28px",
                         borderRadius: "50%",
                         backgroundColor: v.color.hex,
-                        border: v.slug === slug
-                          ? "2px solid #C47B1E"
-                          : "2px solid #E8DDD0",
+                        border: v.slug === slug ? "2px solid #C47B1E" : "2px solid #E8DDD0",
                         outline: v.slug === slug ? "2px solid #C47B1E" : "none",
                         outlineOffset: "2px",
+                        transition: "all 0.2s",
+                        cursor: "pointer",
                       }}
                     />
                   ))}
@@ -367,20 +441,13 @@ const ProductPage = () => {
             {/* Size Selector */}
             <div className="mb-6">
               <div className="mb-2 flex items-center justify-between">
-                <p
-                  className="text-[11px] font-bold uppercase tracking-[0.14em]"
-                  style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
-                >
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>
                   Select Size
                 </p>
-                <button
-                  className="text-[11px] font-bold uppercase tracking-[0.14em] underline transition-colors hover:text-[#C47B1E]"
-                  style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
-                >
+                <button className="text-[11px] font-bold uppercase tracking-[0.14em] underline hover:text-[#C47B1E] transition-colors" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>
                   Size Chart
                 </button>
               </div>
-
               <div className="flex flex-wrap gap-2">
                 {sizes.map((s) => {
                   const outOfStock = s.quantity === 0;
@@ -389,26 +456,18 @@ const ProductPage = () => {
                     <button
                       key={s.size}
                       disabled={outOfStock}
-                      onClick={() => {
-                        setSelectedSize(s.size);
-                        setSizeError(false);
-                      }}
-                      className="transition-all duration-200"
+                      onClick={() => { setSelectedSize(s.size); setSizeError(false); }}
                       style={{
-                        width: "48px",
-                        height: "48px",
+                        width: "48px", height: "48px",
                         fontFamily: "'Jost', sans-serif",
                         fontSize: "13px",
                         fontWeight: isSelected ? 700 : 400,
                         backgroundColor: isSelected ? "#2B2112" : outOfStock ? "#F5E6D0" : "#fff",
                         color: isSelected ? "#fff" : outOfStock ? "#C4A882" : "#1f1b15",
-                        border: sizeError && !selectedSize
-                          ? "1px solid #C4727A"
-                          : isSelected
-                          ? "1px solid #2B2112"
-                          : "1px solid #E8DDD0",
+                        border: sizeError && !selectedSize ? "1px solid #C4727A" : isSelected ? "1px solid #2B2112" : "1px solid #E8DDD0",
                         textDecoration: outOfStock ? "line-through" : "none",
                         cursor: outOfStock ? "not-allowed" : "pointer",
+                        transition: "all 0.2s",
                       }}
                     >
                       {s.size}
@@ -416,50 +475,30 @@ const ProductPage = () => {
                   );
                 })}
               </div>
-
               {sizeError && (
-                <p
-                  className="mt-2 text-[12px]"
-                  style={{ fontFamily: "'Jost', sans-serif", color: "#C4727A" }}
-                >
+                <p className="mt-2 text-[12px]" style={{ fontFamily: "'Jost', sans-serif", color: "#C4727A" }}>
                   Please select a size to continue
                 </p>
               )}
             </div>
 
-            {/* CTA Buttons */}
-            <div className="mb-6 flex flex-col gap-3">
+            {/* CTA Buttons — Desktop only, mobile has sticky bar */}
+            <div className="mb-6 hidden flex-col gap-3 lg:flex">
               <button
                 onClick={handleAddToCart}
                 className="w-full py-4 text-[13px] font-bold uppercase tracking-[0.14em] transition-all duration-300"
-                style={{
-                  fontFamily: "'Jost', sans-serif",
-                  backgroundColor: "#AB721E",
-                  color: "#fff",
-                }}
+                style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "#AB721E", color: "#fff" }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#8B6914"}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#AB721E"}
               >
                 Add to Cart
               </button>
-
               <button
                 onClick={handleAddToCart}
                 className="w-full py-4 text-[13px] font-bold uppercase tracking-[0.14em] transition-all duration-300"
-                style={{
-                  fontFamily: "'Jost', sans-serif",
-                  backgroundColor: "transparent",
-                  color: "#1f1b15",
-                  border: "1px solid #1f1b15",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#1f1b15";
-                  e.currentTarget.style.color = "#fff";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.color = "#1f1b15";
-                }}
+                style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "transparent", color: "#1f1b15", border: "1px solid #1f1b15" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#1f1b15"; e.currentTarget.style.color = "#fff"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#1f1b15"; }}
               >
                 Buy Now
               </button>
@@ -480,7 +519,6 @@ const ProductPage = () => {
         className="mx-auto max-w-[1200px] px-4 py-14 sm:px-6 md:px-10 xl:px-12"
         ref={reviewsRef.ref}
       >
-        {/* Reviews Header */}
         <div
           className="mb-8 flex items-start justify-between transition-all duration-700"
           style={{
@@ -489,44 +527,24 @@ const ProductPage = () => {
           }}
         >
           <div>
-            <h2
-              className="mb-1 text-[22px] font-normal italic sm:text-[26px]"
-              style={{ fontFamily: "'EB Garamond', serif", color: "#1f1b15" }}
-            >
+            <h2 className="mb-1 text-[22px] font-normal italic sm:text-[26px]" style={{ fontFamily: "'EB Garamond', serif", color: "#1f1b15" }}>
               Customer Stories
             </h2>
             <div className="flex items-center gap-2">
               <StarRating rating={5} />
-              <span
-                className="text-[13px]"
-                style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
-              >
-                Based on 48 reviews
-              </span>
+              <span className="text-[13px]" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>Based on 48 reviews</span>
             </div>
           </div>
-
           <button
             className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] transition-all duration-300"
-            style={{
-              fontFamily: "'Jost', sans-serif",
-              border: "1px solid #1f1b15",
-              color: "#1f1b15",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#1f1b15";
-              e.currentTarget.style.color = "#fff";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "#1f1b15";
-            }}
+            style={{ fontFamily: "'Jost', sans-serif", border: "1px solid #1f1b15", color: "#1f1b15" }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#1f1b15"; e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#1f1b15"; }}
           >
             Write a Review
           </button>
         </div>
 
-        {/* Review Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {mockReviews.map((review, index) => (
             <div
@@ -541,28 +559,49 @@ const ProductPage = () => {
               }}
             >
               <StarRating rating={review.rating} size={13} />
-              <p
-                className="my-4 text-[14px] font-light italic leading-relaxed"
-                style={{ fontFamily: "'EB Garamond', serif", color: "#4A3728" }}
-              >
+              <p className="my-4 text-[14px] font-light italic leading-relaxed" style={{ fontFamily: "'EB Garamond', serif", color: "#4A3728" }}>
                 "{review.text}"
               </p>
               <div className="flex items-center gap-3">
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold"
-                  style={{ backgroundColor: "#F5E6D0", color: "#AB721E" }}
-                >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold" style={{ backgroundColor: "#F5E6D0", color: "#AB721E" }}>
                   {review.initials}
                 </div>
-                <span
-                  className="text-[12px] font-semibold uppercase tracking-[0.1em]"
-                  style={{ fontFamily: "'Jost', sans-serif", color: "#1f1b15" }}
-                >
+                <span className="text-[12px] font-semibold uppercase tracking-[0.1em]" style={{ fontFamily: "'Jost', sans-serif", color: "#1f1b15" }}>
                   {review.name}
                 </span>
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ── Sticky Add to Cart — Mobile only ── */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
+        style={{
+          backgroundColor: "#F9F3EB",
+          borderTop: "1px solid #E8DDD0",
+          padding: "12px 16px",
+          boxShadow: "0 -4px 20px rgba(43,33,18,0.08)",
+        }}
+      >
+        <div className="flex gap-3">
+          <button
+            onClick={handleAddToCart}
+            className="flex-1 py-3.5 text-[12px] font-bold uppercase tracking-[0.14em] transition-all duration-200"
+            style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "#AB721E", color: "#fff" }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#8B6914"}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#AB721E"}
+          >
+            Add to Cart
+          </button>
+          <button
+            onClick={handleAddToCart}
+            className="flex-1 py-3.5 text-[12px] font-bold uppercase tracking-[0.14em] transition-all duration-200"
+            style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none" }}
+          >
+            Buy Now
+          </button>
         </div>
       </div>
 
@@ -575,10 +614,7 @@ const LoadingSkeleton = () => (
   <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
     <div className="mx-auto max-w-[1200px] px-4 py-8 sm:px-6 md:px-10 xl:px-12">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-16">
-        <div
-          className="animate-pulse"
-          style={{ aspectRatio: "3/4", backgroundColor: "#E8DDD0" }}
-        />
+        <div className="animate-pulse w-full" style={{ aspectRatio: "4/5", backgroundColor: "#E8DDD0" }} />
         <div className="flex flex-col gap-4 pt-4">
           <div className="h-8 w-3/4 animate-pulse rounded" style={{ backgroundColor: "#E8DDD0" }} />
           <div className="h-6 w-1/3 animate-pulse rounded" style={{ backgroundColor: "#E8DDD0" }} />

@@ -1,6 +1,6 @@
 export const BASE = {
-  ROUTE: "http://localhost:5000",
-  // ROUTE: "https://naarisa.onrender.com"
+  // ROUTE: "http://localhost:5000",
+  ROUTE: "https://naarisa.onrender.com"
 };
 
 export const AUTH = {
