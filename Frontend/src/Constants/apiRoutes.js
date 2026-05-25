@@ -13,3 +13,8 @@ export const PRODUCT = {
   BEST_SELLERS:   "/api/product/best-sellers",
   GET_BY_SLUG:    (slug) => `/api/product/${slug}`,
 };
+
+export const COUPON = {
+  GET_WEBSITE:  "/api/coupon/website-coupons",   // ← public, no auth
+  VALIDATE:     "/api/coupon/validate",          // ← you'll need this for cart apply
+};
