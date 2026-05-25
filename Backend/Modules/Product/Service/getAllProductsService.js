@@ -61,7 +61,7 @@ export const getAllProductsService = async (data) => {
             category: v.productId.category,
             slug: v.slug,
             color: v.color,
-            image: v.images[0],
+            image: v.images[0]?.url || null,
             price: v.discountPrice
         }));
 

@@ -28,8 +28,25 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["Work", "College"],
+      trim: true,
       index: true
+    },
+
+    isBestSeller: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+
+    isFeatured: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+
+    soldCount: {
+      type: Number,
+    default: 0
     },
 
     basePrice: {

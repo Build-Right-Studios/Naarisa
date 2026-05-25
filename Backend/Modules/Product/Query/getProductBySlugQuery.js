@@ -17,7 +17,7 @@ export const getProductByIdQuery = async (data) => {
 
 export const getVariantsByProductQuery = async (data) => {
   const { id } = data;
-  const variants = await Variant.find({ id, isActive: true }).select(
+  const variants = await Variant.find({ productId: id, isActive: true }).select(
     "color slug"
   );
   return variants;

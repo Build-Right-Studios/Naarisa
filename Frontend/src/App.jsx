@@ -1,16 +1,36 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
-import NarisaLanding from './NarisaLanding'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Navbar from "./Components/Common/Navbar";
+import Home from "./Pages/Home";
+import ProductPage from "./Pages/ProductPage";
+// import Product from "./pages/Product";
+// import Cart from "./pages/Cart";
+// import Checkout from "./pages/Checkout";
+// import About from "./pages/About";
+import Footer from "./Components/Common/Footer";
+
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <NarisaLanding />
-  )
+    <BrowserRouter>
+
+      {/* Global Components */}
+      <Navbar />
+
+      {/* Routes */}
+      <Routes>
+
+        <Route path="/" element={<Home />} />
+        <Route path="/product/:slug" element={<ProductPage />} />
+        {/* <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/about" element={<About />} /> */}
+
+      </Routes>
+      <Footer />
+
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;

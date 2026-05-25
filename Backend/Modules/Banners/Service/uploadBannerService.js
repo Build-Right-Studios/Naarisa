@@ -1,13 +1,13 @@
 import { createBannerQuery } from "../Query/bannerQuery.js";
 
 export const uploadBannerService = async ({
-  title, desktopImage, mobileImage, link, order
+  title, desktopImage, mobileImage, cleanLink, order
 }) => {
   return await createBannerQuery({
     title,
     desktopImage,
     mobileImage,
-    link: link || null,
+    link: cleanLink || null,
     order: order || 0
   });
 };

@@ -10,6 +10,7 @@ import { addAddress } from "./Controller/addAddress.js";
 import { updateAddress } from "./Controller/updateAddress.js";
 import { deleteAddress } from "./Controller/deleteAddress.js";
 import { setDefaultAddress } from "./Controller/setDefaultAddress.js";
+import { exportUsers } from "./Controller/exportUsers.js";
 
 import { adminGetUsers } from "./Controller/adminGetUsers.js";
 import { adminGetUserById } from "./Controller/adminGetUserById.js";
@@ -31,6 +32,8 @@ router.delete("/addresses/:id", isUser, deleteAddress);
 router.put("/addresses/:id/set-default", isUser, setDefaultAddress);
 
 router.get("/", isAdmin, adminGetUsers);
+router.get("/export-users", isAdmin, exportUsers);
 router.get("/:id", isAdmin, adminGetUserById);
+
 
 export default router;

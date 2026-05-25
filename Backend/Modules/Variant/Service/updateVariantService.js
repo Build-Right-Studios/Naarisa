@@ -2,32 +2,56 @@ import { updateVariantInternal } from "../Internal/updateVariantInternal.js";
 
 export const updateVariantService = async (data) => {
   try {
-    const {id, updates} = data;
-    // Normalize color if updating
+
+    const { id, updates } = data;
+
+    // Normalize color
     if (updates.color?.name) {
-      updates.color.name = updates.color.name.trim().toLowerCase();
+      updates.color.name =
+        updates.color.name.trim().toLowerCase();
     }
 
     // Validate images
     if (updates.images) {
-      if (updates.images.length === 0 || updates.images.length > 4) {
-        throw new Error("Images must be between 1 and 4");
+
+      if (
+        updates.images.length === 0 ||
+        updates.images.length > 5
+      ) {
+        throw new Error(
+          "Images must be between 1 and 5"
+        );
       }
     }
 
     // Validate sizes
     if (updates.sizes) {
+
       if (!updates.sizes.length) {
-        throw new Error("At least one size required");
+        throw new Error(
+          "At least one size required"
+        );
       }
     }
 
-    const updated = await updateVariantInternal({id, updates});
+    const updated = await updateVariantInternal({
+      id,
+      updates
+    });
 
-    if (!updated) throw new Error("Variant not found");
+    if (!updated) {
+      throw new Error("Variant not found");
+    }
 
     return updated;
+
   } catch (error) {
+
+    console.log(
+      "updateVariantService Error:",
+      error
+    );
+
     throw error;
   }
 };
