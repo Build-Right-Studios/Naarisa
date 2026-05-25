@@ -15,7 +15,7 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:5174',
     'https://naarisa-frontend-git-dev-aryeshs-projects.vercel.app',
-    'https://naarisa-admin-git-internal-aryeshs-projects.vercel.app',
+    'https://naarisa-admin-git-dev-aryeshs-projects.vercel.app',
     'https://naarisa-admin.vercel.app'
   ],
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
