@@ -7,18 +7,19 @@ export const getVariantBySlugQuery = async (data) => {
   return variant;
 };
 
-export const getProductByIdQuery = async (data) => {
-  const { id } = data;
-  const product = await Product.findById(id).select(
-    "name description stylingTips fabricCare basePrice"
+export const getProductByIdQuery = async ({ id }) => {
+  return await Product.findById(id).select(
+    "name basePrice"
   );
-  return product;
 };
 
-export const getVariantsByProductQuery = async (data) => {
-  const { id } = data;
-  const variants = await Variant.find({ productId: id, isActive: true }).select(
-    "color slug"
+export const getVariantsByProductQuery = async ({ id }) => {
+  const variant = await Variant.find({
+    productId: id,
+    isActive: true
+  }).select(
+    "color slug description stylingTips fabricCare returnExchange images sizes discountPrice"
   );
-  return variants;
+  console.log(variant)
+  return variant;
 };

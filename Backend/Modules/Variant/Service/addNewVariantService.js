@@ -1,22 +1,22 @@
 import { existingVariantInternal } from "../Internal/existingVariantInternal.js";
-import {
-    getProductNameInternal,
-    addNewVariantInternal
-} from "../Internal/addNewVariantInternal.js";
-
+import { getProductNameInternal, addNewVariantInternal } from "../Internal/addNewVariantInternal.js";
 import generateSlug from "../../../Utils/generateSlug.js";
 
 export const addNewVariantService = async (variantData) => {
-
     try {
-
         const {
             productId,
             colorName,
             colorHex,
             images,
             sizes,
-            discountPrice
+            discountPrice,
+            description,
+            stylingTips,
+            fabricCare,
+            returnExchange,
+            isBestSeller,
+            isNewArrival
         } = variantData;
 
         const normalizedColor = colorName.trim().toLowerCase();
@@ -54,7 +54,13 @@ export const addNewVariantService = async (variantData) => {
             images,
             sizes,
             discountPrice,
-            slug
+            slug,
+            description,
+            stylingTips,
+            fabricCare,
+            returnExchange,
+            isBestSeller,
+            isNewArrival
         });
 
         return newVariant;

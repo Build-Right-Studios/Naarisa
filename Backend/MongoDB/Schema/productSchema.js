@@ -10,21 +10,6 @@ const productSchema = new mongoose.Schema(
       index: true
     },
 
-    description: {
-      type: String,
-      required: true
-    },
-
-    stylingTips: {
-      type: String,
-      required: true
-    },
-
-    fabricCare: {
-      type: String,
-      required: true
-    },
-
     category: {
       type: String,
       required: true,

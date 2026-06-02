@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import { findOrderByRazorpayOrderId, confirmOrder } from "../Query/verifyPaymentQuery.js";
 
+import { sendSMS } from "../../../config/twilio.js";
+
 export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId, razorpaySignature }) => {
 
   // Step 1 — Recreate the signature
@@ -28,10 +30,33 @@ export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId,
 
   // Step 5 — Confirm the order
   const confirmedOrder = await confirmOrder(order._id, razorpayPaymentId);
+  console.log("Confirmed Order : ", confirmedOrder)
+
+  sendSMS(confirmedOrder.address.phone, `Thank you for shopping with Naarisa. Order #${confirmedOrder._id} has been confirmed. We'll notify you once it is shipped.`)
 
   return {
     orderId: confirmedOrder._id,
     status: confirmedOrder.status,
-    paidAt: confirmedOrder.payment.paidAt
+    paidAt: confirmedOrder.payment.paidAt,
+
+    items: confirmedOrder.items.map(item => ({
+      productName: item.productName,
+      variantName: item.variantName,
+      size: item.size,
+      quantity: item.quantity,
+      priceAtOrder: item.priceAtOrder,
+    })),
+
+    pricing: {
+      subtotal: confirmedOrder.pricing.subtotal,
+      discount: confirmedOrder.pricing.discount,
+      total: confirmedOrder.pricing.total,
+    },
+
+    address: {
+      name: confirmedOrder.address.name,
+      city: confirmedOrder.address.city,
+      state: confirmedOrder.address.state,
+    },
   };
 };

@@ -2,17 +2,18 @@ import { addNewVariantService } from "../Service/addNewVariantService.js";
 
 export const addNewVariant = async (req, res) => {
     try {
-
-        console.log("Body :" , req.body);
-        console.log("Files :" , req.files);
-
         const {
             productId,
             colorName,
             colorHex,
-            discountPrice
+            discountPrice,
+            description,
+            stylingTips,
+            fabricCare,
+            returnExchange,
+            isBestSeller,
+            isNewArrival
         } = req.body;
-
         // Safe JSON parse
         let sizes = [];
 
@@ -66,7 +67,13 @@ export const addNewVariant = async (req, res) => {
             colorHex,
             images,
             sizes,
-            discountPrice
+            discountPrice,
+            description,
+            stylingTips,
+            fabricCare,
+            returnExchange,
+            isBestSeller,
+            isNewArrival
         });
 
         return res.status(201).json({

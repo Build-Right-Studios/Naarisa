@@ -11,11 +11,8 @@ const CATEGORIES = [
 
 const initialForm = {
   name: "",
-  description: "",
   category: "",
   basePrice: "",
-  stylingTips: "",
-  fabricCare: "",
 };
 
 const BASE_URL = BASE.ROUTE;
@@ -74,11 +71,8 @@ export default function AddProduct() {
         },
         body: JSON.stringify({
           name: form.name.trim(),
-          description: form.description.trim(),
           category: form.category,
           basePrice: Number(form.basePrice),
-          stylingTips: form.stylingTips.trim(),
-          fabricCare: form.fabricCare.trim(),
         }),
       });
       const data = await res.json();
@@ -146,15 +140,6 @@ export default function AddProduct() {
               onChange={set("name")}
             />
           </Field>
-
-          <Field label="Description">
-            <textarea
-              style={{ ...S.input, ...S.textarea }}
-              placeholder="Briefly describe the product's aesthetic and fit..."
-              value={form.description}
-              onChange={set("description")}
-            />
-          </Field>
         </div>
 
         {/* Specifications */}
@@ -186,38 +171,6 @@ export default function AddProduct() {
                 onChange={set("basePrice")}
               />
             </div>
-          </Field>
-        </div>
-      </div>
-
-      {/* Row 2: Editorial Details */}
-      <div style={{ ...S.card, marginBottom: 32 }}>
-        <div style={S.cardHeader}>
-          <BookIcon />
-          <h2 style={S.cardTitle}>Editorial Details</h2>
-        </div>
-
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: twoCol ? "1fr 1fr" : "1fr",
-          gap: 20,
-        }}>
-          <Field label="Styling Tips">
-            <textarea
-              style={{ ...S.input, ...S.textarea }}
-              placeholder="Provide detailed advice on how to wear this piece..."
-              value={form.stylingTips}
-              onChange={set("stylingTips")}
-            />
-          </Field>
-
-          <Field label="Fabric Care">
-            <textarea
-              style={{ ...S.input, ...S.textarea }}
-              placeholder="Elaborate maintenance and cleaning instructions..."
-              value={form.fabricCare}
-              onChange={set("fabricCare")}
-            />
           </Field>
         </div>
       </div>
@@ -268,15 +221,6 @@ function TagIcon() {
       stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
       <line x1="7" y1="7" x2="7.01" y2="7" />
-    </svg>
-  );
-}
-function BookIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-      stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
     </svg>
   );
 }
@@ -353,36 +297,6 @@ const S = {
     outline: "none",
     boxSizing: "border-box",
     fontFamily: "'Segoe UI', sans-serif",
-  },
-  textarea: {
-    resize: "vertical",
-    minHeight: 130,
-    lineHeight: 1.6,
-  },
-  selectWrapper: { position: "relative" },
-  select: {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 10,
-    border: "none",
-    background: "#f2f2f5",
-    fontSize: 15,
-    color: "#111",
-    outline: "none",
-    cursor: "pointer",
-    appearance: "none",
-    WebkitAppearance: "none",
-    boxSizing: "border-box",
-    fontFamily: "'Segoe UI', sans-serif",
-  },
-  selectArrow: {
-    position: "absolute",
-    right: 14,
-    top: "50%",
-    transform: "translateY(-50%)",
-    color: "#888",
-    fontSize: 12,
-    pointerEvents: "none",
   },
   inputWithPrefix: { position: "relative" },
   prefix: {

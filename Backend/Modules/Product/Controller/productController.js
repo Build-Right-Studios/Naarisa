@@ -4,9 +4,6 @@ export const addProduct = async (req, res) => {
   try {
     const {
       name,
-      description,
-      stylingTips,
-      fabricCare,
       category,
       basePrice,
       tags
@@ -19,13 +16,6 @@ export const addProduct = async (req, res) => {
       });
     }
 
-    if (!description) {
-      return res.status(400).json({
-        success: false,
-        message: "Description is required",
-      });
-    }
-
     if (!category || !category.trim()) {
       return res.status(400).json({
         success: false,
@@ -33,7 +23,7 @@ export const addProduct = async (req, res) => {
       });
     }
 
-    if (!basePrice) {
+    if (!basePrice && basePrice !== 0) {
       return res.status(400).json({
         success: false,
         message: "Base price is required",
@@ -42,9 +32,6 @@ export const addProduct = async (req, res) => {
 
     const result = await addProductService({
       name,
-      description,
-      stylingTips,
-      fabricCare,
       category: category.trim(),
       basePrice,
       tags

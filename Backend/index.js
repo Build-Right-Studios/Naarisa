@@ -37,8 +37,4 @@ app.get("/", (req, res) => {
   res.json("Server is running fine.")
 })
 
-app.get("/", (req, res) => {
-  res.json("Server is running fine.")
-})
-
 cleanupExpiredOtps();

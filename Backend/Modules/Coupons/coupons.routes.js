@@ -11,9 +11,12 @@ router.post("/add-coupon", isAdmin, addCoupon);
 // router.post("/add-coupon", addCoupon);
 router.get("/get-coupon", isAdmin, getCoupon);
 // router.get("/get-coupon", getCoupon);
+
+router.get("/website-coupons", getWebsiteCoupons);
+
 router.delete("/:id", isAdmin, deleteCoupon);
 // router.delete("/:id", deleteCoupon);
 
 
-router.get("/website-coupons", getWebsiteCoupons);
+
 export default router;

@@ -15,7 +15,8 @@ const MostLoved = () => {
       try {
         const res = await axios.get(`${BASE.ROUTE}${PRODUCT.BEST_SELLERS}`);
         if (res.data.success) {
-          setProducts(res.data.data.products || []);
+          console.log("Best Sellers : ", res.data)
+          setProducts(res.data.data || []);
         }
       } catch (err) {
         console.error("Failed to fetch best sellers:", err);
@@ -69,7 +70,7 @@ const MostLoved = () => {
           ))
           : products.map((product, index) => (
             <GridProductCard
-              key={product.id}
+              key={product._id}
               product={product}
               index={index}
               onClick={() => navigate(`/product/${product.slug}`)}
@@ -108,7 +109,15 @@ const MostLoved = () => {
 
 const GridProductCard = ({ product, index, onClick }) => {
   const { ref, inView } = useInView(0.1);
-  const isOnSale = product.price < product.basePrice;
+
+  const basePrice = product.productId?.basePrice || 0;
+  const sellingPrice = product.discountPrice || basePrice;
+
+  const isOnSale =
+    product.discountPrice &&
+    product.discountPrice < basePrice;
+
+  const image = product.images?.[0]?.url;
 
   return (
     <div
@@ -127,17 +136,19 @@ const GridProductCard = ({ product, index, onClick }) => {
         className="relative overflow-hidden"
         style={{ aspectRatio: "3/4", backgroundColor: "#F0E8DC" }}
       >
-        {product.image ? (
+        {image ? (
           <img
-            src={typeof product.image === "object" ? product.image.url : product.image}
-            alt={product.name}
+            src={image}
+            alt={product.productId?.name}
             className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-            onError={(e) => { e.target.style.display = "none"; }}
           />
         ) : (
           <div
             className="flex h-full w-full items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #F5E6D0, #C4A882)" }}
+            style={{
+              background:
+                "linear-gradient(135deg, #F5E6D0, #C4A882)",
+            }}
           >
             <span
               className="text-[11px] font-bold uppercase tracking-widest"
@@ -147,6 +158,7 @@ const GridProductCard = ({ product, index, onClick }) => {
             </span>
           </div>
         )}
+
         {isOnSale && (
           <div
             className="absolute left-0 top-3 px-2 py-1"
@@ -168,9 +180,12 @@ const GridProductCard = ({ product, index, onClick }) => {
       <div className="pt-3">
         <p
           className="mb-1 text-[13px] font-normal leading-snug sm:text-[14px]"
-          style={{ fontFamily: "'EB Garamond', serif", color: "#1f1b15" }}
+          style={{
+            fontFamily: "'EB Garamond', serif",
+            color: "#1f1b15",
+          }}
         >
-          {product.name}
+          {product.productId?.name}
         </p>
 
         <div className="flex items-center gap-2">
@@ -181,20 +196,22 @@ const GridProductCard = ({ product, index, onClick }) => {
               color: isOnSale ? "#C47B1E" : "#1f1b15",
             }}
           >
-            ₹{product.price?.toLocaleString("en-IN")}
+            ₹{sellingPrice.toLocaleString("en-IN")}
           </span>
 
           {isOnSale && (
             <span
               className="text-[11px] line-through sm:text-[12px]"
-              style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
+              style={{
+                fontFamily: "'Jost', sans-serif",
+                color: "#8C7B6B",
+              }}
             >
-              ₹{product.basePrice?.toLocaleString("en-IN")}
+              ₹{basePrice.toLocaleString("en-IN")}
             </span>
           )}
         </div>
 
-        {/* Color dot */}
         {product.color && (
           <div className="mt-1.5 flex items-center gap-1.5">
             <div
@@ -206,7 +223,10 @@ const GridProductCard = ({ product, index, onClick }) => {
             />
             <span
               className="text-[10px] capitalize sm:text-[11px]"
-              style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
+              style={{
+                fontFamily: "'Jost', sans-serif",
+                color: "#8C7B6B",
+              }}
             >
               {product.color.name}
             </span>

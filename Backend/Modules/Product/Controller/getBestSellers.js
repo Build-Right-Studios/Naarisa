@@ -1,11 +1,24 @@
-import { Product } from "../../../MongoDB/models.js";
-import { getAllProductsService } from "../Service/getAllProductsService.js";
+import { Variant } from "../../../MongoDB/models.js";
 
 export const getBestSellers = async (req, res) => {
-  const data = await getAllProductsService({
-    isBestSeller: true,
-    limit: 8,
-    page: 1
-  });
-  return res.status(200).json({ success: true, data });
+  try {
+    const variants = await Variant.find({
+      isBestSeller: true,
+      isActive: true,
+    })
+      .populate("productId")
+      .limit(8);
+
+    console.log("Variants : ", variants)
+
+    return res.status(200).json({
+      success: true,
+      data: variants,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
 };

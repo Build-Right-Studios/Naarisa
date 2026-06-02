@@ -81,6 +81,8 @@ export default function Products() {
       showToast("Action failed.", "error");
     }
   };
+  
+  // console.log(products);
 
   const filtered = (products || []).filter((p) => {
     const searchText = search.toLowerCase();

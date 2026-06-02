@@ -6,6 +6,7 @@ import variantRoutes from "./Modules/Variant/variant.routes.js";
 import orderRoutes from "./Modules/Order/order.routes.js";
 import couponsRoutes from "./Modules/Coupons/coupons.routes.js";
 import bannerRoutes from "./Modules/Banners/banners.routes.js";
+import paymentRoutes from "./Modules/Payment/payments.routes.js";
 
 const router = express.Router();
 
@@ -16,5 +17,6 @@ router.use("/api/variant", variantRoutes);
 router.use("/api/order", orderRoutes);
 router.use("/api/coupons", couponsRoutes);
 router.use("/api/banners", bannerRoutes);
+router.use("/api/payment", paymentRoutes);
 
 export default router;

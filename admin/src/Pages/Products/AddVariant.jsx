@@ -22,35 +22,162 @@ function useWindowWidth() {
   return w;
 }
 
-export default function AddVariant() {
-  const navigate  = useNavigate();
-  const fileRef   = useRef(null);
+// ─── Rich Text Editor ─────────────────────────────────────────────────────────
+function RichTextarea({ value, onChange, placeholder }) {
+  const editorRef = useRef(null);
+  const isInternalChange = useRef(false);
+  const [activeFormats, setActiveFormats] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    bullets: false,
+  });
 
-  const [products, setProducts]     = useState([]);
+  useEffect(() => {
+    if (editorRef.current && !isInternalChange.current) {
+      if (editorRef.current.innerHTML !== value) {
+        editorRef.current.innerHTML = value || "";
+      }
+    }
+    isInternalChange.current = false;
+  }, [value]);
+
+  const syncContent = () => {
+    isInternalChange.current = true;
+    onChange(editorRef.current?.innerHTML || "");
+    updateActiveFormats();
+  };
+
+  const updateActiveFormats = () => {
+    setActiveFormats({
+      bold: document.queryCommandState("bold"),
+      italic: document.queryCommandState("italic"),
+      underline: document.queryCommandState("underline"),
+      bullets: document.queryCommandState("insertUnorderedList"),
+    });
+  };
+
+  const exec = (cmd) => {
+    editorRef.current?.focus();
+    if (cmd === "bullets") {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const li = (container.nodeType === 3 ? container.parentNode : container).closest?.("li");
+      if (li) {
+        const ul = li.closest("ul");
+        if (ul) {
+          const fragment = document.createDocumentFragment();
+          ul.querySelectorAll("li").forEach((item, i) => {
+            if (i > 0) fragment.appendChild(document.createElement("br"));
+            fragment.appendChild(document.createTextNode(item.textContent));
+          });
+          ul.replaceWith(fragment);
+        }
+      } else {
+        document.execCommand("insertUnorderedList", false, null);
+      }
+    } else {
+      document.execCommand(cmd, false, null);
+    }
+    syncContent();
+  };
+
+  const toolbarBtns = [
+    { key: "bold", cmd: "bold", label: "B", extraStyle: { fontWeight: 700 } },
+    { key: "italic", cmd: "italic", label: "I", extraStyle: { fontStyle: "italic" } },
+    { key: "underline", cmd: "underline", label: "U", extraStyle: { textDecoration: "underline" } },
+    {
+      key: "bullets", cmd: "bullets", extraStyle: {},
+      icon: (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <circle cx="4" cy="7" r="1.5" fill="currentColor" stroke="none" />
+          <circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none" />
+          <circle cx="4" cy="17" r="1.5" fill="currentColor" stroke="none" />
+          <line x1="9" y1="7" x2="21" y2="7" />
+          <line x1="9" y1="12" x2="21" y2="12" />
+          <line x1="9" y1="17" x2="21" y2="17" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <div style={S.richWrapper}>
+      <div style={S.toolbar}>
+        {toolbarBtns.map(({ key, cmd, label, icon, extraStyle }) => {
+          const isActive = activeFormats[key];
+          return (
+            <button
+              key={key}
+              type="button"
+              title={key}
+              onMouseDown={(e) => { e.preventDefault(); exec(cmd); }}
+              style={{
+                ...S.toolbarBtn,
+                ...extraStyle,
+                background: isActive ? "#ede9fe" : "none",
+                borderColor: isActive ? "#7c3aed" : "transparent",
+                color: isActive ? "#7c3aed" : "#333",
+              }}
+            >
+              {icon || label}
+            </button>
+          );
+        })}
+      </div>
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={syncContent}
+        onKeyUp={updateActiveFormats}
+        onMouseUp={updateActiveFormats}
+        onSelect={updateActiveFormats}
+        data-placeholder={placeholder}
+        style={S.richEditor}
+      />
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function AddVariant() {
+  const navigate = useNavigate();
+  const fileRef = useRef(null);
+
+  const [products, setProducts] = useState([]);
   const [parentProduct, setParentProduct] = useState("");
-  const [sizes, setSizes]           = useState(initialSizes);
-  const [colorName, setColorName]   = useState("");
-  const [colorHex, setColorHex]     = useState("#7c3aed");
+  const [sizes, setSizes] = useState(initialSizes);
+  const [colorName, setColorName] = useState("");
+  const [colorHex, setColorHex] = useState("#7c3aed");
   const [discountPrice, setDiscountPrice] = useState("");
-  const [images, setImages]         = useState([]);        // { file, preview }
-  const [dragOver, setDragOver]     = useState(false);
+  const [description, setDescription] = useState("");
+  const [stylingTips, setStylingTips] = useState("");
+  const [fabricCare, setFabricCare] = useState("");
+  const [returnExchange, setReturnExchange] = useState("");
+  const [images, setImages] = useState([]);
+  const [dragOver, setDragOver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError]           = useState("");
-  const [toast, setToast]           = useState(null);
+  const [isBestSeller, setIsBestSeller] = useState(false);
+  const [isNewArrival, setIsNewArrival] = useState(false);
+  const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
 
   const token = localStorage.getItem("token");
   const width = useWindowWidth();
-  const isMobile  = width < 640;
-  const isTablet  = width >= 640 && width < 1024;
+  const isMobile = width < 640;
+  const isTablet = width >= 640 && width < 1024;
   const isMonitor = width >= 1440;
   const pagePadding = isMobile ? "24px 16px" : isTablet ? "28px 28px" : isMonitor ? "48px 64px" : "40px 48px";
   const twoCol = !isMobile;
 
-  // Fetch products for the parent product dropdown
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res  = await fetch(`${BASE_URL}${PRODUCT.GET_PRODUCTS}`, {
+        const res = await fetch(`${BASE_URL}${PRODUCT.GET_PRODUCTS}`, {
           credentials: "include",
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -66,10 +193,9 @@ export default function AddVariant() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // ── Image handling ──
   const addImages = (files) => {
     const valid = Array.from(files).filter((f) =>
-      ["image/jpeg", "image/png", "image/webp"].includes(f.type) && f.size <= 15 * 1024 * 1024
+      ["image/jpeg", "image/png", "image/webp"].includes(f.type) && f.size <= 10 * 1024 * 1024
     );
     const previews = valid.map((file) => ({
       file,
@@ -91,7 +217,6 @@ export default function AddVariant() {
     });
   };
 
-  // ── Size toggles ──
   const toggleSize = (size) => {
     setSizes((prev) => ({
       ...prev,
@@ -106,10 +231,9 @@ export default function AddVariant() {
     }));
   };
 
-  // ── Submit ──
   const handleSubmit = async () => {
     setError("");
-    if (!parentProduct)   return setError("Please select a parent product.");
+    if (!parentProduct) return setError("Please select a parent product.");
     if (!colorName.trim()) return setError("Color name is required.");
     if (images.length === 0) return setError("Please upload at least one image.");
 
@@ -123,13 +247,19 @@ export default function AddVariant() {
       formData.append("colorName", colorName.trim());
       formData.append("colorHex", colorHex);
       if (discountPrice) formData.append("discountPrice", Number(discountPrice));
+      formData.append("description", description);
+      formData.append("stylingTips", stylingTips);
+      formData.append("fabricCare", fabricCare);
+      formData.append("returnExchange", returnExchange);
+      formData.append("isBestSeller", isBestSeller);
+      formData.append("isNewArrival", isNewArrival);
 
       const sizeStock = enabledSizes.map((s) => ({ size: s, stock: sizes[s].stock }));
       formData.append("sizes", JSON.stringify(sizeStock));
 
       images.forEach((img) => formData.append("images", img.file));
 
-      const res  = await fetch(`${BASE_URL}${PRODUCT.ADD_NEW_VARIANT}`, {
+      const res = await fetch(`${BASE_URL}${PRODUCT.ADD_NEW_VARIANT}`, {
         method: "POST",
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
@@ -184,19 +314,17 @@ export default function AddVariant() {
         marginTop: 28,
       }}>
 
-        {/* LEFT — Variant Media + Color */}
+        {/* ── LEFT COLUMN ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
           {/* Variant Media */}
           <div style={S.card}>
             <SectionHeader icon={<ImageIcon />} label="VARIANT MEDIA" />
-
-            {/* Drop zone */}
             <div
               style={{
                 ...S.dropZone,
                 borderColor: dragOver ? "#7c3aed" : "#d1d5db",
-                background:  dragOver ? "#f5f3ff" : "#fafafa",
+                background: dragOver ? "#f5f3ff" : "#fafafa",
               }}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
@@ -213,7 +341,7 @@ export default function AddVariant() {
               />
               <div style={S.uploadIcon}><UploadIcon /></div>
               <p style={S.dropTitle}>Drop images here</p>
-              <p style={S.dropSubtitle}>Supports JPG, PNG, WEBP (Max 15MB)</p>
+              <p style={S.dropSubtitle}>Supports JPG, PNG, WEBP (Max 10MB)</p>
               <button
                 style={S.browseBtn}
                 onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
@@ -222,7 +350,6 @@ export default function AddVariant() {
               </button>
             </div>
 
-            {/* Image previews */}
             <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
               {images.map((img, i) => (
                 <div key={i} style={S.previewWrapper}>
@@ -231,8 +358,10 @@ export default function AddVariant() {
                 </div>
               ))}
               {images.length < 5 && images.length > 0 && (
-                <div style={{ ...S.previewWrapper, ...S.addMoreBtn }}
-                  onClick={() => fileRef.current?.click()}>
+                <div
+                  style={{ ...S.previewWrapper, ...S.addMoreBtn }}
+                  onClick={() => fileRef.current?.click()}
+                >
                   <span style={{ fontSize: 22, color: "#aaa" }}>+</span>
                 </div>
               )}
@@ -255,7 +384,14 @@ export default function AddVariant() {
                     type="color"
                     value={colorHex}
                     onChange={(e) => setColorHex(e.target.value)}
-                    style={{ opacity: 0, position: "absolute", inset: 0, cursor: "pointer", width: "100%", height: "100%" }}
+                    style={{
+                      opacity: 0,
+                      position: "absolute",
+                      inset: 0,
+                      cursor: "pointer",
+                      width: "100%",
+                      height: "100%",
+                    }}
                   />
                   <div style={{
                     width: 44, height: 44,
@@ -286,11 +422,61 @@ export default function AddVariant() {
               </p>
             </div>
           </div>
+
+          {/* Product Visibility */}
+          <div style={S.card}>
+            <SectionHeader icon={<StockIcon />} label="PRODUCT VISIBILITY" />
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+              <label style={S.checkboxRow}>
+                <input
+                  type="checkbox"
+                  checked={isBestSeller}
+                  onChange={(e) => setIsBestSeller(e.target.checked)}
+                  style={S.checkbox}
+                />
+                <span>
+                  <strong>Best Seller</strong>
+                  <div style={S.checkboxHint}>
+                    Show this variant in Best Sellers section.
+                  </div>
+                </span>
+              </label>
+
+              <label style={S.checkboxRow}>
+                <input
+                  type="checkbox"
+                  checked={isNewArrival}
+                  onChange={(e) => setIsNewArrival(e.target.checked)}
+                  style={S.checkbox}
+                />
+                <span>
+                  <strong>New Arrival</strong>
+                  <div style={S.checkboxHint}>
+                    Show this variant in New Arrivals section.
+                  </div>
+                </span>
+              </label>
+
+            </div>
+          </div>
+
+          {/* Description */}
+          <div style={S.card}>
+            <SectionHeader icon={<EditIcon />} label="DESCRIPTION" />
+            <RichTextarea
+              value={description}
+              onChange={setDescription}
+              placeholder="Briefly describe the product's aesthetic and fit..."
+            />
+          </div>
         </div>
 
-        {/* RIGHT — Product Association + Sizes */}
+        {/* ── RIGHT COLUMN ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
+          {/* Product Association + Sizes */}
           <div style={S.card}>
             <SectionHeader icon={<AssocIcon />} label="PRODUCT ASSOCIATION" />
 
@@ -325,11 +511,15 @@ export default function AddVariant() {
                   <div key={size} style={{
                     ...S.sizeCard,
                     borderColor: active ? "#7c3aed" : "#e5e7eb",
-                    background:  active ? "#faf5ff" : "#fff",
+                    background: active ? "#faf5ff" : "#fff",
                   }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <div style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}>
                       <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{size}</span>
-                      {/* Custom checkbox */}
                       <div
                         onClick={() => toggleSize(size)}
                         style={{
@@ -337,8 +527,11 @@ export default function AddVariant() {
                           borderRadius: 4,
                           border: `2px solid ${active ? "#7c3aed" : "#d1d5db"}`,
                           background: active ? "#7c3aed" : "#fff",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          cursor: "pointer", flexShrink: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          flexShrink: 0,
                         }}
                       >
                         {active && <span style={{ color: "#fff", fontSize: 11, lineHeight: 1 }}>✓</span>}
@@ -362,6 +555,38 @@ export default function AddVariant() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Editorial Details */}
+          <div style={S.card}>
+            <SectionHeader icon={<BookIcon />} label="EDITORIAL DETAILS" />
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={S.label}>STYLING TIPS</label>
+              <RichTextarea
+                value={stylingTips}
+                onChange={setStylingTips}
+                placeholder="Provide detailed advice on how to wear this piece..."
+              />
+            </div>
+
+            <div>
+              <label style={S.label}>FABRIC & CARE</label>
+              <RichTextarea
+                value={fabricCare}
+                onChange={setFabricCare}
+                placeholder="Elaborate maintenance and cleaning instructions..."
+              />
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <label style={S.label}>RETURN & EXCHANGE</label>
+              <RichTextarea
+                value={returnExchange}
+                onChange={setReturnExchange}
+                placeholder="Describe return eligibility, exchange process, timelines..."
+              />
             </div>
           </div>
 
@@ -408,9 +633,9 @@ function UploadIcon() {
   return (
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
       stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="16 16 12 12 8 16"/>
-      <line x1="12" y1="12" x2="12" y2="21"/>
-      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+      <polyline points="16 16 12 12 8 16" />
+      <line x1="12" y1="12" x2="12" y2="21" />
+      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
     </svg>
   );
 }
@@ -418,9 +643,18 @@ function ImageIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
       stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2"/>
-      <circle cx="8.5" cy="8.5" r="1.5"/>
-      <polyline points="21 15 16 10 5 21"/>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  );
+}
+function EditIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
   );
 }
@@ -428,9 +662,9 @@ function AssocIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
       stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+      <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
     </svg>
   );
 }
@@ -438,10 +672,21 @@ function StockIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
       stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-      <line x1="8" y1="18" x2="21" y2="18"/>
-      <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
-      <line x1="3" y1="18" x2="3.01" y2="18"/>
+      <line x1="8" y1="6" x2="21" y2="6" />
+      <line x1="8" y1="12" x2="21" y2="12" />
+      <line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" />
+      <line x1="3" y1="12" x2="3.01" y2="12" />
+      <line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  );
+}
+function BookIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+      stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
     </svg>
   );
 }
@@ -464,7 +709,7 @@ const S = {
     letterSpacing: "0.08em",
   },
   breadcrumbLink: { color: "#888", cursor: "pointer" },
-  breadcrumbSep:  { color: "#bbb" },
+  breadcrumbSep: { color: "#bbb" },
   breadcrumbCurrent: { color: "#7c3aed" },
   title: {
     fontWeight: 800,
@@ -503,6 +748,44 @@ const S = {
     outline: "none",
     boxSizing: "border-box",
     fontFamily: "'Segoe UI', sans-serif",
+  },
+  // Rich text editor
+  richWrapper: {
+    border: "1.5px solid #e5e7eb",
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  toolbar: {
+    display: "flex",
+    gap: 4,
+    padding: "6px 8px",
+    borderBottom: "1px solid #e5e7eb",
+    background: "#fff",
+  },
+  toolbarBtn: {
+    border: "1px solid transparent",
+    borderRadius: 6,
+    width: 30,
+    height: 28,
+    cursor: "pointer",
+    fontSize: 14,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "background 0.12s, border-color 0.12s, color 0.12s",
+    fontFamily: "'Segoe UI', sans-serif",
+    padding: 0,
+    lineHeight: 1,
+  },
+  richEditor: {
+    minHeight: 110,
+    padding: "10px 14px",
+    fontSize: 14,
+    color: "#111",
+    lineHeight: 1.6,
+    outline: "none",
+    fontFamily: "'Segoe UI', sans-serif",
+    background: "#f2f2f5",
   },
   selectWrapper: { position: "relative" },
   select: {
@@ -587,7 +870,9 @@ const S = {
     borderRadius: "50%",
     width: 16, height: 16,
     cursor: "pointer",
-    display: "flex", alignItems: "center", justifyContent: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     padding: 0,
   },
   addMoreBtn: {
@@ -646,5 +931,25 @@ const S = {
     fontWeight: 600,
     zIndex: 2000,
     boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+  },
+  checkboxRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 12,
+    cursor: "pointer",
+    padding: "10px 0",
+  },
+
+  checkbox: {
+    width: 18,
+    height: 18,
+    marginTop: 2,
+    cursor: "pointer",
+  },
+
+  checkboxHint: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
   },
 };

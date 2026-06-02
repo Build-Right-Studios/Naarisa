@@ -34,6 +34,14 @@ export const updateVariantService = async (data) => {
       }
     }
 
+    if (updates.isBestSeller !== undefined) {
+      updates.isBestSeller = updates.isBestSeller === "true";
+    }
+
+    if (updates.isNewArrival !== undefined) {
+      updates.isNewArrival = updates.isNewArrival === "true";
+    }
+
     const updated = await updateVariantInternal({
       id,
       updates

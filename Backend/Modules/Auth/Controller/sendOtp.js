@@ -2,7 +2,6 @@ import { sendOtpService } from "../Service/sendOtpService.js";
 
 export const sendOtp = async (req, res) => {
   try {
-    console.log("Backend Reached.")
     const { phone } = req.body;
     console.log("Body Reached.")
     if (!phone) {

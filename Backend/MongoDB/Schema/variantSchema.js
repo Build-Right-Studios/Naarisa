@@ -41,6 +41,35 @@ const variantSchema = new mongoose.Schema({
     isActive: {
       type: Boolean,
       default: true
+    }, 
+    description: {
+      type: String,
+      required: true
+    },
+
+    stylingTips: {
+      type: String,
+      required: true
+    },
+
+    fabricCare: {
+      type: String,
+      required: true
+    }, 
+
+    returnExchange: {
+      type: String,
+      default: ""
+    }, 
+
+    isBestSeller: {
+      type: Boolean,
+      default: false
+    },
+
+    isNewArrival: {
+      type: Boolean,
+      default: false
     }
 }, {timestamps: true});
 

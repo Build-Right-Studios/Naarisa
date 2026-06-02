@@ -41,7 +41,7 @@ export const uploadBannerImages = multer({
   storage: storage_banners,
 
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
+    fileSize: 10 * 1024 * 1024 // 10MB
   }
 }).fields([
   { name: "desktopImage", maxCount: 1 },
@@ -71,7 +71,7 @@ export const uploadVariantImages = multer({
   storage: storage_variants,
 
   limits: {
-    fileSize: 15 * 1024 * 1024 // 15MB
+    fileSize: 10 * 1024 * 1024 // 10MB
   }
 }).array("images", 5);
 

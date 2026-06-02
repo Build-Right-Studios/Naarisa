@@ -13,11 +13,13 @@ export const placeOrder = async (req, res) => {
     if (!address) {
       return res.status(400).json({ message: "Address is mising" });
     }
-    const user = req.user || {
-      _id: new mongoose.Types.ObjectId(),
-      name: "Test User",
-      email: "test@example.com"
-    };
+    const user = req.user;
+    // || {
+    //   _id: new mongoose.Types.ObjectId(),
+    //   name: "Test User",
+    //   email: "test@example.com"
+    // };
+    // console.log(user)
 
     const placedOrder = await placeOrderService({ user, items, address, addressId, couponCode })
 

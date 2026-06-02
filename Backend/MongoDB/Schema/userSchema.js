@@ -41,6 +41,12 @@ const userSchema = new mongoose.Schema({
   },
   addresses: [addressSchema],
 
+  wishlist: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Variant"
+    }
+  ], 
   otp: {
     code: String,       // will store hashed OTP
     expiresAt: Date

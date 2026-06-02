@@ -21,11 +21,11 @@ const navLinks = [
     dropdown: [
       {
         title: "Short Kurti",
-        path: "/categories/short-kurti",
+        path: "/categories/short-kurtis",
       },
       {
         title: "Long Kurti",
-        path: "/categories/long-kurti",
+        path: "/categories/long-kurtis",
       },
       {
         title: "Coord Sets",
@@ -89,7 +89,7 @@ const Navbar = () => {
         >
           {/* LEFT SIDE */}
           <div className="flex items-center lg:gap-6">
-            
+
             {/* MOBILE MENU */}
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -116,16 +116,16 @@ const Navbar = () => {
               lg:flex
             "
             >
-                <img
-                  src={logo}
-                  alt="Naarisa"
-                  className="
+              <img
+                src={logo}
+                alt="Naarisa"
+                className="
                   h-14
                   w-auto
                   object-contain
                   xl:h-12
                 "
-                />
+              />
             </Link>
           </div>
 
@@ -147,16 +147,16 @@ const Navbar = () => {
             lg:hidden
           "
           >
-              <img
-                src={logo}
-                alt="Naarisa"
-                className="
+            <img
+              src={logo}
+              alt="Naarisa"
+              className="
                 h-14
                 w-auto
                 object-contain
                 md:h-16
               "
-              />
+            />
           </Link>
 
           {/* DESKTOP NAVIGATION */}
@@ -189,10 +189,9 @@ const Navbar = () => {
                         tracking-[0.14em]
                         transition-all
                         duration-300
-                        ${
-                          isActive
-                            ? "text-[#7c5400]"
-                            : "text-[#504537] hover:text-[#7c5400]"
+                        ${isActive
+                          ? "text-[#7c5400]"
+                          : "text-[#504537] hover:text-[#7c5400]"
                         }
                       `
                       }
@@ -210,10 +209,9 @@ const Navbar = () => {
                               bg-[#7c5400]
                               transition-all
                               duration-300
-                              ${
-                                isActive
-                                  ? "w-full"
-                                  : "w-0 group-hover:w-full"
+                              ${isActive
+                                ? "w-full"
+                                : "w-0 group-hover:w-full"
                               }
                             `}
                           />
@@ -310,7 +308,7 @@ const Navbar = () => {
 
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-4 sm:gap-5">
-            
+
             {/* SEARCH */}
             <button
               className="
@@ -330,7 +328,8 @@ const Navbar = () => {
             </button>
 
             {/* CART */}
-            <button
+            <Link
+              to="/cart"
               className="
               flex
               items-center
@@ -345,10 +344,11 @@ const Navbar = () => {
             "
             >
               <FiShoppingBag />
-            </button>
+            </Link>
 
             {/* USER */}
-            <button
+            <Link
+              to="/account"
               className="
               flex
               items-center
@@ -363,7 +363,7 @@ const Navbar = () => {
             "
             >
               <FiUser />
-            </button>
+            </Link>
           </div>
         </div>
       </header>
@@ -379,10 +379,9 @@ const Navbar = () => {
           transition-opacity
           duration-300
           lg:hidden
-          ${
-            mobileMenuOpen
-              ? "pointer-events-auto opacity-100"
-              : "pointer-events-none opacity-0"
+          ${mobileMenuOpen
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
           }
         `}
       />
@@ -403,16 +402,15 @@ const Navbar = () => {
           transition-transform
           duration-300
           lg:hidden
-          ${
-            mobileMenuOpen
-              ? "translate-x-0"
-              : "-translate-x-full"
+          ${mobileMenuOpen
+            ? "translate-x-0"
+            : "-translate-x-full"
           }
         `}
       >
         {/* MOBILE HEADER */}
         <div className="mb-14 flex items-center justify-between">
-          
+
           <div
             className="
             flex
@@ -471,10 +469,9 @@ const Navbar = () => {
                     tracking-[0.12em]
                     transition-all
                     duration-300
-                    ${
-                      isActive
-                        ? "text-[#7c5400]"
-                        : "text-[#504537] hover:text-[#7c5400]"
+                    ${isActive
+                      ? "text-[#7c5400]"
+                      : "text-[#504537] hover:text-[#7c5400]"
                     }
                   `
                   }
@@ -492,10 +489,9 @@ const Navbar = () => {
                           bg-[#7c5400]
                           transition-all
                           duration-300
-                          ${
-                            isActive
-                              ? "w-full"
-                              : "w-0 group-hover:w-full"
+                          ${isActive
+                            ? "w-full"
+                            : "w-0 group-hover:w-full"
                           }
                         `}
                       />
@@ -504,7 +500,7 @@ const Navbar = () => {
                 </NavLink>
               ) : (
                 <div className="flex flex-col">
-                  
+
                   {/* CATEGORY BUTTON */}
                   <button
                     onClick={() =>
@@ -529,10 +525,9 @@ const Navbar = () => {
                         text-[18px]
                         transition-transform
                         duration-300
-                        ${
-                          mobileCategoryOpen
-                            ? "rotate-45"
-                            : ""
+                        ${mobileCategoryOpen
+                          ? "rotate-45"
+                          : ""
                         }
                       `}
                     >
@@ -546,10 +541,9 @@ const Navbar = () => {
                       overflow-hidden
                       transition-all
                       duration-300
-                      ${
-                        mobileCategoryOpen
-                          ? "max-h-[300px] opacity-100"
-                          : "max-h-0 opacity-0"
+                      ${mobileCategoryOpen
+                        ? "max-h-[300px] opacity-100"
+                        : "max-h-0 opacity-0"
                       }
                     `}
                   >

@@ -1,38 +1,31 @@
-import {
-    getProductNameQuery,
-    addNewVariantQuery
-} from "../Query/addNewVariantQuery.js";
+import { getProductNameQuery, addNewVariantQuery } from "../Query/addNewVariantQuery.js";
 
 export const getProductNameInternal = async (variantData) => {
-
     try {
-
         const { productId } = variantData;
-
-        const productName = await getProductNameQuery({
-            productId
-        });
-
+        const productName = await getProductNameQuery({ productId });
         return productName;
-
     } catch (error) {
-
         console.log("getProductNameInternal Error:", error);
         throw error;
     }
 };
 
 export const addNewVariantInternal = async (variantData) => {
-
     try {
-
         const {
             productId,
             color,
             images,
             sizes,
             discountPrice,
-            slug
+            slug,
+            description,
+            stylingTips,
+            fabricCare,
+            returnExchange,
+            isBestSeller,
+            isNewArrival
         } = variantData;
 
         const newVariant = await addNewVariantQuery({
@@ -41,13 +34,18 @@ export const addNewVariantInternal = async (variantData) => {
             images,
             sizes,
             discountPrice,
-            slug
+            slug,
+            description,
+            stylingTips,
+            fabricCare,
+            returnExchange,
+            isBestSeller,
+            isNewArrival
         });
 
         return newVariant;
 
     } catch (error) {
-
         console.log("addNewVariantInternal Error:", error);
         throw error;
     }

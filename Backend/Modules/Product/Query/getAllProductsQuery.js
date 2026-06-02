@@ -5,7 +5,7 @@ export const getAllProductsQuery = async (data) => {
     const { filter, skip, limit, sortOption } = data;
     const [variants, total] = await Promise.all([
       Variant.find(filter)
-        .populate("productId", "name category")
+        .populate("productId", "name category basePrice")
         .select("_id slug color images discountPrice createdAt")
         .sort(sortOption)
         .skip(skip)
@@ -13,7 +13,6 @@ export const getAllProductsQuery = async (data) => {
 
       Variant.countDocuments(filter)
     ]);
-
     return { variants, total };
 
   } catch (error) {

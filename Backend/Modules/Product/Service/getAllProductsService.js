@@ -62,7 +62,7 @@ export const getAllProductsService = async (data) => {
             slug: v.slug,
             color: v.color,
             image: v.images[0]?.url || null,
-            price: v.discountPrice
+            price: v.discountPrice ?? v.productId.basePrice
         }));
 
         return {

@@ -7,8 +7,8 @@ import { isUser } from "../../Middleware/isUser.js";
 
 const router = express.Router();
 
-router.post("/place-order", placeOrder);
-// router.post("/place-order", isUser, placeOrder);
+// router.post("/place-order", placeOrder);
+router.post("/place-order", isUser, placeOrder);
 // router.get("/active", isAdmin, getActiveOrders);
 // router.get("/delivered", isAdmin, getDeliveredOrders);
 // router.get("/:id", isAdmin, getOrderById);

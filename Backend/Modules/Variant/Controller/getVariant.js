@@ -2,24 +2,11 @@ import { Variant } from "../../../MongoDB/models.js";
 
 export const getVariant = async (req, res) => {
   try {
-
-    console.log(req.params.id);
-
     const variant = await Variant.findById(req.params.id)
       .populate({
         path: "productId",
-        select: `
-          name
-          category
-          description
-          basePrice
-          stylingTips
-          fabricCare
-          tags
-        `
+        select: `name category basePrice tags`
       });
-
-    console.log(variant);
 
     if (!variant) {
       return res.status(404).json({

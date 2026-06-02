@@ -8,6 +8,7 @@ export const getWebsiteCoupons = async (req, res) => {
       isDeleted: false,
       expiryDate: { $gt: new Date() },
     }).select("code discountType discountValue minOrderValue maxDiscountAmount");
+    console.log(coupons);
 
     res.status(200).json({ success: true, coupons });
   } catch (error) {

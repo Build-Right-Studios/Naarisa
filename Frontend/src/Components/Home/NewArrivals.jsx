@@ -6,17 +6,18 @@ import { BASE, PRODUCT } from "../../Constants/apiroutes.js";
 
 const NewArrivals = () => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const scrollRef                = useRef(null);
-  const header                   = useInView();
-  const navigate                 = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const scrollRef = useRef(null);
+  const header = useInView();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetch = async () => {
       try {
         const res = await axios.get(`${BASE.ROUTE}${PRODUCT.NEW_ARRIVALS}`);
         if (res.data.success) {
-          setProducts(res.data.data.products || []);
+          console.log("New Arrivals : ", res.data)
+          setProducts(res.data.data || []);
         }
       } catch (err) {
         console.error("Failed to fetch new arrivals:", err);
@@ -122,16 +123,16 @@ const NewArrivals = () => {
       >
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))
+            <SkeletonCard key={i} />
+          ))
           : products.map((product, index) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                index={index}
-                onClick={() => navigate(`/product/${product.slug}`)}
-              />
-            ))}
+            <ProductCard
+              key={product._id}
+              product={product}
+              index={index}
+              onClick={() => navigate(`/product/${product.slug}`)}
+            />
+          ))}
       </div>
     </section>
   );
@@ -139,7 +140,15 @@ const NewArrivals = () => {
 
 const ProductCard = ({ product, index, onClick }) => {
   const { ref, inView } = useInView(0.1);
-  const isOnSale = product.price < product.basePrice;
+
+  const basePrice = product.productId?.basePrice || 0;
+  const sellingPrice = product.discountPrice || basePrice;
+
+  const isOnSale =
+    product.discountPrice &&
+    product.discountPrice < basePrice;
+
+  const image = product.images?.[0]?.url;
 
   return (
     <div
@@ -155,54 +164,63 @@ const ProductCard = ({ product, index, onClick }) => {
       onClick={onClick}
     >
       {/* Image */}
-<div
-  className="relative overflow-hidden"
-  style={{ aspectRatio: "3/4", backgroundColor: "#F0E8DC" }}
->
-  {product.image ? (
-    <img
-      src={typeof product.image === "object" ? product.image.url : product.image}
-      alt={product.name}
-      className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-      onError={(e) => { e.target.style.display = "none"; }}
-    />
-  ) : (
-    <div
-      className="flex h-full w-full items-center justify-center"
-      style={{ background: "linear-gradient(135deg, #F5E6D0, #C4A882)" }}
-    >
-      <span
-        className="text-[11px] font-bold uppercase tracking-widest"
-        style={{ color: "#8C7B6B" }}
+      <div
+        className="relative overflow-hidden"
+        style={{
+          aspectRatio: "3/4",
+          backgroundColor: "#F0E8DC",
+        }}
       >
-        Naarisa
-      </span>
-    </div>
-  )}
-  {isOnSale && (
-    <div
-      className="absolute left-0 top-3 px-2 py-1"
-      style={{
-        backgroundColor: "#C4727A",
-        fontFamily: "'Jost', sans-serif",
-        fontSize: "10px",
-        fontWeight: 700,
-        letterSpacing: "0.1em",
-        color: "#fff",
-      }}
-    >
-      SALE
-    </div>
-  )}
-</div>
+        {image ? (
+          <img
+            src={image}
+            alt={product.productId?.name}
+            className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+          />
+        ) : (
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{
+              background:
+                "linear-gradient(135deg, #F5E6D0, #C4A882)",
+            }}
+          >
+            <span
+              className="text-[11px] font-bold uppercase tracking-widest"
+              style={{ color: "#8C7B6B" }}
+            >
+              Naarisa
+            </span>
+          </div>
+        )}
+
+        {isOnSale && (
+          <div
+            className="absolute left-0 top-3 px-2 py-1"
+            style={{
+              backgroundColor: "#C4727A",
+              fontFamily: "'Jost', sans-serif",
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              color: "#fff",
+            }}
+          >
+            SALE
+          </div>
+        )}
+      </div>
 
       {/* Info */}
       <div className="pt-3">
         <p
           className="mb-1 text-[13px] font-normal leading-snug"
-          style={{ fontFamily: "'EB Garamond', serif", color: "#1f1b15" }}
+          style={{
+            fontFamily: "'EB Garamond', serif",
+            color: "#1f1b15",
+          }}
         >
-          {product.name}
+          {product.productId?.name}
         </p>
 
         <div className="flex items-center gap-2">
@@ -213,20 +231,22 @@ const ProductCard = ({ product, index, onClick }) => {
               color: isOnSale ? "#C47B1E" : "#1f1b15",
             }}
           >
-            ₹{product.price?.toLocaleString("en-IN")}
+            ₹{sellingPrice.toLocaleString("en-IN")}
           </span>
 
           {isOnSale && (
             <span
               className="text-[12px] line-through"
-              style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
+              style={{
+                fontFamily: "'Jost', sans-serif",
+                color: "#8C7B6B",
+              }}
             >
-              ₹{product.basePrice?.toLocaleString("en-IN")}
+              ₹{basePrice.toLocaleString("en-IN")}
             </span>
           )}
         </div>
 
-        {/* Color dot */}
         {product.color && (
           <div className="mt-2 flex items-center gap-1.5">
             <div
@@ -238,7 +258,10 @@ const ProductCard = ({ product, index, onClick }) => {
             />
             <span
               className="text-[11px] capitalize"
-              style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
+              style={{
+                fontFamily: "'Jost', sans-serif",
+                color: "#8C7B6B",
+              }}
             >
               {product.color.name}
             </span>

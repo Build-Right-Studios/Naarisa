@@ -111,8 +111,9 @@ export const placeOrderService = async (orderData) => {
     return {
       orderId: order._id,
       razorpayOrderId: razorpayOrder.id,
-      amount: (razorpayOrder.amount)/100,
+      amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
       pricing: { subtotal, discount, total }
     }
   } catch (error) {
