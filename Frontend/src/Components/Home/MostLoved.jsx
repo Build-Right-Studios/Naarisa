@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import useInView from "../../utils/useInView.js";
-import { BASE, PRODUCT } from "../../Constants/apiroutes.js";
+import { BASE, PRODUCT } from "../../Constants/apiRoutes.js";
 
 const MostLoved = () => {
   const [products, setProducts] = useState([]);

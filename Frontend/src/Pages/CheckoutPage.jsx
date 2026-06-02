@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import useCartStore from "../store/useCartStore.js";
-import useCheckoutStore from "../store/useCheckoutStore.js";
+import useCartStore from "../Store/useCartStore.js";
+import useCheckoutStore from "../Store/useCheckoutStore.js";
 import api from "../utils/axiosInstance.js";
 import { ORDER, PAYMENT, USER } from "../Constants/apiRoutes.js";
 
