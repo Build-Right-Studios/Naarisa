@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { BASE, COUPON } from "../Constants/apiroutes.js";
-import useCartStore from "../store/useCartStore.js";
-import useCheckoutStore from "../store/useCheckoutStore.js";
+import { BASE, COUPON } from "../Constants/apiRoutes.js";
+import useCartStore from "../Store/useCartStore.js";
+import useCheckoutStore from "../Store/useCheckoutStore.js";
 
 // ── Trash Icon ────────────────────────────────────────────────────────────────
 const TrashIcon = () => (

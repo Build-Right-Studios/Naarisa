@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/axiosInstance.js";
 import { BASE, PRODUCT } from "../Constants/apiRoutes.js";
-import useCartStore from "../store/useCartStore.js";
+import useCartStore from "../Store/useCartStore.js";
 
 // ── Banner imports ────────────────────────────────────────────────────────────
 import shortKurtisBanner from "../assets/Short Kurtis Banner.png";

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { BASE, PRODUCT, USER } from "../Constants/apiRoutes.js";
 import api from "../utils/axiosInstance.js";
 import useInView from "../utils/useInView.js";
-import useCartStore from "../store/useCartStore.js";
+import useCartStore from "../Store/useCartStore.js";
 
 // ── Accordion ─────────────────────────────────────────────────────────────────
 const Accordion = ({ title, content }) => {
