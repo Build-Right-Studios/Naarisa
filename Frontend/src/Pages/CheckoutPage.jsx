@@ -230,6 +230,10 @@ const CheckoutPage = () => {
     if (!validate()) return;
     setLoading(true);
 
+    console.log("Selected Address ID:", selectedAddressId);
+    console.log("Show Address Form:", showAddressForm);
+    console.log("Form State:", form);
+
     try {
       const payload = {
         items: items.map((item) => ({

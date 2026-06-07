@@ -3,7 +3,7 @@ import routes from "./routes.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectMongoDB from "./config/mongodb.js";
-import { cleanupExpiredOtps } from "./Utils/cleanupExpiredOtps.js";
+import { cleanupExpiredOtps, cleanupPendingOrders } from "./Utils/cleanupExpiredOtps.js";
 
 dotenv.config();
 
@@ -38,3 +38,4 @@ app.get("/", (req, res) => {
 })
 
 cleanupExpiredOtps();
+cleanupPendingOrders();
