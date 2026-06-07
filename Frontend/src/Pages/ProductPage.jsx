@@ -424,22 +424,56 @@ const ProductPage = () => {
   const totalStock = sizes.reduce((sum, s) => sum + s.quantity, 0);
   const lowStock = totalStock > 0 && totalStock <= 5;
 
+  // const handleAddToCart = () => {
+  //   if (!selectedSize) {
+  //     setSizeError(true);
+  //     setTimeout(() => setSizeError(false), 2000);
+  //     return;
+  //   }
+  //   console.log("Added To cart Data : ");
+  //   console.log("productId:", product._id);
+  //   console.log("variantId:", currentVariant._id)
+  //   console.log("name:", product.name)
+  //   console.log("color:", currentVariant.color?.name || "")
+  //   console.log("size:", selectedSize)
+  //   console.log("price:", currentVariant.discountPrice || product.basePrice)
+  //   console.log("image:", images[0]?.url || null)
+  //   console.log("slug:", currentVariant.slug)
+  //   addItem({
+  //     productId: product._id,
+  //     variantId: currentVariant._id,
+  //     name: product.name,
+  //     color: currentVariant.color?.name || "",
+  //     size: selectedSize,
+  //     price: currentVariant.discountPrice || product.basePrice,
+  //     image: images[0]?.url || null,
+  //     slug: currentVariant.slug,
+  //   });
+  //   setToastVisible(true);
+  //   setTimeout(() => setToastVisible(false), 2000);
+  // };
+
   const handleAddToCart = () => {
     if (!selectedSize) {
       setSizeError(true);
       setTimeout(() => setSizeError(false), 2000);
       return;
     }
+
+    // Resolve from _doc if top-level is undefined (unserialized Mongoose doc)
+    const doc = currentVariant?._doc || currentVariant;
+
     addItem({
       productId: product._id,
-      variantId: currentVariant._id,
+      variantId: doc._id,
       name: product.name,
-      color: currentVariant.color?.name || "",
+      color: doc.color?.name || "",
       size: selectedSize,
-      price: currentVariant.discountPrice || product.basePrice,
-      image: images[0]?.url || null,
-      slug: currentVariant.slug,
+      price: doc.discountPrice || product.basePrice,
+      image: doc.images?.[0]?.url || null,
+      slug: doc.slug,
     });
+
     setToastVisible(true);
     setTimeout(() => setToastVisible(false), 2000);
   };
