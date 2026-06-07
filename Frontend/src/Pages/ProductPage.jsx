@@ -368,7 +368,9 @@ const ProductPage = () => {
         if (res.data.success) {
           console.log(res.data)
           setData(res.data);
-          const firstAvailable = res.data.currentVariant?.sizes?.find((s) => s.quantity > 0);
+          const variant = res.data.currentVariant;
+          const sizesData = variant?.sizes || variant?._doc?.sizes || [];
+          const firstAvailable = sizesData.find((s) => s.quantity > 0);
           if (firstAvailable) setSelectedSize(firstAvailable.size);
         }
       } catch (err) {
@@ -415,7 +417,7 @@ const ProductPage = () => {
 
   const { product, currentVariant, allVariants } = data;
   const images = currentVariant?.images || currentVariant?._doc?.images || [];
-  const sizes = currentVariant?.sizes || [];
+  const sizes = currentVariant?.sizes || currentVariant?._doc?.sizes || [];
   const discount = product.basePrice && currentVariant.discountPrice
     ? Math.round(((product.basePrice - currentVariant.discountPrice) / product.basePrice) * 100)
     : null;
