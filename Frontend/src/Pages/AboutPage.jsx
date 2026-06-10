@@ -10,8 +10,8 @@ const coreValues = [
         <circle cx="12" cy="11" r="3"/>
       </svg>
     ),
-    title: "Sustainability",
-    description: "We source organic fibers and use small-batch production to minimize our footprint and honor the earth.",
+    title: "Quality You Can Feel",
+    description: "Carefully chosen fabrics and close attention to finishing — because a garment should feel as good as it looks.",
   },
   {
     icon: (
@@ -22,8 +22,8 @@ const coreValues = [
         <circle cx="11" cy="11" r="2"/>
       </svg>
     ),
-    title: "Craftsmanship",
-    description: "Every stitch is a tribute to the master weavers who have preserved their art for generations.",
+    title: "Modern Designs",
+    description: "Styles that work for college, office, travel, casual outings, and festive days — ethnic wear that fits your whole life.",
   },
   {
     icon: (
@@ -34,8 +34,8 @@ const coreValues = [
         <rect x="14" y="14" width="7" height="7"/>
       </svg>
     ),
-    title: "Modern Design",
-    description: "We strip away the excess to let the silhouette and the story of the fabric take center stage.",
+    title: "Affordable Pricing",
+    description: "Built on decades of sourcing and retail experience, not inflated markups. Great value is part of the design.",
   },
 ];
 
@@ -49,10 +49,10 @@ const gridImages = [
 
 // ── About Page ────────────────────────────────────────────────────────────────
 const AboutPage = () => {
-  const navigate  = useNavigate();
-  const story     = useInView(0.1);
-  const values    = useInView(0.1);
-  const grid      = useInView(0.1);
+  const navigate = useNavigate();
+  const story    = useInView(0.1);
+  const values   = useInView(0.1);
+  const grid     = useInView(0.1);
 
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
@@ -62,7 +62,6 @@ const AboutPage = () => {
         className="relative w-full overflow-hidden"
         style={{ height: "clamp(480px, 70vh, 700px)" }}
       >
-        {/* Gradient placeholder — replace with real image */}
         <div
           className="absolute inset-0"
           style={{
@@ -84,13 +83,11 @@ const AboutPage = () => {
           }}
         />
 
-        {/* Light vignette */}
         <div
           className="absolute inset-0"
           style={{ background: "radial-gradient(ellipse at 60% 40%, rgba(196,123,30,0.25) 0%, transparent 65%)" }}
         />
 
-        {/* Bottom fade */}
         <div
           className="absolute bottom-0 left-0 right-0 pointer-events-none"
           style={{ height: "160px", background: "linear-gradient(to bottom, transparent, #F9F3EB)", zIndex: 2 }}
@@ -106,14 +103,14 @@ const AboutPage = () => {
               className="mb-4 text-[11px] font-bold uppercase tracking-[0.3em]"
               style={{ fontFamily: "'Jost', sans-serif", color: "rgba(245,230,208,0.6)" }}
             >
-              Our Story
+              Est. 1955 · Haridwar
             </p>
             <h1
               className="text-[32px] sm:text-[42px] lg:text-[52px] font-normal italic leading-tight text-white"
               style={{ fontFamily: "'EB Garamond', serif", textShadow: "0 2px 24px rgba(0,0,0,0.4)" }}
             >
-              Modern Ethnic with a
-              <br />Heritage Heart
+              70 Years of Fabric.
+              <br />One Modern Brand.
             </h1>
             <div
               className="mx-auto mt-5 h-[1px] w-12"
@@ -144,24 +141,32 @@ const AboutPage = () => {
               className="mb-3 text-[11px] font-bold uppercase tracking-[0.24em]"
               style={{ fontFamily: "'Jost', sans-serif", color: "#AB721E" }}
             >
-              Est. 2024
+              Our Story
             </p>
 
             <h2
               className="mb-5 text-[30px] sm:text-[36px] font-normal leading-tight"
               style={{ fontFamily: "'EB Garamond', serif", color: "#1f1b15" }}
             >
-              The Naarisa Story
+              A Family Legacy, Now Online
             </h2>
 
             <p
               className="mb-5 text-[15px] font-light leading-[1.9]"
               style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}
             >
-              Naarisa was born from a desire to redefine the dialogue
-              between traditional craftsmanship and contemporary luxury.
-              We believe that heritage isn't a relic of the past, but a living,
-              breathing pulse that informs how we move through the modern world.
+              Naarisa is built on a family legacy in Indian ethnic wear that began in Haridwar in 1955.
+              What started as a local retail store serving generations of women has now evolved into a
+              modern online brand for today's customer.
+            </p>
+
+            <p
+              className="mb-6 text-[15px] font-light leading-[1.9]"
+              style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}
+            >
+              For more than 70 years, our family has worked directly with fabrics, fits, craftsmanship,
+              and customer feedback. That experience shapes every Naarisa collection — ethnic wear that
+              feels current, comfortable, and worth repeating, not just pieces that look good in a photo.
             </p>
 
             {/* Pull quote */}
@@ -170,12 +175,10 @@ const AboutPage = () => {
               style={{ borderLeft: "2px solid #AB721E" }}
             >
               <p
-                className="text-[15px] leading-[1.8] italic"
+                className="text-[16px] leading-[1.8] italic"
                 style={{ fontFamily: "'EB Garamond', serif", color: "#4A3728" }}
               >
-                "Our goal is to create 'breathable luxury'—garments that feel like a
-                second skin, carrying the weight of centuries-old techniques with the
-                lightness of modern silhouettes."
+                "We grew up in a store where repeat customers mattered more than one-time sales."
               </p>
             </div>
 
@@ -188,17 +191,18 @@ const AboutPage = () => {
                 border: "none",
                 cursor: "pointer",
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#8B6914"}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#AB721E"}
+              onClick={() => navigate("/all-products")}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#8B6914")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#AB721E")}
             >
-              Discover Our Process
+              Shop the Collection
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
               </svg>
             </button>
           </div>
 
-          {/* RIGHT — Overlapping images */}
+          {/* RIGHT — Overlapping image blocks */}
           <div
             className="relative transition-all duration-1000"
             style={{
@@ -208,7 +212,7 @@ const AboutPage = () => {
               height: "460px",
             }}
           >
-            {/* Main large image — top right */}
+            {/* Main large block */}
             <div
               className="absolute right-0 top-0 overflow-hidden"
               style={{
@@ -228,11 +232,13 @@ const AboutPage = () => {
                 }}
               />
               <div className="absolute bottom-3 right-3">
-                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(43,33,18,0.4)" }}>Finest Weaves</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(43,33,18,0.4)" }}>
+                  Since 1955
+                </p>
               </div>
             </div>
 
-            {/* Overlapping smaller image — bottom left */}
+            {/* Overlapping smaller block */}
             <div
               className="absolute bottom-0 left-0 overflow-hidden"
               style={{
@@ -243,7 +249,6 @@ const AboutPage = () => {
                 zIndex: 2,
               }}
             >
-              {/* Woven texture */}
               <div
                 className="absolute inset-0 opacity-30"
                 style={{
@@ -256,17 +261,18 @@ const AboutPage = () => {
                   )`,
                 }}
               />
-              {/* Light rays */}
               <div
                 className="absolute inset-0"
                 style={{ background: "radial-gradient(ellipse at 60% 30%, rgba(196,123,30,0.5) 0%, transparent 60%)" }}
               />
               <div className="absolute bottom-3 left-3">
-                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(245,230,208,0.6)" }}>Artisan Craft</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(245,230,208,0.6)" }}>
+                  Haridwar
+                </p>
               </div>
             </div>
 
-            {/* Decorative corner accents */}
+            {/* Decorative corner */}
             <div
               className="absolute right-0 top-0 h-10 w-10"
               style={{
@@ -280,12 +286,49 @@ const AboutPage = () => {
         </div>
       </section>
 
+      {/* ── FOR WOMEN WHO WANT BOTH ── */}
+      <section
+        className="w-full px-4 py-16 sm:px-6 md:px-10 xl:px-12 sm:py-20"
+        style={{ backgroundColor: "#2B2112" }}
+      >
+        <div className="mx-auto max-w-[760px] text-center">
+          <p
+            className="mb-4 text-[11px] font-bold uppercase tracking-[0.24em]"
+            style={{ fontFamily: "'Jost', sans-serif", color: "#AB721E" }}
+          >
+            Our Promise
+          </p>
+          <h2
+            className="mb-6 text-[28px] sm:text-[36px] font-normal italic leading-snug"
+            style={{ fontFamily: "'EB Garamond', serif", color: "#F9F3EB" }}
+          >
+            For Women Who Want Both Style and Value
+          </h2>
+          <p
+            className="mb-5 text-[14px] font-light leading-[1.9]"
+            style={{ fontFamily: "'Jost', sans-serif", color: "#C4A882" }}
+          >
+            We know the frustration of ethnic wear that is trendy but overpriced, or affordable but
+            poorly made. Naarisa aims for the middle ground — latest designs, dependable quality, and
+            prices that make sense.
+          </p>
+          <p
+            className="text-[14px] font-light leading-[1.9]"
+            style={{ fontFamily: "'Jost', sans-serif", color: "#C4A882" }}
+          >
+            Our goal is simple: when you buy a kurta, kurta set, dress, or ethnic outfit from Naarisa,
+            it should become something you reach for often — not something that sits in your wardrobe
+            after one wear.
+          </p>
+          <div className="mx-auto mt-8 h-[1px] w-10" style={{ backgroundColor: "#AB721E" }} />
+        </div>
+      </section>
+
       {/* ── CORE VALUES ── */}
       <section
         className="w-full overflow-hidden px-4 py-16 sm:px-6 sm:py-20 md:px-10 xl:px-12"
         style={{ backgroundColor: "#F5E6D0" }}
       >
-        {/* Header */}
         <div
           ref={values.ref}
           className="mb-12 text-center transition-all duration-700"
@@ -298,13 +341,13 @@ const AboutPage = () => {
             className="mb-2 text-[28px] sm:text-[34px] font-normal italic"
             style={{ fontFamily: "'EB Garamond', serif", color: "#1f1b15" }}
           >
-            Our Core Values
+            What We Stand For
           </h2>
           <p
             className="text-[13px] font-light"
             style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}
           >
-            Foundations of an Artisanal Future
+            The values behind every piece we make
           </p>
           <div
             className="mx-auto mt-4 h-[1px] transition-all duration-1000"
@@ -354,7 +397,7 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* ── INSTAGRAM / LIFESTYLE GRID ── */}
+      {/* ── LIFESTYLE GRID ── */}
       <section
         ref={grid.ref}
         className="w-full"
@@ -374,7 +417,6 @@ const AboutPage = () => {
                 cursor: "pointer",
               }}
             >
-              {/* Texture */}
               <div
                 className="absolute inset-0 opacity-20"
                 style={{
@@ -385,13 +427,11 @@ const AboutPage = () => {
                   )`,
                 }}
               />
-
-              {/* Hover overlay */}
               <div
                 className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300"
                 style={{ backgroundColor: "rgba(43,33,18,0.5)" }}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = "0"}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
               >
                 <p
                   className="text-[11px] font-bold uppercase tracking-[0.2em]"
@@ -400,8 +440,6 @@ const AboutPage = () => {
                   {img.label}
                 </p>
               </div>
-
-              {/* Label bottom */}
               <div className="absolute bottom-3 left-3">
                 <p
                   className="text-[9px] font-bold uppercase tracking-widest"

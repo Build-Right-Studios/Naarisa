@@ -1,17 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../utils/axiosInstance.js"; // ← interceptor handles Bearer token
-
-// ── API routes ────────────────────────────────────────────────────────────────
-const USER = {
-  PROFILE:       "/api/user/profile",
-  ADDRESSES:     "/api/user/addresses",
-  ADDRESS_BY_ID: (id) => `/api/user/addresses/${id}`,
-  SET_DEFAULT:   (id) => `/api/user/addresses/${id}/set-default`,
-  ORDERS:        "/api/user/orders",
-  WISHLIST:      "/api/user/wishlist",
-  WISHLIST_ITEM: (id) => `/api/user/wishlist/${id}`,
-};
+import api from "../utils/axiosInstance.js";
+import { USER } from "../Constants/apiRoutes.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const initials = (name = "") =>
@@ -36,6 +26,8 @@ const Icon = ({ name, size = 16, color = "#8C7B6B" }) => {
     check:    "M20 6L9 17l-5-5",
     x:        "M18 6L6 18M6 6l12 12",
     chevron:  "M9 18l6-6-6-6",
+    menu:     "M3 12h18M3 6h18M3 18h18",
+    back:     "M19 12H5M12 19l-7-7 7-7",
     package:  "M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.27 6.96L12 12.01l8.73-5.05M12 22.08V12",
   };
   return (
@@ -74,7 +66,12 @@ const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisga
 const NavItem = ({ icon, label, active, onClick, danger }) => (
   <button
     onClick={onClick}
-    style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", backgroundColor: active ? "#2B2112" : "transparent", border: "none", borderTop: "1px solid #F5E6D0", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}
+    style={{
+      width: "100%", display: "flex", alignItems: "center", gap: "12px",
+      padding: "12px 16px", backgroundColor: active ? "#2B2112" : "transparent",
+      border: "none", borderTop: "1px solid #F5E6D0", cursor: "pointer",
+      textAlign: "left", transition: "all 0.15s",
+    }}
     onMouseEnter={(e) => { if (!active) e.currentTarget.style.backgroundColor = "#F9F3EB"; }}
     onMouseLeave={(e) => { if (!active) e.currentTarget.style.backgroundColor = "transparent"; }}
   >
@@ -96,11 +93,11 @@ const AddressModal = ({ existing, onSave, onClose }) => {
 
   const validate = () => {
     const e = {};
-    if (!form.name.trim())               e.name    = "Required";
-    if (!/^[6-9]\d{9}$/.test(form.phone)) e.phone  = "Valid 10-digit number";
-    if (!form.line1.trim())              e.line1   = "Required";
-    if (!form.city.trim())               e.city    = "Required";
-    if (!/^\d{6}$/.test(form.pincode))   e.pincode = "Valid 6-digit PIN";
+    if (!form.name.trim())                e.name    = "Required";
+    if (!/^[6-9]\d{9}$/.test(form.phone)) e.phone   = "Valid 10-digit number";
+    if (!form.line1.trim())               e.line1   = "Required";
+    if (!form.city.trim())                e.city    = "Required";
+    if (!/^\d{6}$/.test(form.pincode))    e.pincode = "Valid 6-digit PIN";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -112,26 +109,31 @@ const AddressModal = ({ existing, onSave, onClose }) => {
     setSaving(false);
   };
 
-  const inp = (err) => ({ width: "100%", boxSizing: "border-box", padding: "10px 12px", fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#1f1b15", backgroundColor: "#FDF8F1", border: err ? "1px solid #C4727A" : "1px solid #E8DDD0", outline: "none" });
+  const inp = (err) => ({
+    width: "100%", boxSizing: "border-box", padding: "10px 12px",
+    fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#1f1b15",
+    backgroundColor: "#FDF8F1", border: err ? "1px solid #C4727A" : "1px solid #E8DDD0", outline: "none",
+  });
 
   const Field = ({ label, k, placeholder, maxLength, type = "text" }) => (
     <div>
       <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#8C7B6B", marginBottom: "5px" }}>{label}</p>
       <input type={type} value={form[k]} onChange={set(k)} placeholder={placeholder} maxLength={maxLength}
-        style={inp(errors[k])} onFocus={(e) => (e.target.style.borderColor = "#AB721E")} onBlur={(e) => (e.target.style.borderColor = errors[k] ? "#C4727A" : "#E8DDD0")} />
+        style={inp(errors[k])}
+        onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
+        onBlur={(e) => (e.target.style.borderColor = errors[k] ? "#C4727A" : "#E8DDD0")} />
       {errors[k] && <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", color: "#C4727A", marginTop: "3px" }}>{errors[k]}</p>}
     </div>
   );
 
   return (
     <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(43,33,18,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
-      <div style={{ backgroundColor: "#fff", width: "100%", maxWidth: "480px", maxHeight: "90vh", overflowY: "auto", padding: "28px" }}>
+      <div style={{ backgroundColor: "#fff", width: "100%", maxWidth: "480px", maxHeight: "90vh", overflowY: "auto", padding: "24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: "20px", color: "#1f1b15" }}>{existing ? "Edit Address" : "Add New Address"}</h3>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#8C7B6B" }}><Icon name="x" /></button>
         </div>
 
-        {/* Label toggle */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "18px" }}>
           {["Home", "Work", "Other"].map((l) => (
             <button key={l} onClick={() => setForm((p) => ({ ...p, label: l }))}
@@ -149,13 +151,17 @@ const AddressModal = ({ existing, onSave, onClose }) => {
           <Field label="STREET ADDRESS" k="line1" placeholder="House no. and street" />
           <div>
             <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#8C7B6B", marginBottom: "5px" }}>LANDMARK / AREA <span style={{ fontWeight: 400 }}>(optional)</span></p>
-            <input value={form.line2} onChange={set("line2")} placeholder="Landmark or area" style={inp(false)} onFocus={(e) => (e.target.style.borderColor = "#AB721E")} onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")} />
+            <input value={form.line2} onChange={set("line2")} placeholder="Landmark or area" style={inp(false)}
+              onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
+              onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
             <Field label="CITY" k="city" placeholder="City" />
             <div>
               <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#8C7B6B", marginBottom: "5px" }}>STATE</p>
-              <select value={form.state} onChange={set("state")} style={{ ...inp(false), appearance: "none", cursor: "pointer" }} onFocus={(e) => (e.target.style.borderColor = "#AB721E")} onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")}>
+              <select value={form.state} onChange={set("state")} style={{ ...inp(false), appearance: "none", cursor: "pointer" }}
+                onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
+                onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")}>
                 {STATES.map((s) => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -207,20 +213,20 @@ const ProfileSection = ({ profile, onUpdate }) => {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
         <div>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "30px", fontWeight: 400, color: "#1f1b15", marginBottom: "4px" }}>My Profile</h1>
-          <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "14px", fontStyle: "italic", color: "#8C7B6B" }}>Manage your personal information and account security.</p>
+          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "28px", fontWeight: 400, color: "#1f1b15", marginBottom: "4px" }}>My Profile</h1>
+          <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "14px", fontStyle: "italic", color: "#8C7B6B" }}>Manage your personal information.</p>
         </div>
         {!editing && (
           <button onClick={() => setEditing(true)}
             style={{ display: "flex", alignItems: "center", gap: "7px", padding: "10px 18px", border: "1px solid #1f1b15", backgroundColor: "transparent", color: "#1f1b15", fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", cursor: "pointer", transition: "all 0.2s" }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#1f1b15"; e.currentTarget.style.color = "#fff"; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#1f1b15"; }}>
-            <Icon name="edit" size={13} color="currentColor" /> EDIT PROFILE
+            <Icon name="edit" size={13} color="currentColor" /> EDIT
           </button>
         )}
       </div>
 
-      <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", padding: "24px" }}>
+      <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", padding: "20px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px", paddingBottom: "16px", borderBottom: "1px solid #F5E6D0" }}>
           <Icon name="profile" size={14} color="#AB721E" />
           <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", color: "#4A3728" }}>PERSONAL INFORMATION</span>
@@ -257,7 +263,7 @@ const ProfileSection = ({ profile, onUpdate }) => {
             </div>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "20px" }}>
             {[
               { label: "FULL NAME",     value: profile.name },
               { label: "EMAIL ADDRESS", value: profile.email || <span style={{ color: "#C4A882", fontStyle: "italic", fontSize: "13px" }}>Not added</span> },
@@ -300,7 +306,7 @@ const OrdersSection = () => {
   return (
     <div>
       <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "30px", fontWeight: 400, color: "#1f1b15", marginBottom: "4px" }}>My Orders</h1>
+        <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "28px", fontWeight: 400, color: "#1f1b15", marginBottom: "4px" }}>My Orders</h1>
         <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "14px", fontStyle: "italic", color: "#8C7B6B" }}>{orders.length} order{orders.length !== 1 ? "s" : ""} placed</p>
       </div>
 
@@ -318,8 +324,7 @@ const OrdersSection = () => {
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#C4A882")}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#E8DDD0")}>
 
-              {/* Header row — always visible */}
-              <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", flexWrap: "wrap", gap: "8px" }}
+              <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", flexWrap: "wrap", gap: "8px" }}
                 onClick={() => setExpanded(expanded === order._id ? null : order._id)}>
                 <div>
                   <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", color: "#8C7B6B", marginBottom: "4px" }}>
@@ -329,8 +334,8 @@ const OrdersSection = () => {
                     {fmtDate(order.createdAt)} · {order.items?.length} item{order.items?.length !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "16px", fontWeight: 600, color: "#1f1b15" }}>{fmtPrice(order.pricing?.total)}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "15px", fontWeight: 600, color: "#1f1b15" }}>{fmtPrice(order.pricing?.total)}</p>
                   <StatusBadge status={order.status} />
                   <span style={{ color: "#8C7B6B", display: "inline-flex", transform: expanded === order._id ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
                     <Icon name="chevron" size={14} color="#8C7B6B" />
@@ -338,9 +343,8 @@ const OrdersSection = () => {
                 </div>
               </div>
 
-              {/* Expanded detail */}
               {expanded === order._id && (
-                <div style={{ borderTop: "1px solid #F5E6D0", padding: "16px 20px" }}>
+                <div style={{ borderTop: "1px solid #F5E6D0", padding: "14px 16px" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "14px" }}>
                     {order.items?.map((item, i) => (
                       <div key={i} style={{ display: "flex", gap: "10px", backgroundColor: "#F9F3EB", padding: "10px", flex: "1 1 200px" }}>
@@ -409,7 +413,7 @@ const WishlistSection = () => {
   if (loading) return (
     <div>
       <Skel w="160px" h="34px" mb="24px" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "14px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "14px" }}>
         {[1,2,3,4].map((i) => <div key={i}><Skel w="100%" h="200px" mb="8px" /><Skel w="70%" h="13px" mb="5px" /><Skel w="40%" h="13px" /></div>)}
       </div>
     </div>
@@ -418,7 +422,7 @@ const WishlistSection = () => {
   return (
     <div>
       <div style={{ marginBottom: "24px" }}>
-        <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "30px", fontWeight: 400, color: "#1f1b15", marginBottom: "4px" }}>Wishlist</h1>
+        <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "28px", fontWeight: 400, color: "#1f1b15", marginBottom: "4px" }}>Wishlist</h1>
         <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "14px", fontStyle: "italic", color: "#8C7B6B" }}>{items.length} saved item{items.length !== 1 ? "s" : ""}</p>
       </div>
 
@@ -430,7 +434,7 @@ const WishlistSection = () => {
           <button onClick={() => navigate("/products")} style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", padding: "12px 24px", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none", cursor: "pointer" }}>EXPLORE COLLECTION</button>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "14px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "14px" }}>
           {items.map((item) => {
             const variant = item.variant || item;
             const variantId = variant._id;
@@ -462,7 +466,7 @@ const WishlistSection = () => {
 const AddressesSection = () => {
   const [addresses, setAddresses] = useState([]);
   const [loading,   setLoading]   = useState(true);
-  const [modal,     setModal]     = useState(null); // null | "add" | address object
+  const [modal,     setModal]     = useState(null);
 
   useEffect(() => {
     api.get(USER.ADDRESSES)
@@ -500,7 +504,7 @@ const AddressesSection = () => {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
         <div>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "30px", fontWeight: 400, color: "#1f1b15", marginBottom: "4px" }}>Addresses</h1>
+          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "28px", fontWeight: 400, color: "#1f1b15", marginBottom: "4px" }}>Addresses</h1>
           <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "14px", fontStyle: "italic", color: "#8C7B6B" }}>Manage your saved delivery addresses</p>
         </div>
         <button onClick={() => setModal("add")}
@@ -567,38 +571,81 @@ const AddressesSection = () => {
   );
 };
 
+// ── Nav config ────────────────────────────────────────────────────────────────
+const NAV = [
+  { id: "profile",   icon: "profile",  label: "MY PROFILE" },
+  { id: "orders",    icon: "orders",   label: "ORDERS" },
+  { id: "wishlist",  icon: "wishlist", label: "WISHLIST" },
+  { id: "addresses", icon: "address",  label: "ADDRESSES" },
+];
+
+// ── Mobile Bottom Tab Bar ─────────────────────────────────────────────────────
+const MobileTabBar = ({ activeTab, setActiveTab, onLogout }) => (
+  <div style={{
+    position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+    backgroundColor: "#fff", borderTop: "1px solid #E8DDD0",
+    display: "flex", alignItems: "stretch",
+    boxShadow: "0 -4px 20px rgba(43,33,18,0.08)",
+  }}>
+    {NAV.map((item) => {
+      const active = activeTab === item.id;
+      return (
+        <button key={item.id} onClick={() => setActiveTab(item.id)}
+          style={{
+            flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+            justifyContent: "center", gap: "4px", padding: "10px 4px",
+            backgroundColor: "transparent", border: "none", cursor: "pointer",
+            borderTop: active ? "2px solid #AB721E" : "2px solid transparent",
+            transition: "all 0.15s",
+          }}>
+          <Icon name={item.icon} size={18} color={active ? "#AB721E" : "#8C7B6B"} />
+          <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", color: active ? "#AB721E" : "#8C7B6B" }}>
+            {item.label.split(" ").pop()}
+          </span>
+        </button>
+      );
+    })}
+    <button onClick={onLogout}
+      style={{
+        flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", gap: "4px", padding: "10px 4px",
+        backgroundColor: "transparent", border: "none", borderTop: "2px solid transparent",
+        cursor: "pointer",
+      }}>
+      <Icon name="logout" size={18} color="#C4727A" />
+      <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", color: "#C4727A" }}>LOGOUT</span>
+    </button>
+  </div>
+);
+
 // ── Main Account Page ─────────────────────────────────────────────────────────
 const AccountPage = () => {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [profile,   setProfile]   = useState(null);
   const [loading,   setLoading]   = useState(true);
+  const [isMobile,  setIsMobile]  = useState(window.innerWidth < 1024);
 
   useEffect(() => {
-    const token = localStorage.getItem("naarisa-token"); // ← correct key
-    if (!token) { navigate("/auth?redirect=/account"); return; }
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem("naarisa-token");
+    if (!token) { navigate("/auth?redirect=/account"); return; }
     api.get(USER.PROFILE)
       .then((r) => { if (r.data.success) setProfile(r.data.data); })
-      .catch((err) => {
-        // interceptor handles 401 redirect automatically
-        console.error(err);
-      })
+      .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("naarisa-token"); // ← correct key
+    localStorage.removeItem("naarisa-token");
     localStorage.removeItem("naarisa-user");
     navigate("/");
   };
-
-  const NAV = [
-    { id: "profile",   icon: "profile",  label: "MY PROFILE" },
-    { id: "orders",    icon: "orders",   label: "ORDERS" },
-    { id: "wishlist",  icon: "wishlist", label: "WISHLIST" },
-    { id: "addresses", icon: "address",  label: "ADDRESSES" },
-  ];
 
   if (loading) return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -613,43 +660,70 @@ const AccountPage = () => {
 
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 20px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "24px", alignItems: "start" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: isMobile ? "20px 16px 80px" : "40px 20px" }}>
 
-          {/* ── Sidebar ── */}
-          <div style={{ position: "sticky", top: "24px" }}>
-            {/* Avatar */}
-            <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", padding: "24px 20px", textAlign: "center", marginBottom: "8px" }}>
-              <div style={{ width: "60px", height: "60px", borderRadius: "50%", backgroundColor: "#F5E6D0", border: "2px solid #C4A882", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "20px", fontWeight: 500, color: "#AB721E" }}>{initials(profile.name)}</span>
+        {/* ── Desktop: sidebar + content ── */}
+        {!isMobile && (
+          <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "24px", alignItems: "start" }}>
+            {/* Sidebar */}
+            <div style={{ position: "sticky", top: "24px" }}>
+              <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", padding: "24px 20px", textAlign: "center", marginBottom: "8px" }}>
+                <div style={{ width: "60px", height: "60px", borderRadius: "50%", backgroundColor: "#F5E6D0", border: "2px solid #C4A882", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                  <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "20px", fontWeight: 500, color: "#AB721E" }}>{initials(profile.name)}</span>
+                </div>
+                <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "17px", color: "#1f1b15", marginBottom: "6px" }}>{profile.name}</p>
+                <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#AB721E", backgroundColor: "#F5E6D0", padding: "2px 10px" }}>MEMBER</span>
               </div>
-              <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "17px", color: "#1f1b15", marginBottom: "6px" }}>{profile.name}</p>
-              <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#AB721E", backgroundColor: "#F5E6D0", padding: "2px 10px" }}>MEMBER</span>
+              <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", overflow: "hidden", marginBottom: "8px" }}>
+                {NAV.map((item) => (
+                  <NavItem key={item.id} icon={item.icon} label={item.label} active={activeTab === item.id} onClick={() => setActiveTab(item.id)} />
+                ))}
+              </div>
+              <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", overflow: "hidden" }}>
+                <NavItem icon="logout" label="LOGOUT" danger onClick={handleLogout} />
+              </div>
             </div>
 
-            {/* Nav */}
-            <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", overflow: "hidden", marginBottom: "8px" }}>
-              {NAV.map((item) => (
-                <NavItem key={item.id} icon={item.icon} label={item.label} active={activeTab === item.id} onClick={() => setActiveTab(item.id)} />
-              ))}
-            </div>
-
-            {/* Logout */}
-            <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", overflow: "hidden" }}>
-              <NavItem icon="logout" label="LOGOUT" danger onClick={handleLogout} />
+            {/* Content */}
+            <div>
+              {activeTab === "profile"   && <ProfileSection profile={profile} onUpdate={setProfile} />}
+              {activeTab === "orders"    && <OrdersSection />}
+              {activeTab === "wishlist"  && <WishlistSection />}
+              {activeTab === "addresses" && <AddressesSection />}
             </div>
           </div>
+        )}
 
-          {/* ── Content ── */}
+        {/* ── Mobile: profile header + content ── */}
+        {isMobile && (
           <div>
+            {/* Compact profile strip */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "14px 16px", marginBottom: "16px" }}>
+              <div style={{ width: "44px", height: "44px", borderRadius: "50%", backgroundColor: "#F5E6D0", border: "2px solid #C4A882", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "16px", fontWeight: 500, color: "#AB721E" }}>{initials(profile.name)}</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "16px", color: "#1f1b15", marginBottom: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.name}</p>
+                <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "9px", fontWeight: 700, letterSpacing: "0.12em", color: "#AB721E", backgroundColor: "#F5E6D0", padding: "2px 8px" }}>MEMBER</span>
+              </div>
+            </div>
+
+            {/* Active section label */}
+            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", color: "#8C7B6B", marginBottom: "12px" }}>
+              {NAV.find((n) => n.id === activeTab)?.label}
+            </p>
+
+            {/* Content */}
             {activeTab === "profile"   && <ProfileSection profile={profile} onUpdate={setProfile} />}
             {activeTab === "orders"    && <OrdersSection />}
             {activeTab === "wishlist"  && <WishlistSection />}
             {activeTab === "addresses" && <AddressesSection />}
           </div>
-
-        </div>
+        )}
       </div>
+
+      {/* Mobile bottom tab bar */}
+      {isMobile && <MobileTabBar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />}
     </div>
   );
 };

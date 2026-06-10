@@ -88,7 +88,7 @@ const MostLoved = () => {
               border: "1px solid #AB721E",
               color: "#AB721E",
             }}
-            onClick={() => navigate("/products")}
+            onClick={() => navigate("/best-sellers")}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = "#AB721E";
               e.currentTarget.style.color = "#fff";

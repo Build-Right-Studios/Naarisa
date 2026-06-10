@@ -54,18 +54,18 @@ const SkeletonCard = () => (
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
-
   const [hovered, setHovered] = useState(false);
+
+  const image = product.images?.[0]?.url;
+  const name = product.productId?.name;
+  const price = product.discountPrice ?? product.productId?.basePrice;
 
   return (
     <div
       onClick={() => navigate(`/product/${product.slug}`)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{
-        cursor: "pointer",
-        backgroundColor: "#fff",
-      }}
+      style={{ cursor: "pointer", backgroundColor: "#fff" }}
     >
       <div
         style={{
@@ -75,10 +75,10 @@ const ProductCard = ({ product }) => {
           backgroundColor: "#F5E6D0",
         }}
       >
-        {product.image ? (
+        {image ? (
           <img
-            src={product.image}
-            alt={product.name}
+            src={image}
+            alt={name}
             style={{
               width: "100%",
               height: "100%",
@@ -118,16 +118,10 @@ const ProductCard = ({ product }) => {
             WebkitBoxOrient: "vertical",
           }}
         >
-          {product.name}
+          {name}
         </p>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span
             style={{
               fontFamily: "'Jost', sans-serif",
@@ -136,18 +130,12 @@ const ProductCard = ({ product }) => {
               color: "#1f1b15",
             }}
           >
-            ₹{product.price?.toLocaleString("en-IN")}
+            ₹{price?.toLocaleString("en-IN")}
           </span>
         </div>
 
         {product.color?.hex && (
-          <div
-            style={{
-              display: "flex",
-              gap: "5px",
-              marginTop: "8px",
-            }}
-          >
+          <div style={{ display: "flex", gap: "5px", marginTop: "8px" }}>
             <div
               title={product.color.name}
               style={{
@@ -182,7 +170,7 @@ const BestSellersPage = () => {
 
         console.log("Best Sellers:", res.data);
 
-        setProducts(res.data?.data?.products || []);
+        setProducts(res.data?.data || []);
       } catch (err) {
         console.error(err);
         setProducts([]);
@@ -297,10 +285,7 @@ const BestSellersPage = () => {
             ))
           ) : products.length ? (
             products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-              />
+              <ProductCard key={product._id} product={product} />
             ))
           ) : (
             <div

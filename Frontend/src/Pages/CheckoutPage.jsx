@@ -28,20 +28,15 @@ const Field = ({ label, error, children }) => (
 );
 
 const inputStyle = (hasError) => ({
-  width: "100%",
-  padding: "12px 14px",
-  fontFamily: "'Jost', sans-serif",
-  fontSize: "14px",
-  color: "#1f1b15",
+  width: "100%", padding: "12px 14px",
+  fontFamily: "'Jost', sans-serif", fontSize: "14px", color: "#1f1b15",
   backgroundColor: "#FDF8F1",
   border: hasError ? "1px solid #C4727A" : "1px solid #E8DDD0",
-  outline: "none",
-  boxSizing: "border-box",
-  transition: "border-color 0.2s",
+  outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
 });
 
 // ── Order Summary Sidebar ─────────────────────────────────────────────────────
-const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, gst, total, onComplete, loading }) => (
+const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, total, onComplete, loading }) => (
   <div style={{ backgroundColor: "#F5E6D0", border: "1px solid #E8DDD0", padding: "28px", position: "sticky", top: "24px" }}>
     <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: "22px", fontWeight: 400, color: "#1f1b15", marginBottom: "20px" }}>
       Order Summary
@@ -55,8 +50,8 @@ const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, gst, tot
             {item.image
               ? <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "8px", color: "#8C7B6B", letterSpacing: "0.1em" }}>N</span>
-              </div>
+                  <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "8px", color: "#8C7B6B", letterSpacing: "0.1em" }}>N</span>
+                </div>
             }
           </div>
           <div style={{ flex: 1 }}>
@@ -78,7 +73,6 @@ const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, gst, tot
         ...(appliedCoupon
           ? [{ label: `Discount (${appliedCoupon.code})`, value: `− ₹${Math.round(discountAmount).toLocaleString("en-IN")}`, accent: true }]
           : []),
-        { label: "Estimated Tax", value: `₹${gst.toLocaleString("en-IN")}`, accent: false },
       ].map(({ label, value, accent }) => (
         <div key={label} style={{ display: "flex", justifyContent: "space-between" }}>
           <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#4A3728" }}>{label}</span>
@@ -121,34 +115,29 @@ const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, gst, tot
 const CheckoutPage = () => {
   const navigate = useNavigate();
 
-  // ── Stores ──
-  const items = useCartStore((state) => state.items);
-  const clearCart = useCartStore((state) => state.clearCart);
-  const { subtotal, discountAmount, appliedCoupon, gst, total } = useCheckoutStore();
+  const items             = useCartStore((state) => state.items);
+  const clearCart         = useCartStore((state) => state.clearCart);
+  const { subtotal, discountAmount, appliedCoupon, total } = useCheckoutStore();
   const clearOrderSummary = useCheckoutStore((state) => state.clearOrderSummary);
 
-  // ── Auth ──
   const [user] = useState(() => {
     try { return JSON.parse(localStorage.getItem("naarisa-user")) || null; }
     catch { return null; }
   });
 
-  // ── Form state ──
   const [form, setForm] = useState(() => {
     const firstName = user?.name?.split(" ")[0] || "";
-    const lastName = user?.name?.split(" ").slice(1).join(" ") || "";
-    const phone = user?.phone || "";
+    const lastName  = user?.name?.split(" ").slice(1).join(" ") || "";
+    const phone     = user?.phone || "";
     return { firstName, lastName, street: "", city: "", state: "Maharashtra", pinCode: "", phone, saveInfo: false };
   });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-
-  const [addresses, setAddresses] = useState([]);
+  const [errors,            setErrors]           = useState({});
+  const [loading,           setLoading]           = useState(false);
+  const [addresses,         setAddresses]         = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
-  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [showAddressForm,   setShowAddressForm]   = useState(false);
   const skipCartRedirect = useRef(false);
 
-  // ── Redirects ──
   useEffect(() => {
     const token = localStorage.getItem("naarisa-token");
     if (!token || !user) navigate("/auth?redirect=/checkout");
@@ -159,62 +148,49 @@ const CheckoutPage = () => {
     if (items.length === 0) navigate("/cart");
   }, [items]);
 
-  // ── Fetch saved addresses ──
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
         const res = await api.get(USER.ADDRESSES);
-
         const activeAddresses = res.data?.data || [];
-
         setAddresses(activeAddresses);
 
         if (activeAddresses.length > 0) {
-          // Auto-select default address, or first one
-          const defaultAddress =
-            activeAddresses.find((a) => a.isDefault) || activeAddresses[0];
-
+          const defaultAddress = activeAddresses.find((a) => a.isDefault) || activeAddresses[0];
           setSelectedAddressId(defaultAddress._id);
           setShowAddressForm(false);
-
           const nameParts = defaultAddress.name?.split(" ") || [];
           setForm((prev) => ({
             ...prev,
             firstName: nameParts[0] || "",
-            lastName: nameParts.slice(1).join(" ") || "",
-            street: defaultAddress.line1 || "",
-            city: defaultAddress.city || "",
-            state: defaultAddress.state || "Maharashtra",
-            pinCode: defaultAddress.pincode || "",
-            phone: defaultAddress.phone || prev.phone,
+            lastName:  nameParts.slice(1).join(" ") || "",
+            street:    defaultAddress.line1    || "",
+            city:      defaultAddress.city     || "",
+            state:     defaultAddress.state    || "Maharashtra",
+            pinCode:   defaultAddress.pincode  || "",
+            phone:     defaultAddress.phone    || prev.phone,
           }));
         } else {
-          // No saved addresses — show the form directly
           setShowAddressForm(true);
         }
       } catch (err) {
         console.error("Failed to fetch addresses", err);
-        // On error, fall back to the manual form
         setShowAddressForm(true);
       }
     };
-
     fetchAddresses();
   }, []);
 
-  // ── Validation ──
-  // Skip field validation entirely when a saved address is already selected
   const validate = () => {
     if (selectedAddressId && !showAddressForm) return true;
-
     const e = {};
-    if (!form.firstName.trim()) e.firstName = "Required";
-    if (!form.lastName.trim()) e.lastName = "Required";
-    if (!form.street.trim()) e.street = "Required";
-    if (!form.city.trim()) e.city = "Required";
-    if (!form.state) e.state = "Required";
-    if (!/^\d{6}$/.test(form.pinCode)) e.pinCode = "Enter a valid 6-digit PIN";
-    if (!/^[6-9]\d{9}$/.test(form.phone.replace(/\s/g, ""))) e.phone = "Enter a valid 10-digit mobile number";
+    if (!form.firstName.trim())                             e.firstName = "Required";
+    if (!form.lastName.trim())                              e.lastName  = "Required";
+    if (!form.street.trim())                                e.street    = "Required";
+    if (!form.city.trim())                                  e.city      = "Required";
+    if (!form.state)                                        e.state     = "Required";
+    if (!/^\d{6}$/.test(form.pinCode))                     e.pinCode   = "Enter a valid 6-digit PIN";
+    if (!/^[6-9]\d{9}$/.test(form.phone.replace(/\s/g, ""))) e.phone  = "Enter a valid 10-digit mobile number";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -225,70 +201,58 @@ const CheckoutPage = () => {
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
-  // ── Razorpay flow ─────────────────────────────────────────────────────────
   const handleCompleteOrder = async () => {
     if (!validate()) return;
     setLoading(true);
-
-    console.log("Selected Address ID:", selectedAddressId);
-    console.log("Show Address Form:", showAddressForm);
-    console.log("Form State:", form);
 
     try {
       const payload = {
         items: items.map((item) => ({
           productId: item.productId,
           variantId: item.variantId,
-          size: item.size,
-          quantity: item.qty,
+          size:      item.size,
+          quantity:  item.qty,
         })),
         address: {
-          name: `${form.firstName} ${form.lastName}`.trim(),
-          phone: form.phone.replace(/\s/g, ""),
-          line1: form.street,
-          line2: "",
-          city: form.city,
-          state: form.state,
+          name:    `${form.firstName} ${form.lastName}`.trim(),
+          phone:   form.phone.replace(/\s/g, ""),
+          line1:   form.street,
+          line2:   "",
+          city:    form.city,
+          state:   form.state,
           pincode: form.pinCode,
           country: "India",
         },
         couponCode: appliedCoupon?.code || null,
       };
 
-      console.log("ORDER PAYLOAD:", JSON.stringify(payload, null, 2));
-      console.log("AUTH TOKEN:", localStorage.getItem("naarisa-token"));
-
       const orderRes = await api.post(ORDER.PLACE, payload);
-
       const { razorpayOrderId, amount, currency, keyId } = orderRes.data;
 
       const options = {
-        key: keyId,
+        key:         keyId,
         amount,
-        currency: currency || "INR",
-        name: "Naarisa",
+        currency:    currency || "INR",
+        name:        "Naarisa",
         description: "Artisanal Craftsmanship",
-        order_id: razorpayOrderId,
+        order_id:    razorpayOrderId,
         prefill: {
-          name: `${form.firstName} ${form.lastName}`.trim(),
+          name:    `${form.firstName} ${form.lastName}`.trim(),
           contact: form.phone.replace(/\s/g, ""),
-          email: user?.email || "",
+          email:   user?.email || "",
         },
         theme: { color: "#AB721E" },
 
         handler: async (response) => {
           try {
             const verifyRes = await api.post(PAYMENT.VERIFY, {
-              razorpayOrderId: response.razorpay_order_id,
+              razorpayOrderId:   response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
             });
             skipCartRedirect.current = true;
-
             clearCart();
-            alert("Cleared Cart")
             clearOrderSummary();
-            alert("Cleared Order Summary")
             navigate(`/order-success/${verifyRes.data.orderId}`);
           } catch (verifyErr) {
             console.error("Payment verification failed:", verifyErr);
@@ -297,9 +261,7 @@ const CheckoutPage = () => {
           }
         },
 
-        modal: {
-          ondismiss: () => setLoading(false),
-        },
+        modal: { ondismiss: () => setLoading(false) },
       };
 
       const rzp = new window.Razorpay(options);
@@ -322,7 +284,7 @@ const CheckoutPage = () => {
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
 
-      {/* ── Minimal Header ── */}
+      {/* Minimal Header */}
       <div style={{ borderBottom: "1px solid #E8DDD0", backgroundColor: "#F9F3EB", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span onClick={() => navigate("/")} style={{ fontFamily: "'EB Garamond', serif", fontSize: "22px", fontWeight: 400, color: "#1f1b15", cursor: "pointer", letterSpacing: "0.02em" }}>
           Naarisa
@@ -338,14 +300,14 @@ const CheckoutPage = () => {
         </div>
       </div>
 
-      {/* ── Body ── */}
+      {/* Body */}
       <div className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6 md:px-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_420px] lg:items-start">
 
-          {/* ══ LEFT COLUMN — Addresses + Form ══ */}
+          {/* Left — Addresses + Form */}
           <div>
 
-            {/* ── Saved Addresses Block ── */}
+            {/* Saved Addresses */}
             {addresses.length > 0 && (
               <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "24px", marginBottom: "24px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
@@ -360,13 +322,9 @@ const CheckoutPage = () => {
                       setErrors({});
                       setForm({
                         firstName: user?.name?.split(" ")[0] || "",
-                        lastName: user?.name?.split(" ").slice(1).join(" ") || "",
-                        street: "",
-                        city: "",
-                        state: "Maharashtra",
-                        pinCode: "",
-                        phone: user?.phone || "",
-                        saveInfo: false,
+                        lastName:  user?.name?.split(" ").slice(1).join(" ") || "",
+                        street: "", city: "", state: "Maharashtra", pinCode: "",
+                        phone: user?.phone || "", saveInfo: false,
                       });
                     }}
                     style={{ border: "none", background: "transparent", cursor: "pointer", color: "#AB721E", fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 600, letterSpacing: "0.05em" }}
@@ -383,23 +341,21 @@ const CheckoutPage = () => {
                         setSelectedAddressId(address._id);
                         setShowAddressForm(false);
                         setErrors({});
-
                         const nameParts = address.name?.split(" ") || [];
                         setForm((prev) => ({
                           ...prev,
                           firstName: nameParts[0] || "",
-                          lastName: nameParts.slice(1).join(" ") || "",
-                          street: address.line1 || "",
-                          city: address.city || "",
-                          state: address.state || "Maharashtra",
-                          pinCode: address.pincode || "",
-                          phone: address.phone || "",
+                          lastName:  nameParts.slice(1).join(" ") || "",
+                          street:    address.line1   || "",
+                          city:      address.city    || "",
+                          state:     address.state   || "Maharashtra",
+                          pinCode:   address.pincode || "",
+                          phone:     address.phone   || "",
                         }));
                       }}
                       style={{
                         border: selectedAddressId === address._id ? "2px solid #AB721E" : "1px solid #E8DDD0",
-                        padding: "14px",
-                        cursor: "pointer",
+                        padding: "14px", cursor: "pointer",
                         backgroundColor: selectedAddressId === address._id ? "#FFF8ED" : "#fff",
                         transition: "border-color 0.2s, background-color 0.2s",
                       }}
@@ -431,7 +387,7 @@ const CheckoutPage = () => {
               </div>
             )}
 
-            {/* ── New / Manual Address Form ── */}
+            {/* New / Manual Address Form */}
             {(showAddressForm || addresses.length === 0) && (
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
@@ -446,7 +402,6 @@ const CheckoutPage = () => {
                       type="button"
                       onClick={() => {
                         setShowAddressForm(false);
-                        // Re-select first address if none selected
                         if (!selectedAddressId && addresses.length > 0) {
                           const first = addresses.find((a) => a.isDefault) || addresses[0];
                           setSelectedAddressId(first._id);
@@ -460,96 +415,61 @@ const CheckoutPage = () => {
                 </div>
 
                 <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "28px", display: "flex", flexDirection: "column", gap: "18px" }}>
-
-                  {/* Name row */}
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="FIRST NAME" error={errors.firstName}>
-                      <input
-                        value={form.firstName}
-                        onChange={handleChange("firstName")}
-                        placeholder="Enter first name"
+                      <input value={form.firstName} onChange={handleChange("firstName")} placeholder="Enter first name"
                         style={inputStyle(errors.firstName)}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.firstName ? "#C4727A" : "#E8DDD0")}
-                      />
+                        onBlur={(e) => (e.target.style.borderColor = errors.firstName ? "#C4727A" : "#E8DDD0")} />
                     </Field>
                     <Field label="LAST NAME" error={errors.lastName}>
-                      <input
-                        value={form.lastName}
-                        onChange={handleChange("lastName")}
-                        placeholder="Enter last name"
+                      <input value={form.lastName} onChange={handleChange("lastName")} placeholder="Enter last name"
                         style={inputStyle(errors.lastName)}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.lastName ? "#C4727A" : "#E8DDD0")}
-                      />
+                        onBlur={(e) => (e.target.style.borderColor = errors.lastName ? "#C4727A" : "#E8DDD0")} />
                     </Field>
                   </div>
 
-                  {/* Street */}
                   <Field label="STREET ADDRESS" error={errors.street}>
-                    <input
-                      value={form.street}
-                      onChange={handleChange("street")}
-                      placeholder="House number and street name"
+                    <input value={form.street} onChange={handleChange("street")} placeholder="House number and street name"
                       style={inputStyle(errors.street)}
                       onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                      onBlur={(e) => (e.target.style.borderColor = errors.street ? "#C4727A" : "#E8DDD0")}
-                    />
+                      onBlur={(e) => (e.target.style.borderColor = errors.street ? "#C4727A" : "#E8DDD0")} />
                   </Field>
 
-                  {/* City / State / PIN */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <Field label="CITY" error={errors.city}>
-                      <input
-                        value={form.city}
-                        onChange={handleChange("city")}
-                        placeholder="City"
+                      <input value={form.city} onChange={handleChange("city")} placeholder="City"
                         style={inputStyle(errors.city)}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.city ? "#C4727A" : "#E8DDD0")}
-                      />
+                        onBlur={(e) => (e.target.style.borderColor = errors.city ? "#C4727A" : "#E8DDD0")} />
                     </Field>
                     <Field label="STATE" error={errors.state}>
-                      <select
-                        value={form.state}
-                        onChange={handleChange("state")}
+                      <select value={form.state} onChange={handleChange("state")}
                         style={{ ...inputStyle(errors.state), appearance: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238C7B6B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center", paddingRight: "32px", cursor: "pointer" }}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")}
-                      >
+                        onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")}>
                         {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </Field>
                     <Field label="PIN CODE" error={errors.pinCode}>
-                      <input
-                        value={form.pinCode}
-                        onChange={handleChange("pinCode")}
-                        placeholder="6-digit code"
-                        maxLength={6}
+                      <input value={form.pinCode} onChange={handleChange("pinCode")} placeholder="6-digit code" maxLength={6}
                         style={inputStyle(errors.pinCode)}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.pinCode ? "#C4727A" : "#E8DDD0")}
-                      />
+                        onBlur={(e) => (e.target.style.borderColor = errors.pinCode ? "#C4727A" : "#E8DDD0")} />
                     </Field>
                   </div>
 
-                  {/* Phone */}
                   <Field label="PHONE NUMBER" error={errors.phone}>
                     <div style={{ position: "relative" }}>
                       <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", fontFamily: "'Jost', sans-serif", fontSize: "14px", color: "#8C7B6B", pointerEvents: "none" }}>+91</span>
-                      <input
-                        value={form.phone}
-                        onChange={handleChange("phone")}
-                        placeholder="00000 00000"
-                        maxLength={11}
+                      <input value={form.phone} onChange={handleChange("phone")} placeholder="00000 00000" maxLength={11}
                         style={{ ...inputStyle(errors.phone), paddingLeft: "44px" }}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.phone ? "#C4727A" : "#E8DDD0")}
-                      />
+                        onBlur={(e) => (e.target.style.borderColor = errors.phone ? "#C4727A" : "#E8DDD0")} />
                     </div>
                   </Field>
 
-                  {/* Save info */}
                   <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
                     <div
                       style={{ width: "18px", height: "18px", flexShrink: 0, border: form.saveInfo ? "none" : "1.5px solid #C4A882", backgroundColor: form.saveInfo ? "#2B2112" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
@@ -565,29 +485,25 @@ const CheckoutPage = () => {
                       Save this information for next time
                     </span>
                   </label>
-
                 </div>
               </>
             )}
-
           </div>
 
-          {/* ══ RIGHT COLUMN — Order Summary ══ */}
+          {/* Right — Order Summary */}
           <OrderSummary
             items={items}
             subtotal={subtotal}
             discountAmount={discountAmount}
             appliedCoupon={appliedCoupon}
-            gst={gst}
             total={total}
             onComplete={handleCompleteOrder}
             loading={loading}
           />
-
         </div>
       </div>
 
-      {/* ── Sticky Complete Order — Mobile ── */}
+      {/* Sticky Complete Order — Mobile */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
         style={{ backgroundColor: "#F9F3EB", borderTop: "1px solid #E8DDD0", padding: "12px 16px", boxShadow: "0 -4px 20px rgba(43,33,18,0.08)" }}

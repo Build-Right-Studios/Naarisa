@@ -13,6 +13,10 @@ import logo from "../../assets/Naarisa logo icon.png";
 
 const navLinks = [
   {
+    title: "SHOP ALL",
+    path: "/all-products",
+  },
+  {
     title: "NEW IN",
     path: "/new-in",
   },
@@ -44,10 +48,6 @@ const navLinks = [
   {
     title: "OUR STORY",
     path: "/about",
-  },
-  {
-    title: "WORKWEAVE",
-    path: "/workweave",
   },
 ];
 

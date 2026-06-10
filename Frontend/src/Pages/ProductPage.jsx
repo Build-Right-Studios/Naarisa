@@ -4,6 +4,7 @@ import { BASE, PRODUCT, USER } from "../Constants/apiRoutes.js";
 import api from "../utils/axiosInstance.js";
 import useInView from "../utils/useInView.js";
 import useCartStore from "../Store/useCartStore.js";
+import sizeChart from "../assets/Size Chart.jpeg";
 
 // ── Accordion ─────────────────────────────────────────────────────────────────
 const Accordion = ({ title, content }) => {
@@ -330,6 +331,65 @@ const WriteReviewModal = ({ variantId, onClose, onSubmitted }) => {
   );
 };
 
+// ── Size Chart Modal ──────────────────────────────────────────────────────────
+const SizeChartModal = ({ onClose }) => {
+  useEffect(() => {
+    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8"
+      style={{ backgroundColor: "rgba(43,33,18,0.6)", backdropFilter: "blur(6px)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="relative">
+        <button
+          onClick={onClose}
+          aria-label="Close size chart"
+          style={{
+            position: "absolute",
+            top: "-14px",
+            right: "-14px",
+            zIndex: 10,
+            width: "30px",
+            height: "30px",
+            borderRadius: "50%",
+            backgroundColor: "#2B2112",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F5E6D0" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+        <img
+          src={sizeChart}
+          alt="Size Chart"
+          style={{
+            display: "block",
+            maxWidth: "90vw",
+            maxHeight: "90vh",
+            width: "auto",
+            height: "auto",
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 // ── Main Component ────────────────────────────────────────────────────────────
 const ProductPage = () => {
   const { slug } = useParams();
@@ -345,6 +405,7 @@ const ProductPage = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [toastVisible, setToastVisible] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [showSizeChart, setShowSizeChart] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState([]);
@@ -416,42 +477,15 @@ const ProductPage = () => {
   );
 
   const { product, currentVariant, allVariants } = data;
-  const images = currentVariant?.images || currentVariant?._doc?.images || [];
-  const sizes = currentVariant?.sizes || currentVariant?._doc?.sizes || [];
-  const discount = product.basePrice && currentVariant.discountPrice
-    ? Math.round(((product.basePrice - currentVariant.discountPrice) / product.basePrice) * 100)
+  const doc = currentVariant?._doc || currentVariant;
+  const images = doc?.images || [];
+  const sizes = doc?.sizes || [];
+  const discountPrice = doc?.discountPrice;
+  const discount = product.basePrice && discountPrice
+    ? Math.round(((product.basePrice - discountPrice) / product.basePrice) * 100)
     : null;
-  const totalStock = sizes.reduce((sum, s) => sum + s.quantity, 0);
+  const totalStock = sizes.reduce((sum, s) => sum + s.quantity, 0);  // sizes already uses doc now ✓
   const lowStock = totalStock > 0 && totalStock <= 5;
-
-  // const handleAddToCart = () => {
-  //   if (!selectedSize) {
-  //     setSizeError(true);
-  //     setTimeout(() => setSizeError(false), 2000);
-  //     return;
-  //   }
-  //   console.log("Added To cart Data : ");
-  //   console.log("productId:", product._id);
-  //   console.log("variantId:", currentVariant._id)
-  //   console.log("name:", product.name)
-  //   console.log("color:", currentVariant.color?.name || "")
-  //   console.log("size:", selectedSize)
-  //   console.log("price:", currentVariant.discountPrice || product.basePrice)
-  //   console.log("image:", images[0]?.url || null)
-  //   console.log("slug:", currentVariant.slug)
-  //   addItem({
-  //     productId: product._id,
-  //     variantId: currentVariant._id,
-  //     name: product.name,
-  //     color: currentVariant.color?.name || "",
-  //     size: selectedSize,
-  //     price: currentVariant.discountPrice || product.basePrice,
-  //     image: images[0]?.url || null,
-  //     slug: currentVariant.slug,
-  //   });
-  //   setToastVisible(true);
-  //   setTimeout(() => setToastVisible(false), 2000);
-  // };
 
   const handleAddToCart = () => {
     if (!selectedSize) {
@@ -525,6 +559,10 @@ const ProductPage = () => {
         />
       )}
 
+      {showSizeChart && (
+        <SizeChartModal onClose={() => setShowSizeChart(false)} />
+      )}
+
       {/* ── Breadcrumb ── */}
       <div className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:px-10 xl:px-12">
         <p className="text-[11px] uppercase tracking-[0.14em]" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>
@@ -571,7 +609,7 @@ const ProductPage = () => {
                     <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "#8C7B6B" }}>Naarisa</span>
                   </div>
                 )}
-                {currentVariant.isActive && (
+                {doc?.isActive && (
                   <div className="absolute left-0 top-4 px-3 py-1.5" style={{ backgroundColor: "#2B2112", fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#F5E6D0" }}>
                     NEW COLLECTION
                   </div>
@@ -598,9 +636,9 @@ const ProductPage = () => {
 
             <div className="mb-4 flex items-center gap-3 flex-wrap">
               <span className="text-[22px] font-semibold sm:text-[24px]" style={{ fontFamily: "'Jost', sans-serif", color: "#1f1b15" }}>
-                ₹{(currentVariant.discountPrice || product.basePrice)?.toLocaleString("en-IN")}
+                ₹{(discountPrice || product.basePrice)?.toLocaleString("en-IN")}
               </span>
-              {currentVariant.discountPrice && currentVariant.discountPrice < product.basePrice && (
+              {discountPrice && discountPrice < product.basePrice && (
                 <>
                   <span className="text-[15px] line-through" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>
                     ₹{product.basePrice?.toLocaleString("en-IN")}
@@ -612,10 +650,10 @@ const ProductPage = () => {
               )}
             </div>
 
-            <div className="mb-4 flex items-center justify-between px-4 py-3" style={{ backgroundColor: "#F5E6D0", border: "1px solid #E8DDD0" }}>
+            {/* <div className="mb-4 flex items-center justify-between px-4 py-3" style={{ backgroundColor: "#F5E6D0", border: "1px solid #E8DDD0" }}>
               <span className="text-[12px] font-normal" style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}>Flat discount on first order</span>
               <span className="px-3 py-1 text-[11px] font-bold" style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "#2B2112", color: "#F5E6D0", letterSpacing: "0.08em" }}>EXTRA 10% OFF</span>
-            </div>
+            </div> */}
 
             {lowStock && (
               <div className="mb-4 flex items-center gap-2">
@@ -654,7 +692,13 @@ const ProductPage = () => {
             <div className="mb-6">
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>Select Size</p>
-                <button className="text-[11px] font-bold uppercase tracking-[0.14em] underline hover:text-[#C47B1E] transition-colors" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>Size Chart</button>
+                <button
+                  onClick={() => setShowSizeChart(true)}
+                  className="text-[11px] font-bold uppercase tracking-[0.14em] transition-colors hover:text-[#C47B1E]"
+                  style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}
+                >
+                  Size Chart
+                </button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {sizes.map((s) => {
@@ -770,7 +814,7 @@ const ProductPage = () => {
             ))}
           </div>
         ) : (
-          <div className="py-12 text-center" style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff" }}>
+          <div className="py-8 text-left">
             <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "18px", color: "#8C7B6B" }}>
               No reviews yet for this variant.
             </p>

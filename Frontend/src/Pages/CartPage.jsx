@@ -78,28 +78,10 @@ const CouponCard = ({ coupon, onApply, appliedCode, subtotal }) => {
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span
-              style={{
-                fontFamily: "'Jost', sans-serif",
-                fontSize: "13px",
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                color: "#1f1b15",
-                backgroundColor: "#F5E6D0",
-                padding: "2px 8px",
-              }}
-            >
+            <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em", color: "#1f1b15", backgroundColor: "#F5E6D0", padding: "2px 8px" }}>
               {coupon.code}
             </span>
-            <span
-              style={{
-                fontFamily: "'Jost', sans-serif",
-                fontSize: "11px",
-                fontWeight: 700,
-                color: "#2D6B5A",
-                letterSpacing: "0.08em",
-              }}
-            >
+            <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, color: "#2D6B5A", letterSpacing: "0.08em" }}>
               {discountLabel}
             </span>
           </div>
@@ -118,22 +100,15 @@ const CouponCard = ({ coupon, onApply, appliedCode, subtotal }) => {
           onClick={() => isEligible && onApply(coupon)}
           disabled={!isEligible}
           style={{
-            fontFamily: "'Jost', sans-serif",
-            fontSize: "11px",
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            padding: "7px 14px",
-            flexShrink: 0,
-            cursor: isEligible ? "pointer" : "not-allowed",
-            transition: "all 0.2s",
+            fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
+            padding: "7px 14px", flexShrink: 0,
+            cursor: isEligible ? "pointer" : "not-allowed", transition: "all 0.2s",
             backgroundColor: isApplied ? "#2B2112" : "transparent",
             color: isApplied ? "#F5E6D0" : "#AB721E",
             border: isApplied ? "1px solid #2B2112" : "1px solid #AB721E",
           }}
         >
-          {isApplied ? (
-            <span className="flex items-center gap-1.5"><CheckIcon /> APPLIED</span>
-          ) : "APPLY"}
+          {isApplied ? <span className="flex items-center gap-1.5"><CheckIcon /> APPLIED</span> : "APPLY"}
         </button>
       </div>
     </div>
@@ -144,7 +119,6 @@ const CouponCard = ({ coupon, onApply, appliedCode, subtotal }) => {
 const CartItem = ({ item, onRemove, onQtyChange }) => (
   <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", padding: "16px", marginBottom: "12px" }}>
     <div className="flex gap-4">
-      {/* Image */}
       <div style={{ width: "90px", aspectRatio: "3/4", flexShrink: 0, overflow: "hidden", backgroundColor: "#F5E6D0" }}>
         {item.image ? (
           <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -155,7 +129,6 @@ const CartItem = ({ item, onRemove, onQtyChange }) => (
         )}
       </div>
 
-      {/* Details */}
       <div className="flex-1 flex flex-col justify-between min-w-0">
         <div>
           <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: "17px", fontWeight: 400, color: "#1f1b15", lineHeight: 1.3, marginBottom: "4px" }}>
@@ -166,9 +139,7 @@ const CartItem = ({ item, onRemove, onQtyChange }) => (
           </p>
         </div>
 
-        {/* Price + Controls */}
         <div className="flex items-end justify-between mt-3 flex-wrap gap-2">
-          {/* Qty stepper */}
           <div className="flex items-center" style={{ border: "1px solid #E8DDD0", backgroundColor: "#F9F3EB" }}>
             <button
               onClick={() => onQtyChange(item.id, item.qty - 1)}
@@ -183,7 +154,6 @@ const CartItem = ({ item, onRemove, onQtyChange }) => (
             >+</button>
           </div>
 
-          {/* Price + Remove */}
           <div className="flex items-center gap-4">
             <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "16px", fontWeight: 600, color: "#1f1b15" }}>
               ₹{(item.price * item.qty).toLocaleString("en-IN")}
@@ -231,20 +201,17 @@ const EmptyCart = ({ navigate }) => (
 const CartPage = () => {
   const navigate = useNavigate();
 
-  // ── Zustand stores ──
   const items           = useCartStore((state) => state.items);
   const removeItem      = useCartStore((state) => state.removeItem);
   const updateQty       = useCartStore((state) => state.updateQty);
   const setOrderSummary = useCheckoutStore((state) => state.setOrderSummary);
 
-  // ── Local state ──
   const [websiteCoupons, setWebsiteCoupons] = useState([]);
   const [appliedCoupon,  setAppliedCoupon]  = useState(null);
   const [manualCode,     setManualCode]     = useState("");
   const [couponError,    setCouponError]    = useState("");
   const [couponsLoading, setCouponsLoading] = useState(true);
 
-  // ── Fetch website coupons ──
   useEffect(() => {
     const fetchCoupons = async () => {
       try {
@@ -259,16 +226,14 @@ const CartPage = () => {
     fetchCoupons();
   }, []);
 
-  // ── Drop applied coupon if cart no longer meets min order ──
+  // Drop coupon if cart no longer meets minimum order value
   useEffect(() => {
     if (appliedCoupon && subtotal < (appliedCoupon.minOrderValue || 0)) {
       setAppliedCoupon(null);
     }
   }, [items]);
 
-  // ── Handlers ──
-  const handleRemove = (id) => removeItem(id);
-
+  const handleRemove    = (id) => removeItem(id);
   const handleQtyChange = (id, newQty) => updateQty(id, newQty);
 
   const handleApplyCoupon = (coupon) => {
@@ -295,7 +260,7 @@ const CartPage = () => {
     setManualCode("");
   };
 
-  // ── Calculations ──
+  // ── Calculations (no tax) ──
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
   const discountAmount = appliedCoupon
@@ -304,13 +269,10 @@ const CartPage = () => {
       : Math.min(appliedCoupon.discountValue, subtotal)
     : 0;
 
-  const afterDiscount = subtotal - discountAmount;
-  const gst           = Math.round(afterDiscount * 0.12);
-  const total         = afterDiscount + gst;
+  const total = subtotal - discountAmount;
 
-  // ── Navigate to checkout — persists order summary first ──
   const handleCheckout = () => {
-    setOrderSummary({ subtotal, discountAmount, appliedCoupon, gst, total });
+    setOrderSummary({ subtotal, discountAmount, appliedCoupon, total });
     navigate("/checkout");
   };
 
@@ -319,7 +281,7 @@ const CartPage = () => {
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }} className="pb-28 lg:pb-0">
 
-      {/* ── Breadcrumb ── */}
+      {/* Breadcrumb */}
       <div className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:px-10 xl:px-12">
         <p className="text-[11px] uppercase tracking-[0.14em]" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>
           <span className="cursor-pointer hover:text-[#C47B1E] transition-colors" onClick={() => navigate("/")}>Home</span>
@@ -328,7 +290,7 @@ const CartPage = () => {
         </p>
       </div>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="mx-auto max-w-[1200px] px-4 pt-4 pb-6 sm:px-6 md:px-10 xl:px-12">
         <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "clamp(26px, 4vw, 38px)", fontWeight: 400, color: "#1f1b15" }}>
           Your Cart{" "}
@@ -338,11 +300,11 @@ const CartPage = () => {
         </h1>
       </div>
 
-      {/* ── Main Grid ── */}
+      {/* Main Grid */}
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-10 xl:px-12">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] lg:gap-10 lg:items-start">
 
-          {/* ══ LEFT — Cart Items ══ */}
+          {/* Left — Cart Items */}
           <div>
             {items.map((item) => (
               <CartItem key={item.id} item={item} onRemove={handleRemove} onQtyChange={handleQtyChange} />
@@ -358,10 +320,10 @@ const CartPage = () => {
             </button>
           </div>
 
-          {/* ══ RIGHT — Summary Panel ══ */}
+          {/* Right — Summary Panel */}
           <div className="lg:sticky lg:top-24">
 
-            {/* ── Offers & Coupons ── */}
+            {/* Offers & Coupons */}
             <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "20px", marginBottom: "12px" }}>
               <div className="flex items-center gap-2 mb-4">
                 <TagIcon />
@@ -370,7 +332,6 @@ const CartPage = () => {
                 </h2>
               </div>
 
-              {/* Manual input */}
               <div className="flex gap-2 mb-4">
                 <input
                   value={manualCode}
@@ -395,7 +356,6 @@ const CartPage = () => {
                 </p>
               )}
 
-              {/* Applied coupon banner */}
               {appliedCoupon && (
                 <div style={{ backgroundColor: "#F0FAF4", border: "1px solid #2D6B5A", padding: "10px 14px", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div className="flex items-center gap-2">
@@ -413,7 +373,6 @@ const CartPage = () => {
                 </div>
               )}
 
-              {/* Available coupon list */}
               {couponsLoading ? (
                 <div style={{ padding: "12px 0" }}>
                   {[1, 2].map((i) => (
@@ -426,13 +385,7 @@ const CartPage = () => {
                     Available offers
                   </p>
                   {websiteCoupons.map((coupon) => (
-                    <CouponCard
-                      key={coupon.code}
-                      coupon={coupon}
-                      onApply={handleApplyCoupon}
-                      appliedCode={appliedCoupon?.code}
-                      subtotal={subtotal}
-                    />
+                    <CouponCard key={coupon.code} coupon={coupon} onApply={handleApplyCoupon} appliedCode={appliedCoupon?.code} subtotal={subtotal} />
                   ))}
                 </div>
               ) : (
@@ -442,7 +395,7 @@ const CartPage = () => {
               )}
             </div>
 
-            {/* ── Order Summary ── */}
+            {/* Order Summary */}
             <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "20px", marginBottom: "12px" }}>
               <h2 style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", color: "#1f1b15", marginBottom: "16px" }}>
                 ORDER SUMMARY
@@ -454,7 +407,6 @@ const CartPage = () => {
                 ...(appliedCoupon
                   ? [{ label: `Discount (${appliedCoupon.code})`, value: `− ₹${Math.round(discountAmount).toLocaleString("en-IN")}`, accent: true }]
                   : []),
-                { label: "Estimated Tax (12% GST)", value: `₹${gst.toLocaleString("en-IN")}`, accent: false },
               ].map(({ label, value, accent }) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                   <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#4A3728", fontWeight: 400 }}>{label}</span>
@@ -478,7 +430,7 @@ const CartPage = () => {
               )}
             </div>
 
-            {/* ── Checkout — Desktop ── */}
+            {/* Checkout — Desktop */}
             <div className="hidden lg:block">
               <button
                 onClick={handleCheckout}
@@ -510,7 +462,7 @@ const CartPage = () => {
         </div>
       </div>
 
-      {/* ── Sticky Checkout Bar — Mobile ── */}
+      {/* Sticky Checkout Bar — Mobile */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
         style={{ backgroundColor: "#F9F3EB", borderTop: "1px solid #E8DDD0", padding: "12px 16px", boxShadow: "0 -4px 20px rgba(43,33,18,0.08)" }}
