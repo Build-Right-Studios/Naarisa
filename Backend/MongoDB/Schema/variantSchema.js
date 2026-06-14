@@ -49,7 +49,8 @@ const variantSchema = new mongoose.Schema({
 
     stylingTips: {
       type: String,
-      required: true
+      required: false,
+      default: ""
     },
 
     fabricCare: {
