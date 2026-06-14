@@ -746,7 +746,6 @@ const ProductPage = () => {
             <div>
               <Accordion title="Description" content={currentVariant?.description || product.description || ""} />
               <Accordion title="Fabric & Care" content={currentVariant?.fabricCare || ""} />
-              <Accordion title="Styling Tips" content={currentVariant?.stylingTips || ""} />
               <Accordion title="Returns & Exchanges" content={currentVariant?.returnExchange || ""} />
             </div>
           </div>

@@ -155,7 +155,7 @@ export default function AddVariant() {
   const [colorHex, setColorHex] = useState("#7c3aed");
   const [discountPrice, setDiscountPrice] = useState("");
   const [description, setDescription] = useState("");
-  const [stylingTips, setStylingTips] = useState("");
+  const stylingTips = "";
   const [fabricCare, setFabricCare] = useState("");
   const [returnExchange, setReturnExchange] = useState("");
   const [images, setImages] = useState([]);
@@ -248,7 +248,7 @@ export default function AddVariant() {
       formData.append("colorHex", colorHex);
       if (discountPrice) formData.append("discountPrice", Number(discountPrice));
       formData.append("description", description);
-      formData.append("stylingTips", stylingTips);
+      formData.append("stylingTips", "");
       formData.append("fabricCare", fabricCare);
       formData.append("returnExchange", returnExchange);
       formData.append("isBestSeller", isBestSeller);
@@ -562,14 +562,14 @@ export default function AddVariant() {
           <div style={S.card}>
             <SectionHeader icon={<BookIcon />} label="EDITORIAL DETAILS" />
 
-            <div style={{ marginBottom: 16 }}>
+            {/* <div style={{ marginBottom: 16 }}>
               <label style={S.label}>STYLING TIPS</label>
               <RichTextarea
                 value={stylingTips}
                 onChange={setStylingTips}
                 placeholder="Provide detailed advice on how to wear this piece..."
               />
-            </div>
+            </div> */}
 
             <div>
               <label style={S.label}>FABRIC & CARE</label>

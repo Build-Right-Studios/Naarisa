@@ -230,10 +230,10 @@ const ProductPage = () => {
         </div>
 
         {/* Styling Tips */}
-        <div style={{ background: "#eff6ff", borderRadius: 12, padding: "16px 20px" }}>
+        {/* <div style={{ background: "#eff6ff", borderRadius: 12, padding: "16px 20px" }}>
           <h3 style={{ ...PV.sectionHeading, color: "#1d4ed8", marginBottom: 8 }}>Styling Tips</h3>
           <RichView html={variant.stylingTips} style={{ color: "#1e40af", opacity: 0.85 }} />
-        </div>
+        </div> */}
 
         {/* Fabric & Care */}
         <div>

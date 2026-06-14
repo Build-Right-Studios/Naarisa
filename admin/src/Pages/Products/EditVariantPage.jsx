@@ -272,7 +272,7 @@ const EditVariantPage = () => {
       payload.append("color", JSON.stringify({ name: formData.colorName.trim().toLowerCase(), hex: formData.colorHex }));
       payload.append("existingImages", JSON.stringify(formData.images));
       payload.append("description", formData.description);
-      payload.append("stylingTips", formData.stylingTips);
+      payload.append("stylingTips", "");
       payload.append("fabricCare", formData.fabricCare);
       payload.append("returnExchange", formData.returnExchange);
       payload.append("isBestSeller", formData.isBestSeller);
@@ -429,14 +429,14 @@ const EditVariantPage = () => {
           <div style={ES.card}>
             <p style={ES.sectionLabel}>Editorial Details</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <div>
+              {/* <div>
                 <label style={ES.fieldLabel}>Styling Tips</label>
                 <RichTextarea
                   value={formData.stylingTips}
                   onChange={(val) => setFormData((prev) => ({ ...prev, stylingTips: val }))}
                   placeholder="How to wear this piece..."
                 />
-              </div>
+              </div> */}
               <div>
                 <label style={ES.fieldLabel}>Fabric & Care</label>
                 <RichTextarea
