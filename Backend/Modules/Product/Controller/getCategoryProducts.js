@@ -4,34 +4,25 @@ import { getCategoryProductsService } from "../Service/Getcategoryproductsservic
  * GET /api/product/category/:category
  *
  * Query params:
- *   sort    — newest | price_asc | price_desc | discount   (default: newest)
- *   page    — 1-based page number                          (default: 1)
- *   limit   — items per page                               (default: 12)
- *
- * Response:
- * {
- *   success: true,
- *   data: [ ...products with nested variants ],
- *   total: <number>,      — total matching products (before pagination)
- *   page: <number>,
- *   limit: <number>,
- *   hasMore: <boolean>
- * }
+ *   sort         — newest | price_asc | price_desc | discount  (default: newest)
+ *   page         — 1-based                                     (default: 1)
+ *   limit        — items per page, capped at 48                (default: 12)
+ *   availability — "In Stock" | "Out of Stock" | both
+ *   priceRange   — comma-separated ranges e.g. "0-1000,2000-3500"
+ *   discount     — minimum discount % e.g. 20
+ *   colours      — comma-separated colour names e.g. "Red,Ivory"
  */
 export const getCategoryProducts = async (req, res) => {
   try {
     const { category } = req.params;
 
-    if (!category || !category.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Category is required",
-      });
+    if (!category?.trim()) {
+      return res.status(400).json({ success: false, message: "Category is required" });
     }
 
-    const sort  = req.query.sort  || "newest";
+    const sort  = req.query.sort || "newest";
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
-    const limit = Math.min(48, parseInt(req.query.limit) || 12); // cap at 48
+    const limit = Math.min(48, parseInt(req.query.limit) || 12);
 
     const VALID_SORTS = ["newest", "price_asc", "price_desc", "discount"];
     if (!VALID_SORTS.includes(sort)) {
@@ -42,21 +33,24 @@ export const getCategoryProducts = async (req, res) => {
     }
 
     const { products, total } = await getCategoryProductsService({
-      category: category.trim(),
+      category:     category.trim(),
       sort,
       page,
       limit,
+      availability: req.query.availability,
+      priceRange:   req.query.priceRange,
+      discount:     req.query.discount,
+      colours:      req.query.colours,
     });
 
     return res.status(200).json({
       success: true,
-      data: products,
+      data:    products,
       total,
       page,
       limit,
       hasMore: page * limit < total,
     });
-
   } catch (error) {
     console.error("getCategoryProducts error:", error);
     return res.status(500).json({

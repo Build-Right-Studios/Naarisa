@@ -32,8 +32,8 @@ const navLinks = [
         path: "/categories/long-kurtis",
       },
       {
-        title: "Coord Sets",
-        path: "/categories/coord-sets",
+        title: "Kurti Sets",
+        path: "/categories/kurti-sets",
       },
       {
         title: "Dresses",

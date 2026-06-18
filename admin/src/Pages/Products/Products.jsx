@@ -32,7 +32,7 @@ export default function Products() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}${PRODUCT.GET_ALL}`, {
+      const res = await fetch(`${BASE_URL}${PRODUCT.GET_PRODUCTS}`, {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });

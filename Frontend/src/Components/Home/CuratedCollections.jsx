@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import shortkurtibanner from "../../assets/Short Kurtis Banner.png";
 import longkurtibanner from "../../assets/Long Kurtis Banner.png";
 import dressesbanner from "../../assets/Dresses Banner.png";
+import kurtisetbanner from "../../assets/Kurti Set Banner.png"
 import useInView from "../../utils/useInView.js";
 
 const collections = [
@@ -24,9 +25,10 @@ const collections = [
     accent: "#2B2112",
   },
   {
-    title: "Workweave Luxe",
-    path: "/workweave",
-    gradient: "linear-gradient(135deg, #0d1f1a 0%, #1a3d32 50%, #2D6B5A 100%)",
+    title: "Kurti Sets",
+    path: "/categories/kurti-sets",
+    // gradient: "linear-gradient(135deg, #0d1f1a 0%, #1a3d32 50%, #2D6B5A 100%)",
+    image: kurtisetbanner,
     accent: "#F5E6D0",
   },
 

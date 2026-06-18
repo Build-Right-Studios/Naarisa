@@ -1,21 +1,83 @@
 import { Variant } from "../../../MongoDB/models.js";
 
+/**
+ * GET /api/product/best-sellers
+ *
+ * Query params (all optional):
+ *   availability — "In Stock" | "Out of Stock" | both comma-separated
+ *   priceRange   — comma-separated ranges e.g. "0-1000,2000-3500"
+ *   discount     — minimum discount % e.g. 20
+ *   colours      — comma-separated colour names e.g. "Red,Ivory"
+ */
 export const getBestSellers = async (req, res) => {
   try {
-    const variants = await Variant.find({
-      isBestSeller: true,
-      isActive: true,
-    })
-      .populate("productId")
-      .limit(8);
+    const { availability, priceRange, discount, colours } = req.query;
 
-    console.log("Variants : ", variants)
+    /* ── Base filter ── */
+    const filter = { isBestSeller: true, isActive: true };
+
+    // Availability
+    if (availability) {
+      const av = availability.split(",").map((s) => s.trim());
+      const wantIn  = av.includes("In Stock");
+      const wantOut = av.includes("Out of Stock");
+      if (wantIn && !wantOut)  filter.sizes = { $elemMatch: { quantity: { $gt: 0 } } };
+      if (wantOut && !wantIn)  filter.sizes = { $not: { $elemMatch: { quantity: { $gt: 0 } } } };
+    }
+
+    // Price range (OR across selected ranges)
+    if (priceRange) {
+      const ranges = priceRange.split(",").map((r) => {
+        const [min, max] = r.split("-").map(Number);
+        return { discountPrice: { $gte: min, $lte: max } };
+      });
+      filter.$or = ranges;
+    }
+
+    // Colour
+    if (colours) {
+      filter["color.name"] = {
+        $in: colours.split(",").map((c) => c.trim().toLowerCase()),
+      };
+    }
+
+    /* ── Aggregation (needed for discount % filter) ── */
+    const discountPercent = discount ? Number(discount) : null;
+
+    const pipeline = [
+      { $match: filter },
+      { $lookup: { from: "products", localField: "productId", foreignField: "_id", as: "productId" } },
+      { $unwind: "$productId" },
+
+      ...(discountPercent
+        ? [
+            {
+              $addFields: {
+                computedDiscount: {
+                  $cond: {
+                    if: { $and: [{ $gt: ["$productId.basePrice", 0] }, { $lt: ["$discountPrice", "$productId.basePrice"] }] },
+                    then: { $multiply: [{ $divide: [{ $subtract: ["$productId.basePrice", "$discountPrice"] }, "$productId.basePrice"] }, 100] },
+                    else: 0,
+                  },
+                },
+              },
+            },
+            { $match: { computedDiscount: { $gte: discountPercent } } },
+          ]
+        : []),
+
+      { $sort: { createdAt: -1 } },
+      { $limit: 50 }, // reasonable cap; no pagination on best-sellers page
+    ];
+
+    const variants = await Variant.aggregate(pipeline);
 
     return res.status(200).json({
       success: true,
       data: variants,
     });
   } catch (error) {
+    console.error("getBestSellers error:", error);
     return res.status(500).json({
       success: false,
       message: error.message,

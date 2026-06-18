@@ -4,10 +4,18 @@ import api from "../../services/api";
 import { BASE, PRODUCT } from "../../Constants/apiroutes.js";
 
 const CATEGORIES = [
-  "T-Shirts", "Shirts", "Dresses", "Trousers", "Jeans",
-  "Jackets", "Sweaters", "Shorts", "Skirts", "Ethnic Wear",
-  "Activewear", "Accessories",
+  "Dresses",
+  "Short Kurti",
+  "Long Kurti",
+  "Kurti Sets"
 ];
+
+// const CATEGORIES = [
+//   "short-kurtis",
+//   "long-kurtis",
+//   "dresses",
+//   "kurti-sets",
+// ]
 
 const initialForm = {
   name: "",
@@ -150,13 +158,19 @@ export default function AddProduct() {
           </div>
 
           <Field label="Category">
-            <input
+            <select
               style={S.input}
-              type="text"
-              placeholder="e.g. Oversized T-Shirts"
               value={form.category}
               onChange={set("category")}
-            />
+            >
+              <option value="">Select Category</option>
+
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
           </Field>
 
           <Field label="Base Price (INR)">

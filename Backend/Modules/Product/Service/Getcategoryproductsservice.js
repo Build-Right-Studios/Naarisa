@@ -1,113 +1,147 @@
-import { Product, Variant } from "../../../MongoDB/models.js";
+import { Variant } from "../../../MongoDB/models.js";
 
 /**
- * Fetch all active variants for a given category, grouped by product.
+ * Service + query combined for category products.
+ * Called by getCategoryProducts controller.
+ *
+ * Supports:
+ *   category     — required, matched against productId.category
+ *   sort         — newest | price_asc | price_desc | discount
+ *   page / limit — pagination
+ *   availability — "In Stock" | "Out of Stock"
+ *   priceRange   — "0-1000,1000-2000"
+ *   discount     — minimum discount %
+ *   colours      — "Red,Blue"
  */
 export const getCategoryProductsService = async ({
   category,
-  sort = "newest",
-  page = 1,
-  limit = 12,
+  sort,
+  page,
+  limit,
+  availability,
+  priceRange,
+  discount,
+  colours,
 }) => {
-  // ── 1. Find products in category ─────────────────────────────
-  const products = await Product.find({
-    category: { $regex: new RegExp(`^${category}$`, "i") },
-  }).lean();
-
-  if (!products.length) return { products: [], total: 0 };
-
-  const productIds = products.map((p) => p._id);
-
-  // ── 2. Fetch active variants ────────────────────────────────
-  const variants = await Variant.find({
-    productId: { $in: productIds },
-    isActive: true,
-  }).lean();
-
-  // ── 3. Group variants by productId ──────────────────────────
-  const variantMap = {};
-
-  for (const v of variants) {
-    const pid = v.productId.toString();
-    if (!variantMap[pid]) variantMap[pid] = [];
-    variantMap[pid].push(v);
-  }
-
-  // ── 4. Build combined product view ──────────────────────────
-  let combined = products
-    .filter((p) => variantMap[p._id.toString()]?.length)
-    .map((p) => {
-      const productVariants = variantMap[p._id.toString()];
-      const primaryVariant = productVariants?.[0];
-
-      return {
-        ...p,
-        variants: productVariants,
-
-        // ✅ Variant-driven content (NEW ARCHITECTURE)
-        description: primaryVariant?.description || "",
-        stylingTips: primaryVariant?.stylingTips || "",
-        fabricCare: primaryVariant?.fabricCare || "",
-      };
-    });
-
-  // ── 5. Sorting ───────────────────────────────────────────────
-  combined = sortProducts(combined, sort);
-
-  // ── 6. Pagination ────────────────────────────────────────────
-  const total = combined.length;
   const skip = (page - 1) * limit;
-  const paginated = combined.slice(skip, skip + limit);
 
-  return { products: paginated, total };
-};
+  /* ── Variant-level filter ── */
+  const filter = { isActive: true };
 
-// ── SORT HELPERS ───────────────────────────────────────────────
-const sortProducts = (products, sort) => {
-  switch (sort) {
-    case "price_asc":
-      return [...products].sort((a, b) => {
-        const pa = getEffectivePrice(a);
-        const pb = getEffectivePrice(b);
-        return pa - pb;
-      });
-
-    case "price_desc":
-      return [...products].sort((a, b) => {
-        const pa = getEffectivePrice(a);
-        const pb = getEffectivePrice(b);
-        return pb - pa;
-      });
-
-    case "discount":
-      return [...products].sort((a, b) => {
-        return getMaxDiscount(b) - getMaxDiscount(a);
-      });
-
-    case "newest":
-    default:
-      return [...products].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
+  if (availability) {
+    const av = availability.split(",").map((s) => s.trim());
+    const wantIn  = av.includes("In Stock");
+    const wantOut = av.includes("Out of Stock");
+    if (wantIn && !wantOut)  filter.sizes = { $elemMatch: { quantity: { $gt: 0 } } };
+    if (wantOut && !wantIn)  filter.sizes = { $not: { $elemMatch: { quantity: { $gt: 0 } } } };
   }
-};
 
-// ── PRICE HELPERS ──────────────────────────────────────────────
-const getEffectivePrice = (product) => {
-  const prices = product.variants.map(
-    (v) => v.discountPrice ?? product.basePrice
-  );
+  if (priceRange) {
+    const ranges = priceRange.split(",").map((r) => {
+      const [min, max] = r.split("-").map(Number);
+      return { discountPrice: { $gte: min, $lte: max } };
+    });
+    filter.$or = ranges;
+  }
 
-  return Math.min(...prices);
-};
+  if (colours) {
+    filter["color.name"] = {
+      $in: colours.split(",").map((c) => c.trim().toLowerCase()),
+    };
+  }
 
-const getMaxDiscount = (product) => {
-  const base = product.basePrice;
+  /* ── Sort ── */
+  let sortOption = {};
+  switch (sort) {
+    case "price_asc":  sortOption.discountPrice = 1;  break;
+    case "price_desc": sortOption.discountPrice = -1; break;
+    case "discount":   sortOption.discountPrice = 1;  break;
+    default:           sortOption.createdAt = -1;     break;
+  }
 
-  const discounts = product.variants.map((v) => {
-    if (!v.discountPrice) return 0;
-    return ((base - v.discountPrice) / base) * 100;
-  });
+  const discountPercent = discount ? Number(discount) : null;
 
-  return Math.max(...discounts);
+  /* ── Aggregation pipeline ── */
+  const pipeline = [
+    { $match: filter },
+
+    // Join Product
+    { $lookup: { from: "products", localField: "productId", foreignField: "_id", as: "productId" } },
+    { $unwind: "$productId" },
+
+    // Filter by category (after join)
+    { $match: { "productId.category": category } },
+
+    // Compute and filter by discount %
+    ...(discountPercent
+      ? [
+          {
+            $addFields: {
+              computedDiscount: {
+                $cond: {
+                  if: { $and: [{ $gt: ["$productId.basePrice", 0] }, { $lt: ["$discountPrice", "$productId.basePrice"] }] },
+                  then: { $multiply: [{ $divide: [{ $subtract: ["$productId.basePrice", "$discountPrice"] }, "$productId.basePrice"] }, 100] },
+                  else: 0,
+                },
+              },
+            },
+          },
+          { $match: { computedDiscount: { $gte: discountPercent } } },
+        ]
+      : []),
+
+    { $sort: sortOption },
+
+    // Count + paginate in one round-trip
+    {
+      $facet: {
+        total: [{ $count: "count" }],
+        variants: [
+          { $skip: skip },
+          { $limit: limit },
+          {
+            $project: {
+              _id: 1, slug: 1, color: 1, images: 1,
+              discountPrice: 1, sizes: 1, createdAt: 1,
+              isBestSeller: 1, isNewArrival: 1,
+              "productId._id": 1, "productId.name": 1,
+              "productId.category": 1, "productId.basePrice": 1,
+            },
+          },
+        ],
+      },
+    },
+  ];
+
+  const [result] = await Variant.aggregate(pipeline);
+  const total    = result.total[0]?.count || 0;
+
+  // Shape to match what CategoryPage's ProductCard expects
+  const products = (result.variants || []).map((v) => ({
+  _id: v._id,
+
+  slug: v.slug,
+
+  name: v.productId.name,
+
+  image: v.images?.[0]?.url || null,
+
+  images: v.images || [],
+
+  price: v.productId.basePrice,
+
+  discountPrice: v.discountPrice,
+
+  color: v.color,
+
+  sizes: v.sizes,
+
+  category: v.productId.category,
+
+  isBestSeller: v.isBestSeller,
+
+  isNewArrival: v.isNewArrival,
+}));
+
+  return { products, total };
 };

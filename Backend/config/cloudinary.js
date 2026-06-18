@@ -73,7 +73,7 @@ export const uploadVariantImages = multer({
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB
   }
-}).array("images", 5);
+}).array("images", 8);
 
 /* -------------------------------------------------------------------------- */
 /*                                   EXPORTS                                  */

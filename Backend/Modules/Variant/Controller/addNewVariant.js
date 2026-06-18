@@ -47,10 +47,10 @@ export const addNewVariant = async (req, res) => {
             });
         }
 
-        if (!images || images.length === 0 || images.length > 5) {
+        if (!images || images.length === 0 || images.length > 8) {
             return res.status(400).json({
                 success: false,
-                message: "Please upload 1 to 5 images."
+                message: "Please upload 1 to 8 images."
             });
         }
 

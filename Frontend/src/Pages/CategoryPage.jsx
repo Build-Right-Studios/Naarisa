@@ -1,13 +1,17 @@
 import { useState, useEffect, useRef } from "react";
+import FilterPanel, { FilterTriggerButton, FILTER_DEFAULTS, countActiveFilters } from "./FilterPanel";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/axiosInstance.js";
+import PageHero from "../Components/Common/PageHero.jsx";
+import ProductCard from "../Components/Common/ProductCard.jsx";
 import { BASE, PRODUCT } from "../Constants/apiRoutes.js";
 import useCartStore from "../Store/useCartStore.js";
 
 // ── Banner imports ────────────────────────────────────────────────────────────
 import shortKurtisBanner from "../assets/Short Kurtis Banner.png";
-import longKurtisBanner  from "../assets/Long Kurtis Banner.png";
-import dressesBanner     from "../assets/Dresses Banner.png";
+import longKurtisBanner from "../assets/Long Kurtis Banner.png";
+import dressesBanner from "../assets/Dresses Banner.png";
+import kurtiSetsBanner from "../assets/Kurti Set Banner.png"
 
 // ── Category config ───────────────────────────────────────────────────────────
 // slug must match the URL: /categories/:slug
@@ -16,22 +20,32 @@ import dressesBanner     from "../assets/Dresses Banner.png";
 // Make sure these match exactly what you used when adding products via /add-product
 const CATEGORY_CONFIG = {
   "short-kurtis": {
-    label:    "Short Kurtis",
-    tagline:  "Chic, versatile and effortlessly yours.",
-    banner:   shortKurtisBanner,
-    apiParam: "short-kurtis",
+    label: "Short Kurtis",
+    tagline: "Chic, versatile and effortlessly yours.",
+    banner: shortKurtisBanner,
+    category: "Short Kurti",
   },
+
   "long-kurtis": {
-    label:    "Long Kurtis",
-    tagline:  "Timeless silhouettes. Effortless elegance.",
-    banner:   longKurtisBanner,
-    apiParam: "long-kurtis",
+    label: "Long Kurtis",
+    tagline: "Timeless silhouettes. Effortless elegance.",
+    banner: longKurtisBanner,
+    category: "Long Kurti",
   },
-  "dresses": {
-    label:    "Dresses",
-    tagline:  "Flowy silhouettes, timeless prints and elegance in every detail.",
-    banner:   dressesBanner,
-    apiParam: "dresses",
+
+  dresses: {
+    label: "Dresses",
+    tagline:
+      "Flowy silhouettes, timeless prints and elegance in every detail.",
+    banner: dressesBanner,
+    category: "Dresses",
+  },
+
+  "kurti-sets": {
+    label: "Kurti Sets",
+    tagline: "Complete ensembles. Grace in every detail.",
+    banner: kurtiSetsBanner,
+    category: "Kurti Sets",
   },
 };
 
@@ -51,129 +65,6 @@ const Toast = ({ visible }) => (
   </div>
 );
 
-// ── Product Card ──────────────────────────────────────────────────────────────
-const ProductCard = ({ product, onAddToCart }) => {
-  const navigate = useNavigate();
-  const [hovered, setHovered] = useState(false);
-  const [imgIdx, setImgIdx]   = useState(0);
-
-  const variant = product.variants?.[0] || product.currentVariant || {};
-  const images  = variant.images || [];
-  const price   = variant.discountPrice || product.basePrice || 0;
-  const mrp     = product.basePrice || 0;
-  const discount = mrp && variant.discountPrice && variant.discountPrice < mrp
-    ? Math.round(((mrp - variant.discountPrice) / mrp) * 100)
-    : null;
-  const slug    = variant.slug || product.slug;
-
-  // Swap to second image on hover (if available)
-  useEffect(() => {
-    setImgIdx(hovered && images.length > 1 ? 1 : 0);
-  }, [hovered, images.length]);
-
-  return (
-    <div
-      style={{ cursor: "pointer", backgroundColor: "#fff" }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={() => navigate(`/product/${slug}`)}
-    >
-      {/* Image */}
-      <div style={{ position: "relative", aspectRatio: "3/4", overflow: "hidden", backgroundColor: "#F5E6D0" }}>
-        {images.length > 0 ? (
-          <img
-            src={images[imgIdx]?.url}
-            alt={product.name}
-            style={{
-              width: "100%", height: "100%", objectFit: "cover",
-              transition: "transform 0.5s ease, opacity 0.3s ease",
-              transform: hovered ? "scale(1.04)" : "scale(1)",
-            }}
-          />
-        ) : (
-          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#8C7B6B", letterSpacing: "0.1em" }}>NAARISA</span>
-          </div>
-        )}
-
-        {discount && (
-          <div style={{
-            position: "absolute", top: "12px", left: 0,
-            backgroundColor: "#2D6B5A", color: "#fff",
-            fontFamily: "'Jost', sans-serif", fontSize: "10px",
-            fontWeight: 700, letterSpacing: "0.1em",
-            padding: "4px 10px",
-          }}>
-            -{discount}%
-          </div>
-        )}
-
-        {/* Quick add — appears on hover, desktop only */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onAddToCart(product, variant); }}
-          style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            backgroundColor: "#2B2112", color: "#F5E6D0",
-            fontFamily: "'Jost', sans-serif", fontSize: "11px",
-            fontWeight: 700, letterSpacing: "0.14em",
-            padding: "12px", border: "none", cursor: "pointer",
-            opacity: hovered ? 1 : 0,
-            transform: hovered ? "translateY(0)" : "translateY(8px)",
-            transition: "opacity 0.25s ease, transform 0.25s ease",
-          }}
-          className="hidden sm:block"
-        >
-          QUICK ADD
-        </button>
-      </div>
-
-      {/* Info */}
-      <div style={{ padding: "12px 4px 16px" }}>
-        <p style={{
-          fontFamily: "'EB Garamond', serif", fontSize: "15px",
-          color: "#1f1b15", lineHeight: 1.35, marginBottom: "6px",
-          overflow: "hidden", display: "-webkit-box",
-          WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-        }}>
-          {product.name}
-        </p>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "14px", fontWeight: 600, color: "#1f1b15" }}>
-            ₹{price.toLocaleString("en-IN")}
-          </span>
-          {discount && (
-            <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B", textDecoration: "line-through" }}>
-              ₹{mrp.toLocaleString("en-IN")}
-            </span>
-          )}
-        </div>
-
-        {/* Color swatches */}
-        {product.variants?.length > 1 && (
-          <div style={{ display: "flex", gap: "5px", marginTop: "8px" }}>
-            {product.variants.slice(0, 4).map((v, i) => (
-              <div
-                key={i}
-                title={v.color?.name}
-                style={{
-                  width: "14px", height: "14px", borderRadius: "50%",
-                  backgroundColor: v.color?.hex || "#ccc",
-                  border: "1.5px solid #E8DDD0",
-                }}
-              />
-            ))}
-            {product.variants.length > 4 && (
-              <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", color: "#8C7B6B", alignSelf: "center" }}>
-                +{product.variants.length - 4}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // ── Skeleton Card ─────────────────────────────────────────────────────────────
 const SkeletonCard = () => (
   <div>
@@ -187,26 +78,33 @@ const SkeletonCard = () => (
 
 // ── Sort options ──────────────────────────────────────────────────────────────
 const SORT_OPTIONS = [
-  { label: "Newest",        value: "newest" },
+  { label: "Newest", value: "newest" },
   { label: "Price: Low–High", value: "price_asc" },
   { label: "Price: High–Low", value: "price_desc" },
-  { label: "Discount",      value: "discount" },
+  { label: "Discount", value: "discount" },
 ];
 
 // ── Main Category Page ────────────────────────────────────────────────────────
 const CategoryPage = () => {
-  const { slug }   = useParams();
-  const navigate   = useNavigate();
-  const addItem    = useCartStore((s) => s.addItem);
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const addItem = useCartStore((s) => s.addItem);
 
   const config = CATEGORY_CONFIG[slug];
 
-  const [products, setProducts]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [sort, setSort]           = useState("newest");
-  const [toastVisible, setToast]  = useState(false);
-  const [page, setPage]           = useState(1);
-  const [hasMore, setHasMore]     = useState(false);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState("newest");
+  const [filters, setFilters] = useState(FILTER_DEFAULTS);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [toastVisible, setToast] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const activeFilterCount =
+    filters.availability.length +
+    filters.priceRange.length +
+    (filters.discount ? 1 : 0) +
+    filters.colours.length
   const LIMIT = 12;
 
   // ── Fetch ──
@@ -218,11 +116,34 @@ const CategoryPage = () => {
 
     const fetchProducts = async () => {
       try {
-        const res = await api.get(
-          `${PRODUCT.BY_CATEGORY(config.apiParam)}&limit=${LIMIT}&page=1&sort=${sort}`
-        );
+        const params = new URLSearchParams({
+          limit: LIMIT,
+          page: 1,
+          sort,
+        });
 
+        if (filters.availability?.length) {
+          params.append("availability", filters.availability.join(","));
+        }
+
+        if (filters.priceRange?.length) {
+          params.append("priceRange", filters.priceRange.join(","));
+        }
+
+        if (filters.discount) {
+          params.append("discount", filters.discount);
+        }
+
+        if (filters.colours?.length) {
+          params.append("colours", filters.colours.join(","));
+        }
+
+        const res = await api.get(
+          `${PRODUCT.BY_CATEGORY(encodeURIComponent(config.category))}&${params.toString()}`
+        );
+        console.log(res.data)
         const data = res.data?.data || [];
+
         setProducts(data);
         setHasMore(res.data?.hasMore || false);
       } catch (err) {
@@ -234,7 +155,7 @@ const CategoryPage = () => {
     };
 
     fetchProducts();
-  }, [slug, sort]);
+  }, [slug, sort, filters]);
 
   // ── Load more ──
   const handleLoadMore = async () => {
@@ -260,12 +181,12 @@ const CategoryPage = () => {
     addItem({
       productId: product._id,
       variantId: variant._id,
-      name:      product.name,
-      color:     variant.color?.name || "",
-      size:      firstSize,
-      price:     variant.discountPrice || product.basePrice,
-      image:     variant.images?.[0]?.url || null,
-      slug:      variant.slug || product.slug,
+      name: product.name,
+      color: variant.color?.name || "",
+      size: firstSize,
+      price: variant.discountPrice || product.basePrice,
+      image: variant.images?.[0]?.url || null,
+      slug: variant.slug || product.slug,
     });
 
     setToast(true);
@@ -284,10 +205,31 @@ const CategoryPage = () => {
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
 
+      <PageHero
+        eyebrow="Curated Collection"
+        title={config.label}
+        subtitle={config.tagline}
+      />
+
+      <FilterPanel
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        filters={filters}
+        onChange={(key, val) =>
+          setFilters((prev) => ({
+            ...prev,
+            [key]: val,
+          }))
+        }
+        onApply={() => setFilterOpen(false)}
+        onClear={() => setFilters(FILTER_DEFAULTS)}
+        resultCount={products.length}
+      />
+
       <Toast visible={toastVisible} />
 
       {/* ── Hero Banner ── */}
-      <div style={{ width: "100%", position: "relative", overflow: "hidden", backgroundColor: "#2B2112" }}>
+      {/* <div style={{ width: "100%", position: "relative", overflow: "hidden", backgroundColor: "#2B2112" }}>
         {config.banner ? (
           <img
             src={config.banner}
@@ -317,7 +259,7 @@ const CategoryPage = () => {
             </p>
           </div>
         )}
-      </div>
+      </div> */}
 
       {/* ── Breadcrumb + Controls ── */}
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-10 xl:px-12">
@@ -332,9 +274,9 @@ const CategoryPage = () => {
         {/* Title row + sort */}
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", padding: "16px 0 24px", flexWrap: "wrap", gap: "12px" }}>
           <div>
-            <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 400, color: "#1f1b15", marginBottom: "2px" }}>
+            {/* <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 400, color: "#1f1b15", marginBottom: "2px" }}>
               {config.label}
-            </h1>
+            </h1> */}
             {!loading && (
               <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B", letterSpacing: "0.08em" }}>
                 {products.length} {products.length === 1 ? "style" : "styles"}
@@ -343,25 +285,135 @@ const CategoryPage = () => {
           </div>
 
           {/* Sort dropdown */}
-          <div style={{ position: "relative" }}>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
+          {/* Right side controls */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginLeft: "auto",
+            }}
+          >
+            {/* Sort */}
+            <div
               style={{
-                fontFamily: "'Jost', sans-serif", fontSize: "12px",
-                fontWeight: 600, letterSpacing: "0.1em", color: "#1f1b15",
-                backgroundColor: "#fff", border: "1px solid #E8DDD0",
-                padding: "10px 36px 10px 14px", appearance: "none",
-                cursor: "pointer", outline: "none",
-                backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238C7B6B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
-                backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
               }}
             >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              <span
+                style={{
+                  fontFamily: "'Jost', sans-serif",
+                  fontSize: "11px",
+                  letterSpacing: "0.1em",
+                  color: "#8C7B6B",
+                  textTransform: "uppercase",
+                }}
+              >
+                Sort:
+              </span>
+
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                style={{
+                  fontFamily: "'Jost', sans-serif",
+                  fontSize: "12px",
+                  color: "#1f1b15",
+                  backgroundColor: "#F9F3EB",
+                  border: "1px solid #E8DDD0",
+                  padding: "7px 28px 7px 12px",
+                  cursor: "pointer",
+                  outline: "none",
+                  appearance: "none",
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238C7B6B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 10px center",
+                }}
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filter */}
+            <FilterTriggerButton
+              activeCount={activeFilterCount}
+              onClick={() => setFilterOpen(true)}
+            />
           </div>
+          {/* <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <div style={{ position: "relative", alignItems: "center", gap: "8px"  }}>
+              <span style={{
+                fontFamily: "'Jost', sans-serif",
+                fontSize: "11px",
+                letterSpacing: "0.1em",
+                color: "#8C7B6B",
+                textTransform: "uppercase",
+              }}>
+                Sort:
+              </span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                style={{
+                  fontFamily: "'Jost', sans-serif",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  color: "#1f1b15",
+                  backgroundColor: "#fff",
+                  border: "1px solid #E8DDD0",
+                  padding: "10px 36px 10px 14px",
+                  appearance: "none",
+                  cursor: "pointer",
+                  outline: "none",
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238C7B6B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 12px center",
+                }}
+              >
+                {SORT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <FilterTriggerButton
+              activeCount={activeFilterCount}
+              onClick={() => setFilterOpen(true)}
+            />
+          </div> */}
+          {/* <FilterPanel
+            open={filterOpen}
+            onClose={() => setFilterOpen(false)}
+            filters={filters}
+            onChange={(key, val) =>
+              setFilters((prev) => ({
+                ...prev,
+                [key]: val,
+              }))
+            }
+            onApply={() => {
+              setFilterOpen(false);
+            }}
+            onClear={() => setFilters(FILTER_DEFAULTS)}
+            resultCount={products.length}
+          /> */}
+
         </div>
 
         {/* ── Product Grid ── */}
@@ -370,12 +422,12 @@ const CategoryPage = () => {
             ? Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
             : products.length > 0
               ? products.map((p) => (
-                  <ProductCard
-                    key={p._id}
-                    product={p}
-                    onAddToCart={handleQuickAdd}
-                  />
-                ))
+                <ProductCard
+                  key={p._id}
+                  product={p}
+                  badge="New"
+                />
+              ))
               : (
                 <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "80px 0" }}>
                   <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "22px", color: "#8C7B6B", marginBottom: "8px" }}>

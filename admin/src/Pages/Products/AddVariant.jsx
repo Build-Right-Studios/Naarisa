@@ -177,11 +177,12 @@ export default function AddVariant() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch(`${BASE_URL}${PRODUCT.GET_PRODUCTS}`, {
+        const res = await fetch(`${BASE_URL}${PRODUCT.GET_PARENT_PRODUCTS}`, {
           credentials: "include",
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
+        console.log(data)
         if (data.success) setProducts(data.data || data.products || []);
       } catch (e) { console.error(e); }
     };
@@ -201,7 +202,7 @@ export default function AddVariant() {
       file,
       preview: URL.createObjectURL(file),
     }));
-    setImages((prev) => [...prev, ...previews].slice(0, 5));
+    setImages((prev) => [...prev, ...previews].slice(0, 8));
   };
 
   const handleDrop = (e) => {
@@ -357,7 +358,7 @@ export default function AddVariant() {
                   <button style={S.removeImg} onClick={() => removeImage(i)}>✕</button>
                 </div>
               ))}
-              {images.length < 5 && images.length > 0 && (
+              {images.length < 8 && images.length > 0 && (
                 <div
                   style={{ ...S.previewWrapper, ...S.addMoreBtn }}
                   onClick={() => fileRef.current?.click()}
@@ -490,7 +491,7 @@ export default function AddVariant() {
                 >
                   <option value="">Select a product…</option>
                   {products.map((p) => (
-                    <option key={p._id} value={p._id}>{p.name}</option>
+                    <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
                 <span style={S.selectArrow}>▾</span>

@@ -246,7 +246,7 @@ const EditVariantPage = () => {
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const currentCount = formData.images.length + newImages.length;
-    if (currentCount + files.length > 5) { alert("Maximum 5 images allowed"); return; }
+    if (currentCount + files.length > 8) { alert("Maximum 8 images allowed"); return; }
     setNewImages((prev) => [...prev, ...files]);
   };
 
@@ -347,7 +347,7 @@ const EditVariantPage = () => {
           <div style={ES.card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <p style={ES.sectionLabel}>Product Images</p>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "#888" }}>{totalImages} / 5</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#888" }}>{totalImages} / 8</span>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
               {formData.images.map((img, index) => (
@@ -362,7 +362,7 @@ const EditVariantPage = () => {
                   <button type="button" onClick={() => handleRemoveNewImage(index)} style={ES.imgRemoveBtn}>✕</button>
                 </div>
               ))}
-              {totalImages < 5 && (
+              {totalImages < 8 && (
                 <label style={ES.imgAddBtn}>
                   <span style={{ fontSize: 28, color: "#aaa" }}>+</span>
                   <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "#aaa" }}>Add</span>

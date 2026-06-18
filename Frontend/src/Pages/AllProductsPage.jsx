@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-
+import FilterPanel, { FilterTriggerButton, FILTER_DEFAULTS, countActiveFilters } from "./FilterPanel";
+import PageHero from "../Components/Common/PageHero.jsx";
+import ProductCard from "../Components/Common/ProductCard.jsx";
 import api from "../utils/axiosInstance.js";
 import { PRODUCT } from "../Constants/apiRoutes.js";
 
@@ -8,13 +10,19 @@ import { PRODUCT } from "../Constants/apiRoutes.js";
 /* Constants                                                                   */
 /* -------------------------------------------------------------------------- */
 
-const CATEGORIES = ["All", "Dresses", "Work", "Short Kurti", "Long Kurti", "Co-ords", "Tops"];
+const CATEGORIES = [
+  "All",
+  "Dresses",
+  "Short Kurti",
+  "Long Kurti",
+  "Kurti Sets"
+];
 
 const SORT_OPTIONS = [
-  { label: "Newest First",    value: "newest" },
+  { label: "Newest First", value: "newest" },
   { label: "Price: Low–High", value: "price_asc" },
   { label: "Price: High–Low", value: "price_desc" },
-  { label: "Name: A–Z",       value: "name_asc" },
+  { label: "Name: A–Z", value: "name_asc" },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -35,236 +43,6 @@ const SkeletonCard = () => (
 );
 
 /* -------------------------------------------------------------------------- */
-/* Product Card                                                                */
-/* -------------------------------------------------------------------------- */
-
-const ProductCard = ({ product }) => {
-  const navigate = useNavigate();
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      onClick={() => navigate(`/product/${product.slug}`)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{ cursor: "pointer", backgroundColor: "#fff" }}
-    >
-      <div
-        style={{
-          position: "relative",
-          aspectRatio: "3/4",
-          overflow: "hidden",
-          backgroundColor: "#F5E6D0",
-        }}
-      >
-        {product.image ? (
-          <img
-            src={product.image}
-            alt={product.name}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              transition: "transform .5s ease",
-              transform: hovered ? "scale(1.04)" : "scale(1)",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "'Jost', sans-serif",
-              color: "#8C7B6B",
-              letterSpacing: "0.1em",
-              fontSize: "12px",
-            }}
-          >
-            NAARISA
-          </div>
-        )}
-
-        {/* Category pill */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "10px",
-            left: "10px",
-            backgroundColor: "rgba(43,33,18,0.72)",
-            backdropFilter: "blur(4px)",
-            color: "#F9F3EB",
-            fontFamily: "'Jost', sans-serif",
-            fontSize: "9px",
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            padding: "3px 8px",
-          }}
-        >
-          {product.category}
-        </div>
-      </div>
-
-      <div style={{ padding: "12px 4px 16px" }}>
-        <p
-          style={{
-            fontFamily: "'EB Garamond', serif",
-            fontSize: "15px",
-            color: "#1f1b15",
-            lineHeight: 1.35,
-            marginBottom: "6px",
-            overflow: "hidden",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-          }}
-        >
-          {product.name}
-        </p>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span
-            style={{
-              fontFamily: "'Jost', sans-serif",
-              fontWeight: 600,
-              fontSize: "14px",
-              color: "#1f1b15",
-            }}
-          >
-            ₹{product.price?.toLocaleString("en-IN")}
-          </span>
-        </div>
-
-        {product.color?.hex && (
-          <div style={{ display: "flex", gap: "5px", marginTop: "8px" }}>
-            <div
-              title={product.color.name}
-              style={{
-                width: "14px",
-                height: "14px",
-                borderRadius: "50%",
-                backgroundColor: product.color.hex,
-                border: "1px solid #E8DDD0",
-              }}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-/* -------------------------------------------------------------------------- */
-/* Filter Drawer (Mobile)                                                      */
-/* -------------------------------------------------------------------------- */
-
-const FilterDrawer = ({ open, onClose, activeCategory, onCategory, activeSort, onSort }) => (
-  <>
-    {/* Backdrop */}
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(43,33,18,0.45)",
-        backdropFilter: "blur(3px)",
-        zIndex: 40,
-        opacity: open ? 1 : 0,
-        pointerEvents: open ? "auto" : "none",
-        transition: "opacity 0.3s ease",
-      }}
-    />
-
-    {/* Drawer */}
-    <div
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 50,
-        backgroundColor: "#F9F3EB",
-        borderTop: "1px solid #E8DDD0",
-        padding: "28px 20px 40px",
-        transform: open ? "translateY(0)" : "translateY(100%)",
-        transition: "transform 0.35s ease",
-        maxHeight: "80vh",
-        overflowY: "auto",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "20px", color: "#1f1b15" }}>
-          Filter & Sort
-        </span>
-        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px" }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8C7B6B" strokeWidth="1.5">
-            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Sort */}
-      <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", color: "#8C7B6B", textTransform: "uppercase", marginBottom: "12px" }}>
-        Sort By
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "28px" }}>
-        {SORT_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => { onSort(opt.value); }}
-            style={{
-              textAlign: "left",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "10px 14px",
-              fontFamily: "'Jost', sans-serif",
-              fontSize: "14px",
-              color: activeSort === opt.value ? "#AB721E" : "#1f1b15",
-              backgroundColor: activeSort === opt.value ? "#F5E6D0" : "transparent",
-              fontWeight: activeSort === opt.value ? 600 : 400,
-              transition: "all 0.2s",
-            }}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Category */}
-      <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", color: "#8C7B6B", textTransform: "uppercase", marginBottom: "12px" }}>
-        Category
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => { onCategory(cat); onClose(); }}
-            style={{
-              padding: "8px 16px",
-              fontFamily: "'Jost', sans-serif",
-              fontSize: "12px",
-              letterSpacing: "0.06em",
-              cursor: "pointer",
-              border: "1px solid",
-              transition: "all 0.2s",
-              borderColor: activeCategory === cat ? "#1f1b15" : "#E8DDD0",
-              backgroundColor: activeCategory === cat ? "#1f1b15" : "transparent",
-              color: activeCategory === cat ? "#F9F3EB" : "#1f1b15",
-              fontWeight: activeCategory === cat ? 600 : 400,
-            }}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-    </div>
-  </>
-);
-
-/* -------------------------------------------------------------------------- */
 /* Page                                                                        */
 /* -------------------------------------------------------------------------- */
 
@@ -272,32 +50,48 @@ const AllProductsPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [products, setProducts]     = useState([]);
-  const [loading, setLoading]       = useState(true);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12 });
-  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // ── Filter state ──
+  const [filters, setFilters] = useState(FILTER_DEFAULTS);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const activeCategory = searchParams.get("category") || "All";
-  const activeSort     = searchParams.get("sort")     || "newest";
-  const activePage     = parseInt(searchParams.get("page") || "1", 10);
+  const activeSort = searchParams.get("sort") || "newest";
+  const activePage = parseInt(searchParams.get("page") || "1", 10);
 
   const updateParam = (key, value) => {
     const next = new URLSearchParams(searchParams);
     next.set(key, value);
-    if (key !== "page") next.set("page", "1"); // reset page on filter/sort change
+    if (key !== "page") next.set("page", "1");
     setSearchParams(next);
   };
 
-  const fetchProducts = useCallback(async () => {
+  // ── Build query params including active filters ──
+  const buildParams = useCallback((f = filters) => {
+    const p = new URLSearchParams();
+    if (activeCategory !== "All") p.set("category", activeCategory);
+    p.set("sort", activeSort);
+    p.set("page", activePage);
+    p.set("limit", 12);
+
+    if (f.availability.length) p.set("availability", f.availability.join(","));
+    if (f.priceRange.length) p.set("priceRange", f.priceRange.join(","));
+    if (f.discount) p.set("discount", f.discount);
+    if (f.colours.length) p.set("colours", f.colours.join(","));
+
+    return p;
+  }, [activeCategory, activeSort, activePage, filters]);
+
+  // ── Fetch ──
+  const fetchProducts = useCallback(async (f = filters) => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (activeCategory !== "All") params.set("category", activeCategory);
-      params.set("sort",  activeSort);
-      params.set("page",  activePage);
-      params.set("limit", 12);
-
+      const params = buildParams(f);
       const res = await api.get(`${PRODUCT.GET_ALL}?${params.toString()}`);
+      console.log(res.data)
       setProducts(res.data?.data?.products || []);
       setPagination(res.data?.data?.pagination || { total: 0, page: 1, limit: 12 });
     } catch (err) {
@@ -306,28 +100,47 @@ const AllProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeCategory, activeSort, activePage]);
+  }, [buildParams]);
 
+  // Re-fetch when URL params change
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  // Lock body scroll when drawer is open
-  useEffect(() => {
-    document.body.style.overflow = drawerOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [drawerOpen]);
-
   const totalPages = Math.ceil(pagination.total / pagination.limit);
+  const activeFilterCount = countActiveFilters(filters);
+
+  const handleFilterChange = (key, val) =>
+    setFilters(prev => ({ ...prev, [key]: val }));
+
+  const handleFilterApply = () => {
+    setFilterOpen(false);
+    updateParam("page", "1"); // reset to page 1 on new filter apply
+    fetchProducts(filters);
+  };
+
+  const handleFilterClear = () => {
+    const cleared = FILTER_DEFAULTS;
+    setFilters(cleared);
+    fetchProducts(cleared);
+  };
 
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
 
-      <FilterDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        activeCategory={activeCategory}
-        onCategory={(cat) => updateParam("category", cat)}
-        activeSort={activeSort}
-        onSort={(val) => { updateParam("sort", val); setDrawerOpen(false); }}
+      <PageHero
+        eyebrow="Explore"
+        title="All Products"
+        subtitle="Discover every Naarisa style"
+      />
+
+      {/* ── Filter Panel ── */}
+      <FilterPanel
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        filters={filters}
+        onChange={handleFilterChange}
+        onApply={handleFilterApply}
+        onClear={handleFilterClear}
+        resultCount={pagination.total}
       />
 
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-10 xl:px-12">
@@ -352,7 +165,7 @@ const AllProductsPage = () => {
 
         {/* Heading */}
         <div style={{ padding: "16px 0 0" }}>
-          <h1
+          {/* <h1
             style={{
               fontFamily: "'EB Garamond', serif",
               fontSize: "clamp(24px,3vw,36px)",
@@ -361,9 +174,15 @@ const AllProductsPage = () => {
             }}
           >
             {activeCategory === "All" ? "All Products" : activeCategory}
-          </h1>
+          </h1> */}
           {!loading && (
-            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B", letterSpacing: "0.08em", marginTop: "4px" }}>
+            <p style={{
+              fontFamily: "'Jost', sans-serif",
+              fontSize: "12px",
+              color: "#8C7B6B",
+              letterSpacing: "0.08em",
+              marginTop: "4px",
+            }}>
               {pagination.total} styles
             </p>
           )}
@@ -411,7 +230,13 @@ const AllProductsPage = () => {
 
             {/* Sort — desktop */}
             <div className="hidden md:flex" style={{ alignItems: "center", gap: "8px" }}>
-              <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", letterSpacing: "0.1em", color: "#8C7B6B", textTransform: "uppercase" }}>
+              <span style={{
+                fontFamily: "'Jost', sans-serif",
+                fontSize: "11px",
+                letterSpacing: "0.1em",
+                color: "#8C7B6B",
+                textTransform: "uppercase",
+              }}>
                 Sort:
               </span>
               <select
@@ -438,35 +263,93 @@ const AllProductsPage = () => {
               </select>
             </div>
 
-            {/* Filter & Sort — mobile */}
-            <button
-              className="flex md:hidden"
-              onClick={() => setDrawerOpen(true)}
-              style={{
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 14px",
-                fontFamily: "'Jost', sans-serif",
-                fontSize: "11px",
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "#1f1b15",
-                backgroundColor: "transparent",
-                border: "1px solid #E8DDD0",
-                cursor: "pointer",
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="8" y1="12" x2="16" y2="12" />
-                <line x1="12" y1="18" x2="12" y2="18" strokeLinecap="round" strokeWidth="2" />
-              </svg>
-              Filter & Sort
-            </button>
+            {/* Filter trigger — shown on both mobile and desktop */}
+            <FilterTriggerButton
+              activeCount={activeFilterCount}
+              onClick={() => setFilterOpen(true)}
+            />
+
+            {/* Mobile: category + sort inside filter panel, so just show the trigger */}
+            {/* The old mobile-only FilterDrawer is removed — FilterPanel handles both */}
 
           </div>
         </div>
+
+        {/* ── Active filter chips (quick-clear) ── */}
+        {activeFilterCount > 0 && (
+          <div style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "8px",
+            padding: "16px 0 0",
+            alignItems: "center",
+          }}>
+            <span style={{
+              fontFamily: "'Jost', sans-serif",
+              fontSize: "11px",
+              color: "#8C7B6B",
+              letterSpacing: "0.06em",
+            }}>
+              Active filters:
+            </span>
+
+            {filters.availability.map((v) => (
+              <ActiveChip
+                key={v} label={v}
+                onRemove={() => handleFilterChange("availability", filters.availability.filter(x => x !== v))}
+              />
+            ))}
+            {filters.priceRange.map((v) => (
+              <ActiveChip
+                key={v} label={v.replace("-", "–").replace(/(\d+)/g, (m) => `₹${Number(m).toLocaleString("en-IN")}`)}
+                onRemove={() => handleFilterChange("priceRange", filters.priceRange.filter(x => x !== v))}
+              />
+            ))}
+            {filters.discount && (
+              <ActiveChip
+                label={`${filters.discount}%+ off`}
+                onRemove={() => handleFilterChange("discount", null)}
+              />
+            )}
+            {filters.colours.map((v) => (
+              <ActiveChip
+                key={v} label={v}
+                onRemove={() => handleFilterChange("colours", filters.colours.filter(x => x !== v))}
+              />
+            ))}
+            {/* {filters.fabrics.map((v) => (
+              <ActiveChip
+                key={v} label={v}
+                onRemove={() => handleFilterChange("fabrics", filters.fabrics.filter(x => x !== v))}
+              />
+            ))}
+            {filters.occasions.map((v) => (
+              <ActiveChip
+                key={v} label={v}
+                onRemove={() => handleFilterChange("occasions", filters.occasions.filter(x => x !== v))}
+              />
+            ))} */}
+
+            <button
+              onClick={handleFilterClear}
+              style={{
+                fontFamily: "'Jost', sans-serif",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                color: "#AB721E",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                textDecoration: "underline",
+                textUnderlineOffset: "3px",
+                padding: "4px 0",
+              }}
+            >
+              Clear all
+            </button>
+          </div>
+        )}
 
         {/* ── Grid ── */}
         <div
@@ -477,7 +360,11 @@ const AllProductsPage = () => {
             Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
           ) : products.length ? (
             products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard
+                key={product.id}
+                product={product}
+                badge="New"
+              />
             ))
           ) : (
             <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "80px 0" }}>
@@ -488,7 +375,7 @@ const AllProductsPage = () => {
                 Try a different category or clear your filters
               </p>
               <button
-                onClick={() => setSearchParams({})}
+                onClick={handleFilterClear}
                 style={{
                   marginTop: "20px",
                   padding: "10px 24px",
@@ -511,25 +398,19 @@ const AllProductsPage = () => {
 
         {/* ── Pagination ── */}
         {!loading && totalPages > 1 && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              paddingBottom: "80px",
-            }}
-          >
-            {/* Prev */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "6px",
+            paddingBottom: "80px",
+          }}>
             <button
               onClick={() => updateParam("page", activePage - 1)}
               disabled={activePage === 1}
               style={{
-                width: "36px",
-                height: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                width: "36px", height: "36px",
+                display: "flex", alignItems: "center", justifyContent: "center",
                 border: "1px solid #E8DDD0",
                 backgroundColor: "transparent",
                 cursor: activePage === 1 ? "not-allowed" : "pointer",
@@ -542,14 +423,12 @@ const AllProductsPage = () => {
               </svg>
             </button>
 
-            {/* Page numbers */}
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
                 onClick={() => updateParam("page", page)}
                 style={{
-                  width: "36px",
-                  height: "36px",
+                  width: "36px", height: "36px",
                   fontFamily: "'Jost', sans-serif",
                   fontSize: "13px",
                   fontWeight: activePage === page ? 700 : 400,
@@ -565,16 +444,12 @@ const AllProductsPage = () => {
               </button>
             ))}
 
-            {/* Next */}
             <button
               onClick={() => updateParam("page", activePage + 1)}
               disabled={activePage === totalPages}
               style={{
-                width: "36px",
-                height: "36px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                width: "36px", height: "36px",
+                display: "flex", alignItems: "center", justifyContent: "center",
                 border: "1px solid #E8DDD0",
                 backgroundColor: "transparent",
                 cursor: activePage === totalPages ? "not-allowed" : "pointer",
@@ -593,5 +468,44 @@ const AllProductsPage = () => {
     </div>
   );
 };
+
+/* -------------------------------------------------------------------------- */
+/* Active filter chip                                                          */
+/* -------------------------------------------------------------------------- */
+
+const ActiveChip = ({ label, onRemove }) => (
+  <div style={{
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "4px 10px 4px 12px",
+    border: "1px solid #E8DDD0",
+    backgroundColor: "#fff",
+    fontFamily: "'Jost', sans-serif",
+    fontSize: "11px",
+    color: "#1f1b15",
+    letterSpacing: "0.04em",
+  }}>
+    {label}
+    <button
+      onClick={onRemove}
+      style={{
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: 0,
+        lineHeight: 0,
+        color: "#8C7B6B",
+        display: "flex",
+        alignItems: "center",
+      }}
+    >
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  </div>
+);
 
 export default AllProductsPage;

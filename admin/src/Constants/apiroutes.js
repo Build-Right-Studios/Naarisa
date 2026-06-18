@@ -9,6 +9,7 @@ export const AUTH = {
 };
 
 export const PRODUCT = {
+  GET_PARENT_PRODUCTS: "/api/product/parent-products",
   GET_PRODUCTS: "/api/product/get-products",
   ADD_PRODUCT: "/api/product/add-product",
   ADD_NEW_VARIANT: "/api/variant/add-new-variant",
