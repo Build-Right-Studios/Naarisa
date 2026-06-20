@@ -31,6 +31,7 @@ export const getProducts = async (req, res) => {
                 // images: variant.images || []
             };
         });
+        console.log(formattedProducts)
 
         res.status(200).json({
             success: true,
