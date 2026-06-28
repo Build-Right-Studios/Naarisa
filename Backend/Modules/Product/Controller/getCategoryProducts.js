@@ -12,6 +12,14 @@ import { getCategoryProductsService } from "../Service/Getcategoryproductsservic
  *   discount     — minimum discount % e.g. 20
  *   colours      — comma-separated colour names e.g. "Red,Ivory"
  */
+
+const VALID_SORTS = [
+  "newest",
+  "price_asc",
+  "price_desc",
+  "alphabetical",
+];
+
 export const getCategoryProducts = async (req, res) => {
   try {
     const { category } = req.params;
@@ -24,7 +32,6 @@ export const getCategoryProducts = async (req, res) => {
     const page  = Math.max(1, parseInt(req.query.page)  || 1);
     const limit = Math.min(48, parseInt(req.query.limit) || 12);
 
-    const VALID_SORTS = ["newest", "price_asc", "price_desc", "discount"];
     if (!VALID_SORTS.includes(sort)) {
       return res.status(400).json({
         success: false,

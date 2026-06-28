@@ -6,7 +6,7 @@ export const findActiveOrders = async ({ filter, skip, limit, sortOption }) => {
       .sort(sortOption)
       .skip(skip)
       .limit(limit)
-      .select("user items pricing status payment.status delivery.status createdAt"),
+      .select("user items pricing status payment.status delivery.status createdAt customOrderId"),
     Order.countDocuments(filter)
   ]);
   return { orders, total };

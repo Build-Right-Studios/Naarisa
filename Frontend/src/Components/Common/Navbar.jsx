@@ -679,7 +679,7 @@ const Navbar = () => {
                     </li>
                   ))}
                   <li>
-                    <button
+                    {/* <button
                       onClick={() => {
                         navigate(`/all-products?search=${encodeURIComponent(searchQuery)}`);
                         setSearchOpen(false); setSearchQuery(""); setSuggestions([]);
@@ -688,7 +688,7 @@ const Navbar = () => {
                            font-medium tracking-wide hover:underline text-center"
                     >
                       See all results for "{searchQuery}" →
-                    </button>
+                    </button> */}
                   </li>
                 </ul>
               )}

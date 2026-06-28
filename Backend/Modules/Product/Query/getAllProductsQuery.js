@@ -6,9 +6,23 @@ import { Variant } from "../../../MongoDB/models.js";
  *  2. Filter by category in the DB (fixes the pagination bug in the original)
  *  3. Filter by discount % (computed as (basePrice - discountPrice) / basePrice * 100)
  */
+
+const PRICE_SORTS = new Set(["price_asc", "price_desc"]);
+
 export const getAllProductsQuery = async (data) => {
   try {
-    const { filter, skip, limit, sortOption, category, discountPercent } = data;
+    const {
+      filter,
+      skip,
+      limit,
+      sortOption,
+      sort,
+      category,
+      discountPercent,
+      priceRange,
+    } = data;
+
+    const needsNumericPrice = PRICE_SORTS.has(sort);
 
     // Convert the simple filter object into $match stages
     const initialMatch = { ...filter };
@@ -21,15 +35,71 @@ export const getAllProductsQuery = async (data) => {
       // Stage 2: join Product to get name, category, basePrice
       {
         $lookup: {
-          from:         "products",
-          localField:   "productId",
+          from: "products",
+          localField: "productId",
           foreignField: "_id",
-          as:           "productId",
+          as: "productId",
         },
       },
 
       // Stage 3: unwind (lookup returns array)
       { $unwind: "$productId" },
+
+      ...(priceRange
+        ? [
+          {
+            $match: {
+              $or: priceRange.split(",").map((range) => {
+                const [min, max] = range.split("-").map(Number);
+
+                return {
+                  $or: [
+                    {
+                      discountPrice: {
+                        $gte: min,
+                        $lte: max,
+                      },
+                    },
+                    {
+                      $and: [
+                        {
+                          $or: [
+                            { discountPrice: null },
+                            { discountPrice: { $exists: false } },
+                          ],
+                        },
+                        {
+                          "productId.basePrice": {
+                            $gte: min,
+                            $lte: max,
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                };
+              }),
+            },
+          },
+        ]
+        : []),
+
+      ...(needsNumericPrice
+        ? [
+          {
+            $addFields: {
+              discountPriceNumeric: {
+                $toDouble: {
+                  $ifNull: [
+                    "$discountPrice",
+                    "$productId.basePrice",
+                  ],
+                },
+              },
+            },
+          },
+        ]
+        : []),
 
       // Stage 4: filter by category if provided (now runs after join)
       ...(category
@@ -39,34 +109,34 @@ export const getAllProductsQuery = async (data) => {
       // Stage 5: compute discountPercent and filter if required
       ...(discountPercent
         ? [
-            {
-              $addFields: {
-                computedDiscount: {
-                  $cond: {
-                    if: {
-                      $and: [
-                        { $gt: ["$productId.basePrice", 0] },
-                        { $lt: ["$discountPrice", "$productId.basePrice"] },
-                      ],
-                    },
-                    then: {
-                      $multiply: [
-                        {
-                          $divide: [
-                            { $subtract: ["$productId.basePrice", "$discountPrice"] },
-                            "$productId.basePrice",
-                          ],
-                        },
-                        100,
-                      ],
-                    },
-                    else: 0,
+          {
+            $addFields: {
+              computedDiscount: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gt: ["$productId.basePrice", 0] },
+                      { $lt: ["$discountPrice", "$productId.basePrice"] },
+                    ],
                   },
+                  then: {
+                    $multiply: [
+                      {
+                        $divide: [
+                          { $subtract: ["$productId.basePrice", "$discountPrice"] },
+                          "$productId.basePrice",
+                        ],
+                      },
+                      100,
+                    ],
+                  },
+                  else: 0,
                 },
               },
             },
-            { $match: { computedDiscount: { $gte: discountPercent } } },
-          ]
+          },
+          { $match: { computedDiscount: { $gte: discountPercent } } },
+        ]
         : []),
 
       // Stage 6: sort
@@ -75,20 +145,20 @@ export const getAllProductsQuery = async (data) => {
       // Stage 7: facet — run count and paginated data in one round-trip
       {
         $facet: {
-          total:    [{ $count: "count" }],
+          total: [{ $count: "count" }],
           variants: [
             { $skip: skip },
             { $limit: limit },
             {
               $project: {
-                _id:          1,
-                slug:         1,
-                color:        1,
-                images:       1,
+                _id: 1,
+                slug: 1,
+                color: 1,
+                images: 1,
                 discountPrice: 1,
-                createdAt:    1,
-                "productId._id":      1,
-                "productId.name":     1,
+                createdAt: 1,
+                "productId._id": 1,
+                "productId.name": 1,
                 "productId.category": 1,
                 "productId.basePrice": 1,
               },
@@ -100,7 +170,7 @@ export const getAllProductsQuery = async (data) => {
 
     const [result] = await Variant.aggregate(pipeline);
 
-    const total    = result.total[0]?.count || 0;
+    const total = result.total[0]?.count || 0;
     const variants = result.variants || [];
 
     return { variants, total };

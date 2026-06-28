@@ -37,28 +37,37 @@ export const getCategoryProductsService = async ({
     if (wantOut && !wantIn) filter.sizes = { $not: { $elemMatch: { quantity: { $gt: 0 } } } };
   }
 
-  if (priceRange) {
-    const ranges = priceRange.split(",").map((r) => {
-      const [min, max] = r.split("-").map(Number);
-      return { discountPrice: { $gte: min, $lte: max } };
-    });
-    filter.$or = ranges;
-  }
-
   if (colours) {
     filter["color.name"] = {
-      $in: colours.split(",").map((c) => c.trim().toLowerCase()),
+      $in: colours.split(",").map(
+        (c) => new RegExp(`^${c.trim()}$`, "i")
+      ),
     };
   }
 
   /* ── Sort ── */
-  let sortOption = {};
-  switch (sort) {
-    case "price_asc": sortOption.discountPrice = 1; break;
-    case "price_desc": sortOption.discountPrice = -1; break;
-    case "discount": sortOption.discountPrice = 1; break;
-    default: sortOption.createdAt = -1; break;
-  }
+  const sortOptions = {
+    newest: {
+      createdAt: -1,
+    },
+
+    price_asc: {
+      sellingPrice: 1,
+      createdAt: -1,
+    },
+
+    price_desc: {
+      sellingPrice: -1,
+      createdAt: -1,
+    },
+
+    alphabetical: {
+      displayName: 1,
+      createdAt: -1,
+    },
+  };
+
+  const sortOption = sortOptions[sort] || sortOptions.newest;
 
   const discountPercent = discount ? Number(discount) : null;
 
@@ -68,7 +77,46 @@ export const getCategoryProductsService = async ({
 
     // Join Product
     { $lookup: { from: "products", localField: "productId", foreignField: "_id", as: "productId" } },
+    
     { $unwind: "$productId" },
+
+    {
+      $addFields: {
+        sellingPrice: {
+          $ifNull: [
+            "$discountPrice",
+            "$productId.basePrice"
+          ]
+        },
+
+        displayName: {
+          $concat: [
+            "$productId.name",
+            " - ",
+            "$color.name"
+          ]
+        }
+      }
+    },
+
+    ...(priceRange
+      ? [
+        {
+          $match: {
+            $or: priceRange.split(",").map((range) => {
+              const [min, max] = range.split("-").map(Number);
+
+              return {
+                sellingPrice: {
+                  $gte: min,
+                  $lte: max,
+                },
+              };
+            }),
+          },
+        },
+      ]
+      : []),
 
     // Filter by category (after join)
     { $match: { "productId.category": category } },
@@ -80,8 +128,28 @@ export const getCategoryProductsService = async ({
           $addFields: {
             computedDiscount: {
               $cond: {
-                if: { $and: [{ $gt: ["$productId.basePrice", 0] }, { $lt: ["$discountPrice", "$productId.basePrice"] }] },
-                then: { $multiply: [{ $divide: [{ $subtract: ["$productId.basePrice", "$discountPrice"] }, "$productId.basePrice"] }, 100] },
+                if: {
+                  $and: [
+                    { $gt: ["$productId.basePrice", 0] },
+                    { $lt: ["$sellingPrice", "$productId.basePrice"] },
+                  ],
+                },
+                then: {
+                  $multiply: [
+                    {
+                      $divide: [
+                        {
+                          $subtract: [
+                            "$productId.basePrice",
+                            "$sellingPrice",
+                          ],
+                        },
+                        "$productId.basePrice",
+                      ],
+                    },
+                    100,
+                  ],
+                },
                 else: 0,
               },
             },
@@ -103,7 +171,7 @@ export const getCategoryProductsService = async ({
           {
             $project: {
               _id: 1, slug: 1, color: 1, images: 1,
-              discountPrice: 1, sizes: 1, createdAt: 1,
+              discountPrice: 1, sizes: 1, createdAt: 1, sellingPrice: 1,
               isBestSeller: 1, isNewArrival: 1,
               "productId._id": 1, "productId.name": 1,
               "productId.category": 1, "productId.basePrice": 1,
@@ -136,7 +204,7 @@ export const getCategoryProductsService = async ({
     image: v.images?.[0]?.url || null,
     images: v.images || [],
     price: v.productId.basePrice,
-    discountPrice: v.discountPrice,
+    discountPrice: v.sellingPrice,
     color: v.color,
     sizes: v.sizes,
     category: v.productId.category,

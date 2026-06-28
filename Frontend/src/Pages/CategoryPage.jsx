@@ -78,10 +78,10 @@ const SkeletonCard = () => (
 
 // ── Sort options ──────────────────────────────────────────────────────────────
 const SORT_OPTIONS = [
-  { label: "Newest", value: "newest" },
+  { label: "Newest First", value: "newest" },
   { label: "Price: Low–High", value: "price_asc" },
   { label: "Price: High–Low", value: "price_desc" },
-  { label: "Discount", value: "discount" },
+  { label: "Name: A–Z", value: "alphabetical" }, // was "name_asc" — now synced with backend
 ];
 
 // ── Main Category Page ────────────────────────────────────────────────────────
@@ -100,11 +100,11 @@ const CategoryPage = () => {
   const [toastVisible, setToast] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const activeFilterCount =
-    filters.availability.length +
-    filters.priceRange.length +
-    (filters.discount ? 1 : 0) +
-    filters.colours.length
+  const activeFilterCount = countActiveFilters(filters)
+    // filters.availability.length +
+    // filters.priceRange.length +
+    // (filters.discount ? 1 : 0) +
+    // filters.colours.length
   const LIMIT = 12;
 
   // ── Fetch ──
@@ -160,14 +160,39 @@ const CategoryPage = () => {
   // ── Load more ──
   const handleLoadMore = async () => {
     const nextPage = page + 1;
+
     try {
+      const params = new URLSearchParams({
+        limit: LIMIT,
+        page: nextPage,
+        sort,
+      });
+
+      if (filters.availability?.length) {
+        params.append("availability", filters.availability.join(","));
+      }
+
+      if (filters.priceRange?.length) {
+        params.append("priceRange", filters.priceRange.join(","));
+      }
+
+      if (filters.discount) {
+        params.append("discount", filters.discount);
+      }
+
+      if (filters.colours?.length) {
+        params.append("colours", filters.colours.join(","));
+      }
+
       const res = await api.get(
-        `${PRODUCT.BY_CATEGORY(config.apiParam)}&limit=${LIMIT}&page=${nextPage}&sort=${sort}`
+        `${PRODUCT.BY_CATEGORY(
+          encodeURIComponent(config.category)
+        )}&${params.toString()}`
       );
-      const data = res.data?.data || [];
-      setProducts((prev) => [...prev, ...data]);
+
+      setProducts((prev) => [...prev, ...(res.data.data || [])]);
       setPage(nextPage);
-      setHasMore(res.data?.hasMore || false);
+      setHasMore(res.data.hasMore);
     } catch (err) {
       console.error("Load more failed:", err);
     }
@@ -425,7 +450,13 @@ const CategoryPage = () => {
                 <ProductCard
                   key={p._id}
                   product={p}
-                  badge="New"
+                  badge={
+                    p.isBestSeller
+                      ? "Best Seller"
+                      : p.isNewArrival
+                        ? "New"
+                        : null
+                  }
                 />
               ))
               : (

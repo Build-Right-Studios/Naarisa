@@ -237,7 +237,7 @@ const SORT_OPTIONS = [
     { label: "Newest First", value: "newest" },
     { label: "Price: Low–High", value: "price_asc" },
     { label: "Price: High–Low", value: "price_desc" },
-    { label: "Name: A–Z", value: "name_asc" },
+    { label: "Name: A–Z", value: "alphabetical" },
 ];
 
 const NewArrivalsPage = () => {
@@ -245,9 +245,16 @@ const NewArrivalsPage = () => {
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+
     const [filters, setFilters] = useState(FILTER_DEFAULTS);
+    const [draftFilters, setDraftFilters] = useState(FILTER_DEFAULTS);
+
     const [filterOpen, setFilterOpen] = useState(false);
+
     const [sort, setSort] = useState("newest");
+
+    const [resultCount, setResultCount] = useState(0);
+    const [countLoading, setCountLoading] = useState(false);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -256,16 +263,20 @@ const NewArrivalsPage = () => {
 
                 params.append("sort", sort);
 
-                if (filters.colors?.length) {
-                    params.append("colors", filters.colors.join(","));
+                if (filters.availability?.length) {
+                    params.append("availability", filters.availability.join(","));
                 }
 
-                if (filters.sizes?.length) {
-                    params.append("sizes", filters.sizes.join(","));
+                if (filters.priceRange?.length) {
+                    params.append("priceRange", filters.priceRange.join(","));
                 }
 
-                if (filters.priceRange) {
-                    params.append("priceRange", filters.priceRange);
+                if (filters.discount) {
+                    params.append("discount", filters.discount);
+                }
+
+                if (filters.colours?.length) {
+                    params.append("colours", filters.colours.join(","));
                 }
 
                 const url = params.toString()
@@ -284,6 +295,64 @@ const NewArrivalsPage = () => {
         fetchProducts();
     }, [filters, sort]);
 
+    useEffect(() => {
+        if (!filterOpen) return;
+
+        const fetchCount = async () => {
+            try {
+                setCountLoading(true);
+
+                const params = new URLSearchParams();
+
+                params.append("sort", sort);
+
+                if (draftFilters.availability?.length) {
+                    params.append(
+                        "availability",
+                        draftFilters.availability.join(",")
+                    );
+                }
+
+                if (draftFilters.priceRange?.length) {
+                    params.append(
+                        "priceRange",
+                        draftFilters.priceRange.join(",")
+                    );
+                }
+
+                if (draftFilters.discount) {
+                    params.append(
+                        "discount",
+                        draftFilters.discount
+                    );
+                }
+
+                if (draftFilters.colours?.length) {
+                    params.append(
+                        "colours",
+                        draftFilters.colours.join(",")
+                    );
+                }
+
+                const url = params.toString()
+                    ? `${PRODUCT.NEW_ARRIVALS_COUNT}?${params.toString()}`
+                    : PRODUCT.NEW_ARRIVALS_COUNT;
+
+                const res = await api.get(url);
+
+                setResultCount(res.data.count ?? 0);
+
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setCountLoading(false);
+            }
+        };
+
+        fetchCount();
+
+    }, [draftFilters, sort, filterOpen]);
+
     const hasBanner = Boolean(desktopBanner || mobileBanner);
 
     return (
@@ -296,16 +365,21 @@ const NewArrivalsPage = () => {
             <FilterPanel
                 open={filterOpen}
                 onClose={() => setFilterOpen(false)}
-                filters={filters}
-                onChange={(key, val) =>
-                    setFilters((prev) => ({
+                filters={draftFilters}
+                onChange={(key, value) =>
+                    setDraftFilters(prev => ({
                         ...prev,
-                        [key]: val,
+                        [key]: value,
                     }))
                 }
-                onApply={() => setFilterOpen(false)}
-                onClear={() => setFilters(FILTER_DEFAULTS)}
-                resultCount={products.length}
+                onApply={() => {
+                    setFilters(draftFilters);
+                    setFilterOpen(false);
+                }}
+                onClear={() => {
+                    setDraftFilters(FILTER_DEFAULTS);
+                }}
+                resultCount={countLoading ? null : resultCount}
             />
             {/* ------------------------------------------------------------------ */}
             {/* Banner — only rendered when image assets are present                */}
@@ -495,13 +569,11 @@ const NewArrivalsPage = () => {
 
                         {/* Filters */}
                         <FilterTriggerButton
-                            activeCount={
-                                filters.availability.length +
-                                filters.priceRange.length +
-                                (filters.discount ? 1 : 0) +
-                                filters.colours.length
-                            }
-                            onClick={() => setFilterOpen(true)}
+                            activeCount={countActiveFilters(filters)}
+                            onClick={() => {
+                                setDraftFilters(filters);
+                                setFilterOpen(true);
+                            }}
                         />
                     </div>
                 </div>

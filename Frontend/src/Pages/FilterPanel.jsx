@@ -310,7 +310,7 @@ export default function FilterPanel({ open, onClose, filters = FILTER_DEFAULTS, 
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#8f5e17"}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = T.gold}
           >
-            {resultCount !== undefined ? `View ${resultCount.toLocaleString("en-IN")} Results` : "View Results"}
+            {"View Results"}
           </button>
         </div>
       </div>

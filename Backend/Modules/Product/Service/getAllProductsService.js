@@ -41,13 +41,13 @@ export const getAllProductsService = async (data) => {
     }
 
     // Price range — supports multiple ranges (OR logic)
-    if (priceRange) {
-      const ranges = priceRange.split(",").map((r) => {
-        const [min, max] = r.split("-").map(Number);
-        return { discountPrice: { $gte: min, $lte: max } };
-      });
-      filter.$or = ranges;
-    }
+    // if (priceRange) {
+    //   const ranges = priceRange.split(",").map((r) => {
+    //     const [min, max] = r.split("-").map(Number);
+    //     return { discountPrice: { $gte: min, $lte: max } };
+    //   });
+    //   filter.$or = ranges;
+    // }
 
     // Colour — case-insensitive match against color.name
     if (colours) {
@@ -56,13 +56,14 @@ export const getAllProductsService = async (data) => {
     }
 
     /* ── Sort option ── */
-    let sortOption = {};
-    switch (sort) {
-      case "price_asc": sortOption.discountPrice = 1; break;
-      case "price_desc": sortOption.discountPrice = -1; break;
-      case "name_asc": sortOption.slug = 1; break;
-      default: sortOption.createdAt = -1; break; // newest
-    }
+    const SORT_MAP = {
+      newest: { createdAt: -1 },
+      price_asc: { discountPriceNumeric: 1 },
+      price_desc: { discountPriceNumeric: -1 },
+      alphabetical: { "productId.name": 1 },
+    };
+
+    const sortOption = SORT_MAP[sort] ?? SORT_MAP.newest;
 
     /* ── Fetch from DB ──
          category and discount% require a join with Product, so we pass
@@ -71,29 +72,37 @@ export const getAllProductsService = async (data) => {
       filter,
       skip,
       limit,
+      sort,
       sortOption,
       category: category || null,
       discountPercent: discount ? Number(discount) : null,
+      priceRange,
     });
 
     /* ── Shape response ── */
-    const products = variants.map((v) => ({
-      id: v._id,
-      name: v.productId.name,
-      category: v.productId.category,
-      slug: v.slug,
-      color: v.color,
-      image: cloudinaryTransform(
-        v.images?.[0]?.url,
-        "f_auto,q_auto,w_500,h_750,c_fill"
-      ),
+    const products = variants.map((variant) => ({
+      ...variant,
 
-      price: v.discountPrice ?? v.productId.basePrice,
+      images: variant.images?.map((image) => ({
+        ...image,
+        url: cloudinaryTransform(
+          image.url,
+          "f_auto,q_auto,w_500,h_750,c_fill"
+        ),
+      })),
+
+      productId: {
+        ...variant.productId,
+      },
     }));
 
     return {
       products,
-      pagination: { total, page, limit },
+      pagination: {
+        total,
+        page,
+        limit,
+      },
     };
   } catch (error) {
     console.log("getAllProductsService Error:", error);

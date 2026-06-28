@@ -111,11 +111,14 @@ const OrderSuccessPage = () => {
           }}
         >
           <p>
-            <strong>Order ID:</strong> {order._id}
+            <strong>Order ID:</strong> {order.customOrderId}
           </p>
 
           <p>
-            <strong>Status:</strong> {order.status}
+            <strong>Status:</strong>{" "}
+            {order.status
+              ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
+              : "N/A"}
           </p>
 
           <p>

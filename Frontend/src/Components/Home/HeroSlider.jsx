@@ -24,6 +24,7 @@ const HeroSlider = () => {
       try {
         const res = await axios.get(`${BASE.ROUTE}${BANNER.GET_ACTIVE}`);
         if (res.data.success) {
+          console.log(res.data)
           setBanners(res.data.data);
         }
       } catch (err) {

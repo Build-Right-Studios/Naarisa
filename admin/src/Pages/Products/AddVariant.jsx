@@ -484,109 +484,231 @@ export default function AddVariant() {
         {/* ── RIGHT COLUMN ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-          {/* Product Association + Sizes */}
-          <div style={{ marginBottom: 24, position: "relative" }}>
-            <label style={S.label}>SELECT PARENT PRODUCT</label>
+          {/* Product Association */}
+          <div style={S.card}>
+  <SectionHeader icon={<AssocIcon />} label="PARENT PRODUCT" />
 
-            <div style={{ position: "relative" }}>
-              <span style={{
-                position: "absolute", left: 12, top: "50%",
-                transform: "translateY(-50%)", color: "#9ca3af",
-                fontSize: 16, pointerEvents: "none", zIndex: 1,
-              }}>
-                🔍
-              </span>
-              <input
-                ref={productSearchRef}
-                style={{ ...S.input, paddingLeft: 36 }}
-                placeholder="Search products…"
-                value={productSearch}
-                onChange={(e) => {
-                  setProductSearch(e.target.value);
-                  setProductDropdownOpen(true);
-                  if (!e.target.value) setParentProduct("");
-                }}
-                onFocus={() => setProductDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setProductDropdownOpen(false), 150)}
-              />
-              {parentProduct && (
-                <button
-                  style={{
-                    position: "absolute", right: 10, top: "50%",
-                    transform: "translateY(-50%)", background: "none",
-                    border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 14,
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setParentProduct("");
-                    setProductSearch("");
-                    productSearchRef.current?.focus();
-                  }}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+  <div style={{ position: "relative" }}>
+    <div style={{ position: "relative" }}>
+      <span
+        style={{
+          position: "absolute",
+          left: 12,
+          top: "50%",
+          transform: "translateY(-50%)",
+          color: "#9ca3af",
+          fontSize: 16,
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
+      >
+        🔍
+      </span>
 
-            {productDropdownOpen && filteredProducts.length > 0 && (
-              <div style={{
-                position: "absolute", top: "100%", left: 0, right: 0,
-                zIndex: 100, background: "#fff", border: "1px solid #e5e7eb",
-                borderRadius: 10, marginTop: 4, maxHeight: 220, overflowY: "auto",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-              }}>
-                {filteredProducts.map((p) => (
+      <input
+        ref={productSearchRef}
+        style={{ ...S.input, paddingLeft: 36 }}
+        placeholder="Search products..."
+        value={productSearch}
+        onChange={(e) => {
+          setProductSearch(e.target.value);
+          setProductDropdownOpen(true);
+
+          if (!e.target.value) setParentProduct("");
+        }}
+        onFocus={() => setProductDropdownOpen(true)}
+        onBlur={() => setTimeout(() => setProductDropdownOpen(false), 150)}
+      />
+
+      {parentProduct && (
+        <button
+          style={{
+            position: "absolute",
+            right: 10,
+            top: "50%",
+            transform: "translateY(-50%)",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#9ca3af",
+            fontSize: 14,
+          }}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            setParentProduct("");
+            setProductSearch("");
+            productSearchRef.current?.focus();
+          }}
+        >
+          ✕
+        </button>
+      )}
+    </div>
+
+    {productDropdownOpen && filteredProducts.length > 0 && (
+      <div
+        style={{
+          position: "absolute",
+          top: "calc(100% + 6px)",
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          background: "#fff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 10,
+          maxHeight: 220,
+          overflowY: "auto",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+        }}
+      >
+        {filteredProducts.map((p) => (
+          <div
+            key={p.id}
+            onMouseDown={() => {
+              setParentProduct(p.id);
+              setProductSearch(p.name);
+              setProductDropdownOpen(false);
+            }}
+            style={{
+              padding: "12px 14px",
+              fontSize: 14,
+              cursor: "pointer",
+              borderBottom: "1px solid #f3f4f6",
+              background:
+                parentProduct === p.id ? "#f5f3ff" : "#fff",
+              color: "#111827",
+              fontWeight: parentProduct === p.id ? 600 : 500,
+              transition: "0.2s",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "#f9fafb")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background =
+                parentProduct === p.id
+                  ? "#f5f3ff"
+                  : "#fff")
+            }
+          >
+            {p.name}
+          </div>
+        ))}
+      </div>
+    )}
+
+    {productDropdownOpen &&
+      productSearch &&
+      filteredProducts.length === 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            right: 0,
+            zIndex: 100,
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 10,
+            padding: "12px 14px",
+            fontSize: 13,
+            color: "#888",
+          }}
+        >
+          No products found for "{productSearch}"
+        </div>
+      )}
+  </div>
+
+  {parentProduct ? (
+    <p
+      style={{
+        fontSize: 12,
+        color: "#7c3aed",
+        marginTop: 12,
+        fontWeight: 600,
+      }}
+    >
+      ✓ Parent product selected
+    </p>
+  ) : (
+    <p
+      style={{
+        fontSize: 12,
+        color: "#888",
+        marginTop: 12,
+      }}
+    >
+      Search and select the parent product to associate this variant.
+    </p>
+  )}
+</div>
+
+
+          {/* Size Selection */}
+          <div style={S.card}>
+            <SectionHeader icon={<AssocIcon />} label="SIZE & STOCK" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+              {SIZES.map((size) => {
+                const sizeData = sizes[size];
+                const isEnabled = sizeData.enabled;
+                return (
                   <div
-                    key={p.id}
-                    onMouseDown={() => {
-                      setParentProduct(p.id);
-                      setProductSearch(p.name);
-                      setProductDropdownOpen(false);
-                    }}
+                    key={size}
                     style={{
-                      padding: "10px 14px", fontSize: 14, cursor: "pointer",
-                      color: "#111", borderBottom: "0.5px solid #f0f0f0",
-                      background: parentProduct === p.id ? "#f5f3ff" : "#fff",
+                      ...S.sizeCard,
+                      borderColor: isEnabled ? "#7c3aed" : "#e5e7eb",
+                      background: isEnabled ? "#f5f3ff" : "#fafafa",
+                      cursor: "pointer",
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "#f9fafb"}
-                    onMouseLeave={(e) => e.currentTarget.style.background = parentProduct === p.id ? "#f5f3ff" : "#fff"}
+                    onClick={() => toggleSize(size)}
                   >
-                    {p.name}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <input
+                        type="checkbox"
+                        checked={isEnabled}
+                        onChange={() => toggleSize(size)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ cursor: "pointer", width: 16, height: 16 }}
+                      />
+                      <span
+                        style={{
+                          fontWeight: 700,
+                          fontSize: 14,
+                          color: isEnabled ? "#7c3aed" : "#666",
+                        }}
+                      >
+                        {size}
+                      </span>
+                    </div>
+                    {isEnabled && (
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Stock qty"
+                        value={sizeData.stock || ""}
+                        onChange={(e) => setStock(size, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          ...S.input,
+                          fontSize: 12,
+                          padding: "8px 10px",
+                          background: "#fff",
+                        }}
+                      />
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-
-            {productDropdownOpen && productSearch && filteredProducts.length === 0 && (
-              <div style={{
-                position: "absolute", top: "100%", left: 0, right: 0,
-                zIndex: 100, background: "#fff", border: "1px solid #e5e7eb",
-                borderRadius: 10, marginTop: 4, padding: "12px 14px",
-                fontSize: 13, color: "#888",
-              }}>
-                No products found for "{productSearch}"
-              </div>
-            )}
-
-            {parentProduct && (
-              <p style={{ fontSize: 12, color: "#7c3aed", marginTop: 6, fontWeight: 600 }}>
-                ✓ Selected
-              </p>
-            )}
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 12, color: "#888", marginTop: 12 }}>
+              Click a size card to toggle availability. Enter stock quantity for enabled sizes.
+            </p>
           </div>
 
+          
           {/* Editorial Details */}
           <div style={S.card}>
             <SectionHeader icon={<BookIcon />} label="EDITORIAL DETAILS" />
-
-            {/* <div style={{ marginBottom: 16 }}>
-              <label style={S.label}>STYLING TIPS</label>
-              <RichTextarea
-                value={stylingTips}
-                onChange={setStylingTips}
-                placeholder="Provide detailed advice on how to wear this piece..."
-              />
-            </div> */}
 
             <div>
               <label style={S.label}>FABRIC & CARE</label>

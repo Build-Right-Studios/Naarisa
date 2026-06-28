@@ -213,7 +213,8 @@ export default function Orders() {
                 return (
                   <tr key={order._id} style={S.tr}>
                     <td style={{ ...S.td, padding: tdPad, fontWeight: 700, color: "#111", fontSize: 14 }}>
-                      #{order.orderId || order._id?.slice(-5).toUpperCase()}
+                      {/* #{order.orderId || order._id?.slice(-5).toUpperCase()} */}
+                      {order.customOrderId}
                     </td>
                     <td style={{ ...S.td, padding: tdPad }}>
                       <div style={{ fontSize: 14, color: "#111" }}>{date}</div>

@@ -189,7 +189,7 @@ const EmptyCart = ({ navigate }) => (
       </p>
     </div>
     <button
-      onClick={() => navigate("/products")}
+      onClick={() => navigate("/all-products")}
       style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", fontWeight: 700, letterSpacing: "0.14em", padding: "14px 32px", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none", cursor: "pointer", marginTop: "8px" }}
     >
       EXPLORE COLLECTION

@@ -93,6 +93,7 @@ export default function OrderDetail() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
+      console.log(data)
       if (data.success) setOrder(data.data);
       else setError(data.message || "Failed to load order.");
     } catch {
@@ -291,7 +292,7 @@ export default function OrderDetail() {
       >
         <div>
           <h1 style={{ ...D.title, fontSize: isMobile ? 22 : 28 }}>
-            Order #{order.orderId || id.slice(-6).toUpperCase()}
+            Order #{order.customOrderId || id.slice(-6).toUpperCase()}
           </h1>
           <p style={D.subtitle}>Placed on {formatDateTime(order.createdAt)}</p>
         </div>

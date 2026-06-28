@@ -1,13 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import useInView from "../utils/useInView.js";
+import shortkurtibanner from "../assets/Short Kurtis Banner.png";
+import longkurtibanner from "../assets/Long Kurtis Banner.png";
+import dressesbanner from "../assets/Dresses Banner.png";
+import kurtisetbanner from "../assets/Kurti Set Banner.png"
 
 // ── Core Values Data ──────────────────────────────────────────────────────────
 const coreValues = [
   {
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#AB721E" strokeWidth="1.5">
-        <path d="M12 2a9 9 0 0 1 9 9c0 4.97-9 13-9 13S3 15.97 3 11a9 9 0 0 1 9-9z"/>
-        <circle cx="12" cy="11" r="3"/>
+        <path d="M12 2a9 9 0 0 1 9 9c0 4.97-9 13-9 13S3 15.97 3 11a9 9 0 0 1 9-9z" />
+        <circle cx="12" cy="11" r="3" />
       </svg>
     ),
     title: "Quality You Can Feel",
@@ -16,10 +20,10 @@ const coreValues = [
   {
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#AB721E" strokeWidth="1.5">
-        <path d="M12 19l7-7 3 3-7 7-3-3z"/>
-        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
-        <path d="M2 2l7.586 7.586"/>
-        <circle cx="11" cy="11" r="2"/>
+        <path d="M12 19l7-7 3 3-7 7-3-3z" />
+        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
+        <path d="M2 2l7.586 7.586" />
+        <circle cx="11" cy="11" r="2" />
       </svg>
     ),
     title: "Modern Designs",
@@ -28,10 +32,10 @@ const coreValues = [
   {
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#AB721E" strokeWidth="1.5">
-        <rect x="3" y="3" width="7" height="7"/>
-        <rect x="14" y="3" width="7" height="7"/>
-        <rect x="3" y="14" width="7" height="7"/>
-        <rect x="14" y="14" width="7" height="7"/>
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
       </svg>
     ),
     title: "Affordable Pricing",
@@ -41,18 +45,18 @@ const coreValues = [
 
 // ── Grid image placeholders ───────────────────────────────────────────────────
 const gridImages = [
-  { gradient: "linear-gradient(135deg, #2B2112 0%, #4A3728 60%, #8B6914 100%)", label: "Craft" },
-  { gradient: "linear-gradient(160deg, #C4A882 0%, #AB721E 50%, #8B6914 100%)", label: "Collection" },
-  { gradient: "linear-gradient(135deg, #3A2010 0%, #6B4A2A 50%, #C4A882 100%)", label: "Atelier" },
-  { gradient: "linear-gradient(160deg, #1a0a0a 0%, #4A3728 50%, #C47B1E 100%)", label: "Heritage" },
+  { title: "Short Kurtis", path: "/categories/short-kurtis", image: shortkurtibanner },
+  { title: "Long Kurtis", path: "/categories/long-kurtis", image: longkurtibanner },
+  { title: "Dresses", path: "/categories/dresses", image: dressesbanner },
+  { title: "Kurti Sets", path: "/categories/kurti-sets", image: kurtisetbanner },
 ];
 
 // ── About Page ────────────────────────────────────────────────────────────────
 const AboutPage = () => {
   const navigate = useNavigate();
-  const story    = useInView(0.1);
-  const values   = useInView(0.1);
-  const grid     = useInView(0.1);
+  const story = useInView(0.1);
+  const values = useInView(0.1);
+  const grid = useInView(0.1);
 
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
@@ -197,7 +201,7 @@ const AboutPage = () => {
             >
               Shop the Collection
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
               </svg>
             </button>
           </div>
@@ -403,48 +407,36 @@ const AboutPage = () => {
         className="w-full"
         style={{ backgroundColor: "#2B2112" }}
       >
-        <div className="grid grid-cols-2 sm:grid-cols-4">
-          {gridImages.map((img, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {gridImages.map((item, index) => (
             <div
               key={index}
-              className="relative overflow-hidden transition-all duration-700"
-              style={{
-                aspectRatio: "1/1",
-                background: img.gradient,
-                opacity: grid.inView ? 1 : 0,
-                transform: grid.inView ? "scale(1)" : "scale(0.96)",
-                transitionDelay: `${index * 80}ms`,
-                cursor: "pointer",
-              }}
+              onClick={() => navigate(item.path)}
+              className="relative overflow-hidden cursor-pointer group transition-all duration-700 p-2"
             >
-              <div
-                className="absolute inset-0 opacity-20"
-                style={{
-                  backgroundImage: `repeating-linear-gradient(
-                    45deg,
-                    rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px,
-                    transparent 1px, transparent 10px
-                  )`,
-                }}
+              {/* Image */}
+              <img
+                src={item.image}
+                alt={item.title}
+               className="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
               />
-              <div
-                className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300"
-                style={{ backgroundColor: "rgba(43,33,18,0.5)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
-              >
+
+              {/* Dark Overlay */}
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-300" />
+
+              {/* Title Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <p
-                  className="text-[11px] font-bold uppercase tracking-[0.2em]"
-                  style={{ fontFamily: "'Jost', sans-serif", color: "#F5E6D0" }}
+                  className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#F5E6D0]"
+                  style={{ fontFamily: "'Jost', sans-serif" }}
                 >
-                  {img.label}
+                  {item.title}
                 </p>
               </div>
+
+              {/* Brand */}
               <div className="absolute bottom-3 left-3">
-                <p
-                  className="text-[9px] font-bold uppercase tracking-widest"
-                  style={{ color: "rgba(245,230,208,0.4)" }}
-                >
+                <p className="text-[9px] font-bold uppercase tracking-widest text-[#F5E6D0]/60">
                   Naarisa
                 </p>
               </div>
@@ -452,7 +444,7 @@ const AboutPage = () => {
           ))}
         </div>
       </section>
-
+      <div style={{ height: "16px", backgroundColor: "#F5E6D0" }} />
     </div>
   );
 };

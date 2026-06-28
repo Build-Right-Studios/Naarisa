@@ -1,4 +1,4 @@
-import { Variant } from "../../../MongoDB/models.js";
+import { Product, Variant } from "../../../MongoDB/models.js";
 
 export const searchProducts = async (req, res) => {
   try {
@@ -13,28 +13,42 @@ export const searchProducts = async (req, res) => {
       });
     }
 
-    const variants = await Variant.find({ isActive: true })
+    const regex = new RegExp(query, "i");
+
+    // Find matching products
+    const matchedProducts = await Product.find({
+      $or: [
+        { name: regex },
+        { category: regex },
+        { tags: regex },
+      ],
+    })
+      .select("_id")
+      .lean();
+
+    const productIds = matchedProducts.map((product) => product._id);
+
+    // Find matching variants by product OR color
+    const variants = await Variant.find({
+      isActive: true,
+      $or: [
+        {
+          productId: { $in: productIds },
+        },
+        {
+          "color.name": regex,
+        },
+      ],
+    })
       .populate({
         path: "productId",
-        match: {
-          $or: [
-            { name: { $regex: query, $options: "i" } },
-            { category: { $regex: query, $options: "i" } },
-            { tags: { $regex: query, $options: "i" } },
-          ],
-        },
         select: "name category basePrice",
       })
       .sort({ createdAt: -1 })
       .limit(Number(limit))
       .lean();
 
-    // Remove variants whose parent product didn't match
-    const matchedVariants = variants.filter(
-      (variant) => variant.productId
-    );
-
-    const formatted = matchedVariants.map((variant) => ({
+    const formatted = variants.map((variant) => ({
       id: variant._id.toString(),
 
       name: `${variant.productId.name} - ${
@@ -47,7 +61,7 @@ export const searchProducts = async (req, res) => {
       slug: variant.slug,
 
       price:
-        variant.discountPrice ||
+        variant.discountPrice ??
         variant.productId.basePrice,
 
       image: variant.images?.[0]?.url || null,

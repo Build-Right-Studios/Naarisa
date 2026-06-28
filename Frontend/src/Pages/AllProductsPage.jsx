@@ -19,10 +19,10 @@ const CATEGORIES = [
 ];
 
 const SORT_OPTIONS = [
-  { label: "Newest First", value: "newest" },
+  { label: "Newest First",    value: "newest" },
   { label: "Price: Low–High", value: "price_asc" },
   { label: "Price: High–Low", value: "price_desc" },
-  { label: "Name: A–Z", value: "name_asc" },
+  { label: "Name: A–Z",       value: "alphabetical" },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -367,9 +367,9 @@ const AllProductsPage = () => {
           ) : products.length ? (
             products.map((product) => (
               <ProductCard
-                key={product.id}
+                key={product._id}
                 product={product}
-                badge="New"
+                badge="Shop All"
               />
             ))
           ) : (

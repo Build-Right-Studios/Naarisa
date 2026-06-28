@@ -6,13 +6,6 @@ import FilterPanel, { FilterTriggerButton, FILTER_DEFAULTS, countActiveFilters }
 import api from "../utils/axiosInstance.js";
 import { PRODUCT } from "../Constants/apiRoutes.js";
 
-import desktopBanner from "../assets/Naarisa - Bestseller Desktop.png";
-import mobileBanner from "../assets/Naarisa - Bestseller Mobile.png";
-
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                     */
-/* -------------------------------------------------------------------------- */
-
 /* -------------------------------------------------------------------------- */
 /* Skeleton                                                                    */
 /* -------------------------------------------------------------------------- */
@@ -59,10 +52,10 @@ const ActiveChip = ({ label, onRemove }) => (
 );
 
 const SORT_OPTIONS = [
-  { label: "Newest First", value: "newest" },
-  { label: "Price: Low–High", value: "price_asc" },
-  { label: "Price: High–Low", value: "price_desc" },
-  { label: "Name: A–Z", value: "name_asc" },
+  { label: "Newest First",    value: "newest"       },
+  { label: "Price: Low–High", value: "price_asc"    },
+  { label: "Price: High–Low", value: "price_desc"   },
+  { label: "Name: A–Z",       value: "alphabetical" }, // was "name_asc" — now synced with backend
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -73,8 +66,9 @@ const BestSellersPage = () => {
   const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
-  const [allProducts, setAllProducts] = useState([]); // unfiltered, for resultCount
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // ── Filter state ──
   const [filters, setFilters] = useState(FILTER_DEFAULTS);
@@ -82,60 +76,81 @@ const BestSellersPage = () => {
   const [sort, setSort] = useState("newest");
 
   // ── Build filter query params ──
-  const buildParams = useCallback((f = filters) => {
+  const buildParams = useCallback((f = filters, sortBy = sort) => {
     const p = new URLSearchParams();
 
-    p.set("sort", sort);
+    p.set("sort", sortBy);
 
-    if (f.availability.length) p.set("availability", f.availability.join(","));
-    if (f.priceRange.length) p.set("priceRange", f.priceRange.join(","));
-    if (f.discount) p.set("discount", f.discount);
-    if (f.colours.length) p.set("colours", f.colours.join(","));
-    // if (f.fabrics.length) p.set("fabrics", f.fabrics.join(","));
-    // if (f.occasions.length) p.set("occasions", f.occasions.join(","));
+    if (f.availability && f.availability.length > 0) {
+      p.set("availability", f.availability.join(","));
+    }
+    if (f.priceRange && f.priceRange.length > 0) {
+      p.set("priceRange", f.priceRange.join(","));
+    }
+    if (f.discount) {
+      p.set("discount", f.discount);
+    }
+    if (f.colours && f.colours.length > 0) {
+      p.set("colours", f.colours.join(","));
+    }
 
     return p;
-  }, [filters, sort]);
+  }, []);
 
-  // ── Fetch ──
-  const fetchProducts = useCallback(async (f = filters) => {
-    setLoading(true);
-    try {
-      const params = buildParams(f);
-      const query = params.toString();
-      const url = query ? `${PRODUCT.BEST_SELLERS}?${query}` : PRODUCT.BEST_SELLERS;
-      const res = await api.get(url);
+  // ── Fetch products ──
+  const fetchProducts = useCallback(
+    async (filtersToUse = filters, sortToUse = sort) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = buildParams(filtersToUse, sortToUse);
+        const query = params.toString();
+        const url = query 
+          ? `${PRODUCT.BEST_SELLERS}?${query}` 
+          : PRODUCT.BEST_SELLERS;
 
-      setProducts(res.data?.data || []);
-      // Store unfiltered total on first load (no active filters)
-      if (countActiveFilters(f) === 0) {
-        setAllProducts(res.data?.data || []);
+        const res = await api.get(url);
+
+        console.log(res.data)
+
+        // ✅ CORRECT: res.data.data IS the array (not nested under .products)
+        const productsArray = Array.isArray(res.data?.data) ? res.data.data : [];
+        setProducts(productsArray);
+
+        // Store total count only when no filters are active
+        if (countActiveFilters(filtersToUse) === 0) {
+          setTotalCount(productsArray.length);
+        }
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError("Failed to load products. Please try again.");
+        setProducts([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error(err);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [buildParams]);
+    },
+    [buildParams]
+  );
 
-  // Initial fetch
-  useEffect(() => { fetchProducts(); }, [fetchProducts, sort]);  // eslint-disable-line
+  // ── Initial fetch and fetch on sort change ──
+  useEffect(() => {
+    fetchProducts(filters, sort);
+  }, [sort, fetchProducts]);
 
   const activeFilterCount = countActiveFilters(filters);
 
-  const handleFilterChange = (key, val) =>
-    setFilters(prev => ({ ...prev, [key]: val }));
+  const handleFilterChange = (key, val) => {
+    setFilters((prev) => ({ ...prev, [key]: val }));
+  };
 
   const handleFilterApply = () => {
     setFilterOpen(false);
-    fetchProducts(filters);
+    fetchProducts(filters, sort);
   };
 
   const handleFilterClear = () => {
-    const cleared = FILTER_DEFAULTS;
-    setFilters(cleared);
-    fetchProducts(cleared);
+    setFilters(FILTER_DEFAULTS);
+    fetchProducts(FILTER_DEFAULTS, sort);
   };
 
   return (
@@ -158,40 +173,28 @@ const BestSellersPage = () => {
         resultCount={products.length}
       />
 
-      {/* Banner */}
-      {/* <div>
-        <img src={desktopBanner} alt="Bestsellers" className="hidden md:block w-full" />
-        <img src={mobileBanner} alt="Bestsellers" className="block md:hidden w-full" />
-      </div> */}
-
       <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-10 xl:px-12">
 
         {/* Breadcrumb */}
         <p style={{
-          fontFamily: "'Jost', sans-serif", fontSize: "11px",
-          letterSpacing: "0.14em", color: "#8C7B6B",
-          textTransform: "uppercase", padding: "24px 0 0",
+          fontFamily: "'Jost', sans-serif",
+          fontSize: "11px",
+          letterSpacing: "0.14em",
+          color: "#8C7B6B",
+          textTransform: "uppercase",
+          padding: "24px 0 0",
         }}>
-          <span onClick={() => navigate("/")} className="cursor-pointer hover:text-[#AB721E]">
+          <span 
+            onClick={() => navigate("/")} 
+            className="cursor-pointer hover:text-[#AB721E]"
+          >
             Home
           </span>
           <span style={{ margin: "0 8px" }}>/</span>
           <span style={{ color: "#1f1b15" }}>Bestsellers</span>
         </p>
 
-        {/* Heading */}
-        {/* <div style={{ padding: "16px 0 0" }}>
-          <h1 style={{
-            fontFamily: "'EB Garamond', serif",
-            fontSize: "clamp(24px,3vw,36px)",
-            color: "#1f1b15", fontWeight: 400,
-          }}>
-            Bestsellers
-          </h1>
-        </div> */}
-
-        {/* ── Toolbar: count + filter trigger ── */}
-        {/* ── Toolbar ── */}
+        {/* ── Toolbar: Count + Sort + Filter ── */}
         <div
           style={{
             display: "flex",
@@ -212,7 +215,9 @@ const BestSellersPage = () => {
                 letterSpacing: "0.08em",
               }}
             >
-              {products.length} styles
+              {activeFilterCount > 0
+                ? `${products.length} of ${totalCount} styles`
+                : `${products.length} styles`}
             </p>
           )}
 
@@ -224,7 +229,7 @@ const BestSellersPage = () => {
               marginLeft: "auto",
             }}
           >
-            {/* Sort */}
+            {/* Sort Dropdown */}
             <div
               style={{
                 display: "flex",
@@ -271,80 +276,106 @@ const BestSellersPage = () => {
               </select>
             </div>
 
-            {/* Filter */}
+            {/* Filter Button */}
             <FilterTriggerButton
               activeCount={activeFilterCount}
               onClick={() => setFilterOpen(true)}
             />
           </div>
         </div>
-        {/* <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "20px 0 24px",
-            borderBottom: "1px solid #E8DDD0",
-            gap: "12px",
-            flexWrap: "wrap",
-          }}
-        >
-          {!loading && (
-            <p style={{
-              fontFamily: "'Jost', sans-serif", fontSize: "12px",
-              color: "#8C7B6B", letterSpacing: "0.08em",
-            }}>
-              {products.length} styles
-            </p>
-          )}
 
-          <FilterTriggerButton
-            activeCount={activeFilterCount}
-            onClick={() => setFilterOpen(true)}
-            style={{ marginLeft: "auto" }}
-          />
-        </div> */}
-
-        {/* ── Active filter chips ── */}
+        {/* ── Active Filter Chips ── */}
         {activeFilterCount > 0 && (
-          <div style={{
-            display: "flex", flexWrap: "wrap", gap: "8px",
-            padding: "16px 0 0", alignItems: "center",
-          }}>
-            <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#8C7B6B", letterSpacing: "0.06em" }}>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "8px",
+              padding: "16px 0 0",
+              alignItems: "center",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "'Jost', sans-serif",
+                fontSize: "11px",
+                color: "#8C7B6B",
+                letterSpacing: "0.06em",
+              }}
+            >
               Active filters:
             </span>
 
-            {filters.availability.map((v) => (
-              <ActiveChip key={v} label={v}
-                onRemove={() => handleFilterChange("availability", filters.availability.filter(x => x !== v))}
-              />
-            ))}
-            {filters.priceRange.map((v) => (
-              <ActiveChip key={v}
-                label={v.replace(/(\d+)-(\d+)/, (_, a, b) =>
-                  `₹${Number(a).toLocaleString("en-IN")}–₹${Number(b).toLocaleString("en-IN")}`
-                )}
-                onRemove={() => handleFilterChange("priceRange", filters.priceRange.filter(x => x !== v))}
-              />
-            ))}
+            {/* Availability Filters */}
+            {filters.availability &&
+              filters.availability.map((v) => (
+                <ActiveChip
+                  key={v}
+                  label={v}
+                  onRemove={() =>
+                    handleFilterChange(
+                      "availability",
+                      filters.availability.filter((x) => x !== v)
+                    )
+                  }
+                />
+              ))}
+
+            {/* Price Range Filters */}
+            {filters.priceRange &&
+              filters.priceRange.map((v) => (
+                <ActiveChip
+                  key={v}
+                  label={v.replace(/(\d+)-(\d+)/, (_, a, b) =>
+                    `₹${Number(a).toLocaleString("en-IN")}–₹${Number(b).toLocaleString("en-IN")}`
+                  )}
+                  onRemove={() =>
+                    handleFilterChange(
+                      "priceRange",
+                      filters.priceRange.filter((x) => x !== v)
+                    )
+                  }
+                />
+              ))}
+
+            {/* Discount Filter */}
             {filters.discount && (
-              <ActiveChip label={`${filters.discount}%+ off`}
+              <ActiveChip
+                label={`${filters.discount}%+ off`}
                 onRemove={() => handleFilterChange("discount", null)}
               />
             )}
-            {filters.colours.map((v) => (
-              <ActiveChip key={v} label={v}
-                onRemove={() => handleFilterChange("colours", filters.colours.filter(x => x !== v))}
-              />
-            ))}
+
+            {/* Colour Filters */}
+            {filters.colours &&
+              filters.colours.map((v) => (
+                <ActiveChip
+                  key={v}
+                  label={v}
+                  onRemove={() =>
+                    handleFilterChange(
+                      "colours",
+                      filters.colours.filter((x) => x !== v)
+                    )
+                  }
+                />
+              ))}
+
+            {/* Clear All Button */}
             <button
               onClick={handleFilterClear}
               style={{
-                fontFamily: "'Jost', sans-serif", fontSize: "11px",
-                fontWeight: 600, letterSpacing: "0.06em", color: "#AB721E",
-                background: "none", border: "none", cursor: "pointer",
-                textDecoration: "underline", textUnderlineOffset: "3px", padding: "4px 0",
+                fontFamily: "'Jost', sans-serif",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                color: "#AB721E",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                textDecoration: "underline",
+                textUnderlineOffset: "3px",
+                padding: "4px 0",
               }}
             >
               Clear all
@@ -352,37 +383,77 @@ const BestSellersPage = () => {
           </div>
         )}
 
-        {/* ── Grid ── */}
+        {/* ── Error Message ── */}
+        {error && (
+          <div
+            style={{
+              padding: "16px",
+              marginTop: "16px",
+              backgroundColor: "#FFE5E5",
+              border: "1px solid #FF9999",
+              borderRadius: "4px",
+              color: "#CC0000",
+              fontSize: "13px",
+              fontFamily: "'Jost', sans-serif",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* ── Product Grid ── */}
         <div
           className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-3 lg:grid-cols-4"
           style={{ paddingTop: "32px", paddingBottom: "80px" }}
         >
           {loading ? (
+            // Skeleton Loading
             Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)
-          ) : products.length ? (
-            products.map((product) => (
+          ) : products.length > 0 ? (
+            // Product Cards
+            products.map((product, index) => (
               <ProductCard
-                key={product._id}
+                key={product.id || product._id || index}
                 product={product}
-                badge="New"
+                badge="Bestseller"
               />
             ))
           ) : (
+            // No Results Message
             <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "80px 0" }}>
-              <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "24px", color: "#8C7B6B" }}>
+              <p
+                style={{
+                  fontFamily: "'EB Garamond', serif",
+                  fontSize: "24px",
+                  color: "#8C7B6B",
+                }}
+              >
                 No bestsellers found
               </p>
-              <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#C4A882", marginTop: "8px" }}>
+              <p
+                style={{
+                  fontFamily: "'Jost', sans-serif",
+                  fontSize: "12px",
+                  color: "#C4A882",
+                  marginTop: "8px",
+                }}
+              >
                 Try adjusting or clearing your filters
               </p>
               <button
                 onClick={handleFilterClear}
                 style={{
-                  marginTop: "20px", padding: "10px 24px",
-                  fontFamily: "'Jost', sans-serif", fontSize: "11px",
-                  fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                  backgroundColor: "#1f1b15", color: "#F9F3EB",
-                  border: "none", cursor: "pointer",
+                  marginTop: "20px",
+                  padding: "10px 24px",
+                  fontFamily: "'Jost', sans-serif",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  backgroundColor: "#1f1b15",
+                  color: "#F9F3EB",
+                  border: "none",
+                  cursor: "pointer",
                 }}
               >
                 Clear Filters
@@ -390,7 +461,6 @@ const BestSellersPage = () => {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
