@@ -105,14 +105,14 @@ const HeroSlider = () => {
 
           return (
             <div
-              key={banner._id}
+              key={banner._doc._id}
               className="absolute inset-0 transition-opacity duration-1000"
               style={{
                 opacity: index === current ? 1 : 0,
                 zIndex: index === current ? 1 : 0,
                 cursor: banner.link ? "pointer" : "default",
               }}
-              onClick={() => handleBannerClick(banner.link)}
+              onClick={() => handleBannerClick(banner._doc.link)}
             >
               {/* Banner Image */}
               <img
