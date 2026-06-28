@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import {
   FiSearch,
@@ -10,6 +10,9 @@ import {
 } from "react-icons/fi";
 
 import logo from "../../assets/Naarisa logo icon.png";
+import { BASE, PRODUCT } from "../../Constants/apiRoutes.js";
+
+const BASE_URL = BASE.ROUTE;
 
 const navLinks = [
   {
@@ -54,6 +57,41 @@ const navLinks = [
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileCategoryOpen, setMobileCategoryOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef(null);
+  const navigate = useNavigate();
+  const [suggestions, setSuggestions] = useState([]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) { setSuggestions([]); return; }
+    // Debounce + call your API
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `${BASE_URL}${PRODUCT.SEARCH_PRODUCTS}?q=${encodeURIComponent(searchQuery)}`
+        );
+
+        console.log(res.data)
+
+        const data = await res.json();
+
+        console.log("Search Response:", data);
+
+        if (data.success) {
+          setSuggestions(data.data || []);
+        }
+      } catch (e) {
+        console.log("Error from Navbar :", e);
+        setSuggestions([]);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
+  }, [searchOpen]);
 
   return (
     <>
@@ -311,18 +349,9 @@ const Navbar = () => {
 
             {/* SEARCH */}
             <button
-              className="
-              flex
-              items-center
-              justify-center
-              text-[22px]
-              text-[#1f1b15]
-              transition
-              duration-300
-              hover:text-[#7c5400]
-              md:text-[23px]
-              xl:text-[20px]
-            "
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center justify-center text-[22px] text-[#1f1b15] 
+             transition duration-300 hover:text-[#7c5400] md:text-[23px] xl:text-[20px]"
             >
               <FiSearch />
             </button>
@@ -576,6 +605,121 @@ const Navbar = () => {
           ))}
         </ul>
       </div>
+      {/* SEARCH OVERLAY */}
+      {searchOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={() => { setSearchOpen(false); setSearchQuery(""); setSuggestions([]); }}
+          />
+          <div className="fixed top-0 left-0 right-0 z-50 bg-[#fff8f3] shadow-lg px-5 py-5 sm:px-8">
+            <div className="mx-auto max-w-[680px]">
+
+              {/* Input row */}
+              <div className="flex items-center gap-3 border-b border-[#e8ddd0] pb-4">
+                <FiSearch className="text-[20px] text-[#7c5400] flex-shrink-0" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && searchQuery.trim()) {
+                      navigate(`/all-products?search=${encodeURIComponent(searchQuery.trim())}`);
+                      setSearchOpen(false); setSearchQuery(""); setSuggestions([]);
+                    }
+                    if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); setSuggestions([]); }
+                  }}
+                  placeholder="Search for kurtis, dresses, sets…"
+                  className="flex-1 bg-transparent font-['Jost'] text-[16px] text-[#1f1b15]
+                       placeholder-[#a89080] outline-none"
+                />
+                <button
+                  onClick={() => { setSearchOpen(false); setSearchQuery(""); setSuggestions([]); }}
+                  className="text-[22px] text-[#504537] hover:text-[#7c5400] transition"
+                >
+                  <FiX />
+                </button>
+              </div>
+
+              {/* Suggestions */}
+              {suggestions.length > 0 && (
+                <ul className="mt-3 max-h-[60vh] overflow-y-auto divide-y divide-[#f0e8de]">
+                  {suggestions.map((item) => (
+                    <li key={item.id}>
+                      <button
+                        onClick={() => {
+                          navigate(`/product/${item.slug || item.id}`);
+                          setSearchOpen(false); setSearchQuery(""); setSuggestions([]);
+                        }}
+                        className="w-full flex items-center gap-4 py-3 text-left
+                             hover:text-[#7c5400] transition-colors duration-200"
+                      >
+                        {item.image && (
+                          <img src={item.image} alt={item.name}
+                            className="h-12 w-12 rounded-lg object-cover flex-shrink-0
+                                 border border-[#eadcc8]" />
+                        )}
+                        <div>
+                          <p className="font-['Jost'] text-[14px] text-[#1f1b15] font-medium">
+                            {item.name}
+                          </p>
+                          {item.category && (
+                            <p className="font-['Jost'] text-[12px] text-[#a89080] mt-0.5">
+                              {item.category}
+                            </p>
+                          )}
+                        </div>
+                        {item.price && (
+                          <span className="ml-auto font-['Jost'] text-[13px] text-[#7c5400] font-medium">
+                            ₹{item.price}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                  <li>
+                    <button
+                      onClick={() => {
+                        navigate(`/all-products?search=${encodeURIComponent(searchQuery)}`);
+                        setSearchOpen(false); setSearchQuery(""); setSuggestions([]);
+                      }}
+                      className="w-full py-3 font-['Jost'] text-[13px] text-[#7c5400]
+                           font-medium tracking-wide hover:underline text-center"
+                    >
+                      See all results for "{searchQuery}" →
+                    </button>
+                  </li>
+                </ul>
+              )}
+
+              {/* No results */}
+              {searchQuery.trim() && suggestions.length === 0 && (
+                <p className="mt-4 font-['Jost'] text-[13px] text-[#a89080] text-center">
+                  No results found — press Enter to search all products
+                </p>
+              )}
+
+              {/* Empty state hints */}
+              {!searchQuery && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {["Anarkali", "Short Kurti", "Kurti Sets", "New In"].map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setSearchQuery(tag)}
+                      className="px-3 py-1.5 rounded-full border border-[#e8ddd0] font-['Jost']
+                           text-[12px] text-[#504537] hover:border-[#7c5400]
+                           hover:text-[#7c5400] transition-colors"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 };

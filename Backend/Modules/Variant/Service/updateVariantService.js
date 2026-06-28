@@ -16,7 +16,7 @@ export const updateVariantService = async (data) => {
 
       if (
         updates.images.length === 0 ||
-        updates.images.length > 5
+        updates.images.length > 8
       ) {
         throw new Error(
           "Images must be between 1 and 5"

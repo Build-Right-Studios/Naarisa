@@ -2,6 +2,7 @@ import { verifyPaymentService } from "../Service/verifyPaymentService.js";
 
 export const verifyPayment = async (req, res) => {
   try {
+    console.log("Verify Payment called.")
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
     if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
@@ -13,7 +14,7 @@ export const verifyPayment = async (req, res) => {
       razorpayPaymentId,
       razorpaySignature
     });
-
+    console.log("Verify Payment ending.")
     return res.status(200).json({
       message: "Payment verified successfully",
       ...result

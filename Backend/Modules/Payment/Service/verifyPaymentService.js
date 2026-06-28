@@ -1,9 +1,11 @@
 import crypto from "crypto";
 import { findOrderByRazorpayOrderId, confirmOrder } from "../Query/verifyPaymentQuery.js";
-
 import { sendSMS } from "../../../config/twilio.js";
+import { sendSMSTemplate } from "../../../config/msg91.js";
+import { sendOrderConfirmationEmail } from "../../../config/emailService.js";
 
 export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId, razorpaySignature }) => {
+  console.log("Verify Payment Service called.")
 
   // Step 1 — Recreate the signature
   const body = razorpayOrderId + "|" + razorpayPaymentId;
@@ -32,10 +34,52 @@ export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId,
   const confirmedOrder = await confirmOrder(order._id, razorpayPaymentId);
   console.log("Confirmed Order : ", confirmedOrder)
 
-  sendSMS(confirmedOrder.address.phone, `Thank you for shopping with Naarisa. Order #${confirmedOrder._id} has been confirmed. We'll notify you once it is shipped.`)
+
+  // Step 6 — Get user email (populate might have it)
+  const userEmail = confirmedOrder.address.email;
+
+  // Step 7 — Send SMS
+  try {
+    if (process.env.MSG91_ORDER_CONFIRMATION_FLOW) {
+      await sendSMSTemplate(
+        process.env.MSG91_ORDER_CONFIRMATION_FLOW,
+        confirmedOrder.address.phone,
+        [
+          confirmedOrder.customOrderId,
+        ]
+      );
+    } else {
+      // Fallback to Twilio
+      await sendSMS(
+        confirmedOrder.address.phone,
+        `Thank you for shopping with Naarisa. Order #${confirmedOrder.customOrderId} has been confirmed. We'll notify you once it is shipped.`
+      );
+    }
+  } catch (smsError) {
+    console.error("Order Confirmation SMS failed:", smsError);
+  }
+
+  // Step 8 — Send Email
+  console.log("UserEmail :", userEmail)
+  if (userEmail) {
+    try {
+      await sendOrderConfirmationEmail(userEmail, {
+        customOrderId: confirmedOrder.customOrderId,
+        items: confirmedOrder.items,
+        pricing: confirmedOrder.pricing,
+        address: confirmedOrder.address
+      });
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+      // Don't throw - SMS was already sent, payment is confirmed
+    }
+  }
+
+  console.log("Verify Payment Service ending.")
 
   return {
     orderId: confirmedOrder._id,
+    customOrderId: confirmedOrder.customOrderId,
     status: confirmedOrder.status,
     paidAt: confirmedOrder.payment.paidAt,
 

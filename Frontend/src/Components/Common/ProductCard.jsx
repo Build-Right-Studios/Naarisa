@@ -12,9 +12,13 @@ const ProductCard = ({
     product.image ??
     product.images?.[0]?.url;
 
-  const name =
-    product.name ??
-    product.productId?.name;
+  const productName = product.name || product.productId?.name;
+
+  const name = `${productName} - ${product.color?.name
+      ? product.color.name.charAt(0).toUpperCase() +
+      product.color.name.slice(1)
+      : ""
+    }`;
 
   const originalPrice =
     product.price ??
@@ -31,6 +35,7 @@ const ProductCard = ({
       : 0;
 
   return (
+
     <div
       onClick={() => navigate(`/product/${product.slug}`)}
       onMouseEnter={() => setHovered(true)}

@@ -18,6 +18,8 @@ import AllProductsPage from "./Pages/AllProductsPage";
 import NewArrivalsPage from "./Pages/Newarrivalspage";
 import ContactPage from "./Pages/ContactPage";
 import ReturnRefundPage from "./Pages/ReturnRefundPage";
+import TermsPage from "./Pages/TermsPage";
+import PrivacyPolicyPage from "./Pages/PrivacyPolicyPage";
 
 
 function App() {
@@ -43,6 +45,8 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/return-refund-policy" element={<ReturnRefundPage />} />
+        <Route path="/terms-of-condition" element={<PrivacyPolicyPage />} />
+        <Route path="/privacy-policy" element={<TermsPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
       </Routes>

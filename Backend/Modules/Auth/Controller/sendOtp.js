@@ -15,7 +15,7 @@ export const sendOtp = async (req, res) => {
 
     const result = await sendOtpService(phone);
 
-    console.log("Result Reached.")
+    console.log("Result Reached.", result)
 
     return res.status(200).json({
       success: true,

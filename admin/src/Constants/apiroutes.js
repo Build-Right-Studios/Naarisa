@@ -33,6 +33,11 @@ export const ORDER = {
   ACTIVE:    "/api/order/active",
   DELIVERED: "/api/order/delivered",
   BY_ID:     (id) => `/api/order/${id}`,
+  CREATE_SHIPMENT: (orderId) => `/api/shipment/${orderId}/create-shipment`,
+  GET_COURIERS: (id) => `/api/shipment/${id}/couriers`,
+  ASSIGN_COURIER: (id) => `/api/shipment/${id}/assign-courier`,
+  GET_TRACKING: (orderId) => `/api/shipment/tracking/${orderId}`,
+  SYNC_TRACKING: (orderId) => `/api/shipment/tracking/${orderId}/sync`,
 };
 
 export const BANNER = {

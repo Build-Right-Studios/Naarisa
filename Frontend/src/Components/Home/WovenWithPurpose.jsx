@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
 import useInView from "../../utils/useInView.js";
+import wovenwithpurpose from "../../assets/Woven with purpose.png";
 
 const brandValues = [
   {
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M12 2a9 9 0 0 1 9 9c0 4.97-9 13-9 13S3 15.97 3 11a9 9 0 0 1 9-9z"/>
-        <circle cx="12" cy="11" r="3"/>
+        <path d="M12 2a9 9 0 0 1 9 9c0 4.97-9 13-9 13S3 15.97 3 11a9 9 0 0 1 9-9z" />
+        <circle cx="12" cy="11" r="3" />
       </svg>
     ),
     label: "Pure Organics",
@@ -14,7 +15,7 @@ const brandValues = [
   {
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
       </svg>
     ),
     label: "Ethically Made",
@@ -22,7 +23,7 @@ const brandValues = [
   {
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
       </svg>
     ),
     label: "Artisan Crafted",
@@ -30,13 +31,13 @@ const brandValues = [
   {
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <circle cx="12" cy="12" r="5"/>
-        <line x1="12" y1="1" x2="12" y2="3"/>
-        <line x1="12" y1="21" x2="12" y2="23"/>
-        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-        <line x1="1" y1="12" x2="3" y2="12"/>
-        <line x1="21" y1="12" x2="23" y2="12"/>
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" />
+        <line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" />
+        <line x1="21" y1="12" x2="23" y2="12" />
       </svg>
     ),
     label: "Natural Dyes",
@@ -44,9 +45,9 @@ const brandValues = [
 ];
 
 const WovenWithPurpose = () => {
-  const image   = useInView(0.1);
+  const image = useInView(0.1);
   const content = useInView(0.1);
-  const strip   = useInView(0.1);
+  const strip = useInView(0.1);
 
   const isDesktop = window.innerWidth >= 1024;
 
@@ -76,34 +77,30 @@ const WovenWithPurpose = () => {
               className="relative overflow-hidden"
               style={{ aspectRatio: "4/3" }}
             >
+              <img
+                src={wovenwithpurpose}
+                alt="Woven With Purpose"
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+              />
+
+              {/* Optional subtle overlay for text readability */}
               <div
                 className="absolute inset-0"
                 style={{
-                  background: "linear-gradient(160deg, #2B2112 0%, #4A3728 30%, #8B6914 60%, #C47B1E 85%, #F5E6D0 100%)",
+                  background:
+                    "linear-gradient(to top, rgba(0,0,0,0.28), transparent 45%)",
                 }}
               />
-              <div
-                className="absolute inset-0 opacity-30"
-                style={{
-                  backgroundImage: `repeating-linear-gradient(
-                    0deg, transparent, transparent 4px,
-                    rgba(255,255,255,0.08) 4px, rgba(255,255,255,0.08) 5px
-                  ), repeating-linear-gradient(
-                    90deg, transparent, transparent 8px,
-                    rgba(255,255,255,0.05) 8px, rgba(255,255,255,0.05) 9px
-                  )`,
-                }}
-              />
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: "radial-gradient(ellipse at 70% 30%, rgba(196,123,30,0.4) 0%, transparent 60%)",
-                }}
-              />
+
               <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4">
                 <p
                   className="text-[9px] font-bold uppercase tracking-[0.2em] sm:text-[10px]"
-                  style={{ fontFamily: "'Jost', sans-serif", color: "rgba(245,230,208,0.7)" }}
+                  style={{
+                    fontFamily: "'Jost', sans-serif",
+                    color: "#fff",
+                  }}
                 >
                   Artisan Craft
                 </p>
@@ -172,8 +169,8 @@ const WovenWithPurpose = () => {
               className="text-[13px] font-light leading-[1.8] sm:text-[14px] lg:text-[15px]"
               style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}
             >
-              Naarisa is a modern ethnic wear brand built on over 70 years of family experience in women's fashion. 
-              Our journey began in Haridwar in 1955, where generations of our family served customers through a trusted retail store. 
+              Naarisa is a modern ethnic wear brand built on over 70 years of family experience in women's fashion.
+              Our journey began in Haridwar in 1955, where generations of our family served customers through a trusted retail store.
               Today, we bring that same understanding of quality, fit and value online.
             </p>
 

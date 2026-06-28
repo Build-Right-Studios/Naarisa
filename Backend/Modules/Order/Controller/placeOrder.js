@@ -5,7 +5,6 @@ export const placeOrder = async (req, res) => {
   try {
     const { items, address, addressId, couponCode } = req.body;
 
-    // Basic validation
     if (!items || items.length === 0) {
       return res.status(400).json({ message: "No items in order" });
     }
@@ -14,12 +13,6 @@ export const placeOrder = async (req, res) => {
       return res.status(400).json({ message: "Address is mising" });
     }
     const user = req.user;
-    // || {
-    //   _id: new mongoose.Types.ObjectId(),
-    //   name: "Test User",
-    //   email: "test@example.com"
-    // };
-    // console.log(user)
 
     const placedOrder = await placeOrderService({ user, items, address, addressId, couponCode })
 
@@ -55,11 +48,6 @@ export const placeOrder = async (req, res) => {
     return res.status(201).json({
       message: "Order created successfully",
       ...placedOrder
-      // orderId: order._id,
-      // razorpayOrderId: razorpayOrder.id,
-      // amount: razorpayOrder.amount,
-      // currency: razorpayOrder.currency,
-      // pricing: { subtotal, discount, total }
     });
 
   } catch (error) {

@@ -78,8 +78,10 @@ export default function Orders() {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
+      
       const data = await res.json();
       if (data.success) {
+        console.log(data.orders[0].pricing.total)
         setOrders(data.orders || data.data || []);
         setTotalCount(data.totalOrders || data.count || 0);
       }
@@ -205,7 +207,8 @@ export default function Orders() {
                 const email = order.user?.email || order.customerEmail || "";
                 const initials = getInitials(name);
                 const itemCount = order.items?.length || order.itemCount || 0;
-                const total = order.totalAmount || order.total || 0;
+                // const total = order.totalAmount || order.total || 0;
+                const total = order.pricing.total || 0;
 
                 return (
                   <tr key={order._id} style={S.tr}>

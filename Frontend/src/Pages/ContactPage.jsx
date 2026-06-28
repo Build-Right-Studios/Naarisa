@@ -18,7 +18,7 @@ const T = {
 const INFO = [
   {
     label: "Email us",
-    value: "hello@naarisa.com",
+    value: "naarisa23@gmail.com",
     hint: "We reply within 24 hours",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -30,7 +30,7 @@ const INFO = [
   },
   {
     label: "Call us",
-    value: "+91 98765 43210",
+    value: "+91 98971 39380",
     hint: "Mon–Sat, 10am – 6pm IST",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -41,8 +41,8 @@ const INFO = [
   },
   {
     label: "Visit us",
-    value: "Delhi, India",
-    hint: "By appointment only",
+    value: "Mohan Exclusive, Haridwar",
+    hint: "Mohan Exclusive, 1, Gurudwara road, Kathra Bazar Jwalapur, Haridwar, Uttarakhand, 249407",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
         stroke={T.gold} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -142,7 +142,6 @@ const ContactPage = () => {
     }
   };
 
-
   const borderFor = (key) => ({
     ...inputStyle(!!errors[key]),
     borderColor: focused === key ? T.gold : errors[key] ? "#B94A48" : T.border,
@@ -192,12 +191,17 @@ const ContactPage = () => {
     <div style={{ backgroundColor: T.bg, minHeight: "100vh" }}>
 
       {/* ── Breadcrumb ── */}
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-10 xl:px-12">
+      <div style={{
+        margin: "0 auto",
+        maxWidth: "1200px",
+        paddingLeft: "20px",
+        paddingRight: "20px",
+      }}>
         <p style={{
           fontFamily: T.sans, fontSize: "11px", letterSpacing: "0.14em",
           color: T.mid, textTransform: "uppercase", padding: "24px 0 0",
         }}>
-          <span onClick={() => navigate("/")} className="cursor-pointer hover:text-[#AB721E]">
+          <span onClick={() => navigate("/")} style={{ cursor: "pointer" }} className="hover:text-[#AB721E]">
             Home
           </span>
           <span style={{ margin: "0 8px" }}>/</span>
@@ -208,10 +212,13 @@ const ContactPage = () => {
       {/* ── Hero ── */}
       <div style={{
         borderBottom: `1px solid ${T.border}`,
-        padding: "48px 0 40px",
+        padding: "48px 20px 40px",
         marginBottom: "0",
       }}>
-        <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-10 xl:px-12">
+        <div style={{
+          margin: "0 auto",
+          maxWidth: "1200px",
+        }}>
           <p style={{
             fontFamily: T.sans, fontSize: "11px", fontWeight: 700,
             letterSpacing: "0.2em", textTransform: "uppercase",
@@ -236,120 +243,35 @@ const ContactPage = () => {
       </div>
 
       {/* ── Main layout ── */}
-      <div className="mx-auto max-w-[1200px] px-4 sm:px-6 md:px-10 xl:px-12">
+      <div style={{
+        margin: "0 auto",
+        maxWidth: "1200px",
+        paddingLeft: "20px",
+        paddingRight: "20px",
+      }}>
         <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          display: "flex",
+          flexDirection: "column",
           gap: "0",
-          alignItems: "start",
         }}>
 
-          {/* ── Left: info panel ── */}
+          {/* ── Top: form (now first on mobile/all) ── */}
           <div style={{
             padding: "48px 0",
-            borderRight: `1px solid ${T.border}`,
-            paddingRight: "clamp(24px, 5vw, 64px)",
+            borderBottom: `1px solid ${T.border}`,
+            width: "100%",
           }}>
-
-            {/* Info items */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "32px", marginBottom: "48px" }}>
-              {INFO.map((item) => (
-                <div key={item.label} style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-                  <div style={{
-                    width: "40px", height: "40px", flexShrink: 0,
-                    border: `1px solid ${T.border}`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    backgroundColor: T.surface,
-                  }}>
-                    {item.icon}
-                  </div>
-                  <div>
-                    <p style={{ fontFamily: T.sans, fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.mid, marginBottom: "4px" }}>
-                      {item.label}
-                    </p>
-                    <p style={{ fontFamily: T.serif, fontSize: "17px", color: T.ink, marginBottom: "3px" }}>
-                      {item.value}
-                    </p>
-                    <p style={{ fontFamily: T.sans, fontSize: "12px", color: T.light }}>
-                      {item.hint}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: "32px" }}>
-              <p style={{ fontFamily: T.sans, fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.mid, marginBottom: "16px" }}>
-                Follow us
-              </p>
-              <div style={{ display: "flex", gap: "12px" }}>
-                {[
-                  {
-                    label: "Instagram",
-                    icon: (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="2" y="2" width="20" height="20" rx="5" />
-                        <circle cx="12" cy="12" r="4" />
-                        <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" />
-                      </svg>
-                    ),
-                  },
-                  {
-                    label: "Pinterest",
-                    icon: (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.236 2.636 7.855 6.356 9.312-.088-.791-.167-2.005.035-2.868.181-.78 1.172-4.97 1.172-4.97s-.299-.598-.299-1.482c0-1.388.806-2.428 1.808-2.428.853 0 1.266.641 1.266 1.408 0 .858-.546 2.141-.828 3.33-.236.995.499 1.806 1.476 1.806 1.772 0 3.137-1.868 3.137-4.565 0-2.386-1.715-4.052-4.163-4.052-2.836 0-4.5 2.127-4.5 4.326 0 .856.33 1.774.741 2.276a.3.3 0 0 1 .069.286c-.076.314-.244.995-.277 1.134-.044.183-.146.222-.337.134-1.249-.581-2.03-2.407-2.03-3.874 0-3.154 2.292-6.052 6.608-6.052 3.469 0 6.165 2.473 6.165 5.776 0 3.447-2.173 6.22-5.19 6.22-1.013 0-1.966-.527-2.292-1.148l-.623 2.378c-.226.869-.835 1.958-1.244 2.621.937.29 1.931.446 2.962.446 5.523 0 10-4.477 10-10S17.523 2 12 2z" />
-                      </svg>
-                    ),
-                  },
-                  {
-                    label: "WhatsApp",
-                    icon: (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                      </svg>
-                    ),
-                  },
-                ].map((s) => (
-                  <button
-                    key={s.label}
-                    title={s.label}
-                    style={{
-                      width: "36px", height: "36px",
-                      border: `1px solid ${T.border}`,
-                      backgroundColor: "transparent",
-                      color: T.mid, cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = T.gold;
-                      e.currentTarget.style.color = T.gold;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = T.border;
-                      e.currentTarget.style.color = T.mid;
-                    }}
-                  >
-                    {s.icon}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Right: form ── */}
-          <div style={{ padding: "48px 0", paddingLeft: "clamp(24px, 5vw, 64px)" }}>
-
             <form onSubmit={handleSubmit} noValidate>
               <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
 
                 {/* Name + Email */}
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gridTemplateColumns: "1fr",
                   gap: "16px",
+                  "@media (min-width: 768px)": {
+                    gridTemplateColumns: "1fr 1fr",
+                  },
                 }}>
                   <Field label="Full name *" error={errors.name}>
                     <input
@@ -380,7 +302,7 @@ const ContactPage = () => {
                 <Field label="Phone number (optional)" error={errors.phone}>
                   <input
                     type="tel"
-                    placeholder="+91 98765 43210"
+                    placeholder="+91 98971 39380"
                     value={form.phone}
                     onChange={(e) => set("phone", e.target.value)}
                     onFocus={() => setFocused("phone")}
@@ -483,15 +405,119 @@ const ContactPage = () => {
             </form>
           </div>
 
+          {/* ── Bottom: info panel ── */}
+          <div style={{
+            padding: "48px 0",
+            width: "100%",
+          }}>
+
+            {/* Info items */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr",
+              gap: "32px",
+              marginBottom: "48px",
+              "@media (min-width: 768px)": {
+                gridTemplateColumns: "repeat(3, 1fr)",
+              },
+            }}>
+              {INFO.map((item) => (
+                <div key={item.label} style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
+                  <div style={{
+                    width: "40px", height: "40px", flexShrink: 0,
+                    border: `1px solid ${T.border}`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    backgroundColor: T.surface,
+                  }}>
+                    {item.icon}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontFamily: T.sans, fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.mid, marginBottom: "4px" }}>
+                      {item.label}
+                    </p>
+                    <p style={{ fontFamily: T.serif, fontSize: "17px", color: T.ink, marginBottom: "3px", wordBreak: "break-word" }}>
+                      {item.value}
+                    </p>
+                    <p style={{ fontFamily: T.sans, fontSize: "12px", color: T.light, lineHeight: 1.5 }}>
+                      {item.hint}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Divider */}
+            <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: "32px" }}>
+              <p style={{ fontFamily: T.sans, fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: T.mid, marginBottom: "16px" }}>
+                Follow us
+              </p>
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                {[
+                  {
+                    label: "Instagram",
+                    url:"https://www.instagram.com/naarisa.in",
+                    icon: (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" />
+                        <circle cx="12" cy="12" r="4" />
+                        <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" />
+                      </svg>
+                    ),
+                  },
+                  {
+                    label: "WhatsApp",
+                    url:"https://wa.me/919897139380",
+                    icon: (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                      </svg>
+                    ),
+                  },
+                ].map((s) => (
+                  <button onClick={() => window.open(s.url, "_blank")}
+                    key={s.label}
+                    title={s.label}
+                    style={{
+                      width: "36px", height: "36px",
+                      border: `1px solid ${T.border}`,
+                      backgroundColor: "transparent",
+                      color: T.mid, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      transition: "all 0.2s",
+                      flexShrink: 0,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = T.gold;
+                      e.currentTarget.style.color = T.gold;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = T.border;
+                      e.currentTarget.style.color = T.mid;
+                    }}
+                  >
+                    {s.icon}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      {/* ── Spin keyframe ── */}
+      {/* ── Spin keyframe & responsive styles ── */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         input::placeholder, textarea::placeholder { color: #C4A882; }
         input:focus, textarea:focus, select:focus { outline: none; }
         select option { font-family: 'Jost', sans-serif; }
+        
+        /* Mobile-first responsive adjustments */
+        @media (max-width: 767px) {
+          div[style*="gridTemplateColumns"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
 
     </div>

@@ -50,8 +50,8 @@ const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, total, o
             {item.image
               ? <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "8px", color: "#8C7B6B", letterSpacing: "0.1em" }}>N</span>
-                </div>
+                <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "8px", color: "#8C7B6B", letterSpacing: "0.1em" }}>N</span>
+              </div>
             }
           </div>
           <div style={{ flex: 1 }}>
@@ -115,8 +115,8 @@ const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, total, o
 const CheckoutPage = () => {
   const navigate = useNavigate();
 
-  const items             = useCartStore((state) => state.items);
-  const clearCart         = useCartStore((state) => state.clearCart);
+  const items = useCartStore((state) => state.items);
+  const clearCart = useCartStore((state) => state.clearCart);
   const { subtotal, discountAmount, appliedCoupon, total } = useCheckoutStore();
   const clearOrderSummary = useCheckoutStore((state) => state.clearOrderSummary);
 
@@ -127,15 +127,16 @@ const CheckoutPage = () => {
 
   const [form, setForm] = useState(() => {
     const firstName = user?.name?.split(" ")[0] || "";
-    const lastName  = user?.name?.split(" ").slice(1).join(" ") || "";
-    const phone     = user?.phone || "";
-    return { firstName, lastName, street: "", city: "", state: "Maharashtra", pinCode: "", phone, saveInfo: false };
+    const lastName = user?.name?.split(" ").slice(1).join(" ") || "";
+    const phone = user?.phone || "";
+    const email = user?.email || "";
+    return { firstName, lastName, email, street: "", city: "", state: "Maharashtra", pinCode: "", phone, saveInfo: false };
   });
-  const [errors,            setErrors]           = useState({});
-  const [loading,           setLoading]           = useState(false);
-  const [addresses,         setAddresses]         = useState([]);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
-  const [showAddressForm,   setShowAddressForm]   = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
   const skipCartRedirect = useRef(false);
 
   useEffect(() => {
@@ -163,12 +164,12 @@ const CheckoutPage = () => {
           setForm((prev) => ({
             ...prev,
             firstName: nameParts[0] || "",
-            lastName:  nameParts.slice(1).join(" ") || "",
-            street:    defaultAddress.line1    || "",
-            city:      defaultAddress.city     || "",
-            state:     defaultAddress.state    || "Maharashtra",
-            pinCode:   defaultAddress.pincode  || "",
-            phone:     defaultAddress.phone    || prev.phone,
+            lastName: nameParts.slice(1).join(" ") || "",
+            street: defaultAddress.line1 || "",
+            city: defaultAddress.city || "",
+            state: defaultAddress.state || "Maharashtra",
+            pinCode: defaultAddress.pincode || "",
+            phone: defaultAddress.phone || prev.phone,
           }));
         } else {
           setShowAddressForm(true);
@@ -184,13 +185,15 @@ const CheckoutPage = () => {
   const validate = () => {
     if (selectedAddressId && !showAddressForm) return true;
     const e = {};
-    if (!form.firstName.trim())                             e.firstName = "Required";
-    if (!form.lastName.trim())                              e.lastName  = "Required";
-    if (!form.street.trim())                                e.street    = "Required";
-    if (!form.city.trim())                                  e.city      = "Required";
-    if (!form.state)                                        e.state     = "Required";
-    if (!/^\d{6}$/.test(form.pinCode))                     e.pinCode   = "Enter a valid 6-digit PIN";
-    if (!/^[6-9]\d{9}$/.test(form.phone.replace(/\s/g, ""))) e.phone  = "Enter a valid 10-digit mobile number";
+    if (!form.firstName.trim()) e.firstName = "Required";
+    if (!form.lastName.trim()) e.lastName = "Required";
+    if (!form.street.trim()) e.street = "Required";
+    if (!form.city.trim()) e.city = "Required";
+    if (!form.state) e.state = "Required";
+    if (!/^\d{6}$/.test(form.pinCode)) e.pinCode = "Enter a valid 6-digit PIN";
+    if (!/^[6-9]\d{9}$/.test(form.phone.replace(/\s/g, ""))) e.phone = "Enter a valid 10-digit mobile number";
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Enter a valid email";
+
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -210,16 +213,17 @@ const CheckoutPage = () => {
         items: items.map((item) => ({
           productId: item.productId,
           variantId: item.variantId,
-          size:      item.size,
-          quantity:  item.qty,
+          size: item.size,
+          quantity: item.qty,
         })),
         address: {
-          name:    `${form.firstName} ${form.lastName}`.trim(),
-          phone:   form.phone.replace(/\s/g, ""),
-          line1:   form.street,
-          line2:   "",
-          city:    form.city,
-          state:   form.state,
+          name: `${form.firstName} ${form.lastName}`.trim(),
+          phone: form.phone.replace(/\s/g, ""),
+          email: form.email.toLowerCase().trim(),
+          line1: form.street,
+          line2: "",
+          city: form.city,
+          state: form.state,
           pincode: form.pinCode,
           country: "India",
         },
@@ -230,27 +234,30 @@ const CheckoutPage = () => {
       const { razorpayOrderId, amount, currency, keyId } = orderRes.data;
 
       const options = {
-        key:         keyId,
+        key: keyId,
         amount,
-        currency:    currency || "INR",
-        name:        "Naarisa",
+        currency: currency || "INR",
+        name: "Naarisa",
         description: "Artisanal Craftsmanship",
-        order_id:    razorpayOrderId,
+        order_id: razorpayOrderId,
         prefill: {
-          name:    `${form.firstName} ${form.lastName}`.trim(),
+          name: `${form.firstName} ${form.lastName}`.trim(),
           contact: form.phone.replace(/\s/g, ""),
-          email:   user?.email || "",
+          email: user?.email || "",
         },
         theme: { color: "#AB721E" },
 
         handler: async (response) => {
           try {
             const verifyRes = await api.post(PAYMENT.VERIFY, {
-              razorpayOrderId:   response.razorpay_order_id,
+              razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,
+              customOrderId: orderRes.data.customOrderId,
+              userEmail: form.email || user?.email
             });
             skipCartRedirect.current = true;
+            console.log(verifyRes.data)
             clearCart();
             clearOrderSummary();
             navigate(`/order-success/${verifyRes.data.orderId}`);
@@ -322,7 +329,7 @@ const CheckoutPage = () => {
                       setErrors({});
                       setForm({
                         firstName: user?.name?.split(" ")[0] || "",
-                        lastName:  user?.name?.split(" ").slice(1).join(" ") || "",
+                        lastName: user?.name?.split(" ").slice(1).join(" ") || "",
                         street: "", city: "", state: "Maharashtra", pinCode: "",
                         phone: user?.phone || "", saveInfo: false,
                       });
@@ -345,12 +352,12 @@ const CheckoutPage = () => {
                         setForm((prev) => ({
                           ...prev,
                           firstName: nameParts[0] || "",
-                          lastName:  nameParts.slice(1).join(" ") || "",
-                          street:    address.line1   || "",
-                          city:      address.city    || "",
-                          state:     address.state   || "Maharashtra",
-                          pinCode:   address.pincode || "",
-                          phone:     address.phone   || "",
+                          lastName: nameParts.slice(1).join(" ") || "",
+                          street: address.line1 || "",
+                          city: address.city || "",
+                          state: address.state || "Maharashtra",
+                          pinCode: address.pincode || "",
+                          phone: address.phone || "",
                         }));
                       }}
                       style={{
@@ -468,6 +475,18 @@ const CheckoutPage = () => {
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
                         onBlur={(e) => (e.target.style.borderColor = errors.phone ? "#C4727A" : "#E8DDD0")} />
                     </div>
+                  </Field>
+
+                  <Field label="EMAIL ADDRESS (FOR NOTIFICATIONS)" error={errors.email}>
+                    <input
+                      value={form.email}
+                      onChange={handleChange("email")}
+                      placeholder="your@email.com"
+                      type="email"
+                      style={inputStyle(errors.email)}
+                      onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
+                      onBlur={(e) => (e.target.style.borderColor = errors.email ? "#C4727A" : "#E8DDD0")}
+                    />
                   </Field>
 
                   <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>

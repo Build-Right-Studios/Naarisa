@@ -103,13 +103,13 @@ const AboutPage = () => {
               className="mb-4 text-[11px] font-bold uppercase tracking-[0.3em]"
               style={{ fontFamily: "'Jost', sans-serif", color: "rgba(245,230,208,0.6)" }}
             >
-              Est. 1955 · Haridwar
+              Est. 1971 · Haridwar
             </p>
             <h1
               className="text-[32px] sm:text-[42px] lg:text-[52px] font-normal italic leading-tight text-white"
               style={{ fontFamily: "'EB Garamond', serif", textShadow: "0 2px 24px rgba(0,0,0,0.4)" }}
             >
-              70 Years of Fabric.
+              50 Years of Fabric.
               <br />One Modern Brand.
             </h1>
             <div
@@ -155,7 +155,7 @@ const AboutPage = () => {
               className="mb-5 text-[15px] font-light leading-[1.9]"
               style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}
             >
-              Naarisa is built on a family legacy in Indian ethnic wear that began in Haridwar in 1955.
+              Naarisa is built on a family legacy in Indian ethnic wear that began in Haridwar in 1971.
               What started as a local retail store serving generations of women has now evolved into a
               modern online brand for today's customer.
             </p>
@@ -164,7 +164,7 @@ const AboutPage = () => {
               className="mb-6 text-[15px] font-light leading-[1.9]"
               style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}
             >
-              For more than 70 years, our family has worked directly with fabrics, fits, craftsmanship,
+              For more than 50 years, our family has worked directly with fabrics, fits, craftsmanship,
               and customer feedback. That experience shapes every Naarisa collection — ethnic wear that
               feels current, comfortable, and worth repeating, not just pieces that look good in a photo.
             </p>

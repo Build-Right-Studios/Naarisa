@@ -25,5 +25,9 @@ export const findDeliveredOrders = async ({ filter, skip, limit, sortOption }) =
 };
 
 export const findOrderById = async (orderId) => {
-  return await Order.findById(orderId);
+  return await Order.findById(orderId)
+    .populate({
+      path: "user",
+      select: "name email phone"
+    });
 };

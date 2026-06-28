@@ -1,9 +1,9 @@
 import { findVariantWithProduct, createOrder } from "../Query/placeOrderQuery.js";
-
 import { resolveAddress } from "../../User/Service/resolveAddressService.js";
 import { createRazorpayOrder } from "../../Payment/Service/createRazorpayOrder.js";
 import { applyCoupon } from "../../Coupons/Service/applyCouponService.js";
 import { deductStockForItems } from "../../Variant/Service/deductStockForItemsService.js";
+import { generateOrderId } from "../../../Utils/generateOrderId.js";
 
 const buildOrderItems = async (items) => {
   let subtotal = 0;
@@ -52,7 +52,8 @@ const buildOrderItems = async (items) => {
       quantity,
       priceAtOrder,
       productName: product.name,
-      variantName: variant.color.name
+      variantName: variant.color.name,
+      image: variant.images?.[0]?.url || null
     });
   }
 
@@ -62,17 +63,22 @@ const buildOrderItems = async (items) => {
 const saveOrder = async ({
   userId,
   orderItems,
+  userEmail,
   appliedCoupon,
   pricing,
   deliveryAddress,
   razorpayOrderId
 }) => {
+  const customOrderId = generateOrderId();
+
   return await createOrder({
+    customOrderId,
     user: userId,
     items: orderItems,
+    email: userEmail,
     coupon: appliedCoupon,
     pricing,
-    address: deliveryAddress,
+    address: { ...deliveryAddress, email: deliveryAddress.email || null },
     payment: {
       razorpayOrderId,
       status: "pending"
@@ -105,11 +111,13 @@ export const placeOrderService = async (orderData) => {
       appliedCoupon,
       pricing: { subtotal, discount, total },
       deliveryAddress,
-      razorpayOrderId: razorpayOrder.id
+      razorpayOrderId: razorpayOrder.id,
+      userEmail: deliveryAddress.email || user.email,
     });
 
     return {
       orderId: order._id,
+      customOrderId: order.customOrderId,
       razorpayOrderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,

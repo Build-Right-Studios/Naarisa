@@ -18,6 +18,7 @@ export const PRODUCT = {
   BEST_SELLERS: "/api/product/best-sellers",
   GET_BY_SLUG:  (slug) => `/api/product/${slug}`,
   BY_CATEGORY:  (category) => `/api/product/category/${category}?`,
+  SEARCH_PRODUCTS: "/api/product/search",
 };
 
 export const COUPON = {
@@ -28,6 +29,7 @@ export const ORDER = {
   PLACE:      "/api/order/place-order",   // POST — isUser protected
   MY_ORDERS:  "/api/user/orders",         // GET  — isUser protected
   BY_ID:      (id) => `/api/user/orders/${id}`,
+  GET_TRACKING: (orderId) => `/api/shipment/tracking/${orderId}`,
 };
 
 export const PAYMENT = {

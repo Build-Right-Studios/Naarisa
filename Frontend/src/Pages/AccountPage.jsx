@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/axiosInstance.js";
+import OrderTrackingWidget from "../Components/Common/OrderTrackingWidget.jsx";
+import AddressModal from "../Components/Common/AddressModal.jsx";
 import { USER } from "../Constants/apiRoutes.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -15,20 +17,20 @@ const fmtPrice = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const Icon = ({ name, size = 16, color = "#8C7B6B" }) => {
   const paths = {
-    profile:  "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z",
-    orders:   "M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0",
+    profile: "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z",
+    orders: "M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0",
     wishlist: "M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z",
-    address:  "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0zM12 13a3 3 0 100-6 3 3 0 000 6z",
-    logout:   "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
-    edit:     "M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z",
-    plus:     "M12 5v14M5 12h14",
-    trash:    "M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6",
-    check:    "M20 6L9 17l-5-5",
-    x:        "M18 6L6 18M6 6l12 12",
-    chevron:  "M9 18l6-6-6-6",
-    menu:     "M3 12h18M3 6h18M3 18h18",
-    back:     "M19 12H5M12 19l-7-7 7-7",
-    package:  "M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.27 6.96L12 12.01l8.73-5.05M12 22.08V12",
+    address: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0zM12 13a3 3 0 100-6 3 3 0 000 6z",
+    logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
+    edit: "M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z",
+    plus: "M12 5v14M5 12h14",
+    trash: "M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6",
+    check: "M20 6L9 17l-5-5",
+    x: "M18 6L6 18M6 6l12 12",
+    chevron: "M9 18l6-6-6-6",
+    menu: "M3 12h18M3 6h18M3 18h18",
+    back: "M19 12H5M12 19l-7-7 7-7",
+    package: "M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.27 6.96L12 12.01l8.73-5.05M12 22.08V12",
   };
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -40,11 +42,11 @@ const Icon = ({ name, size = 16, color = "#8C7B6B" }) => {
 // ── Status Badge ──────────────────────────────────────────────────────────────
 const StatusBadge = ({ status }) => {
   const map = {
-    payment_pending: { label: "Pending",    bg: "#FEF3C7", color: "#92400E" },
-    confirmed:       { label: "Confirmed",  bg: "#D1FAE5", color: "#065F46" },
-    dispatched:      { label: "Dispatched", bg: "#DBEAFE", color: "#1E40AF" },
-    delivered:       { label: "Delivered",  bg: "#F0FDF4", color: "#166534" },
-    cancelled:       { label: "Cancelled",  bg: "#FEE2E2", color: "#991B1B" },
+    payment_pending: { label: "Pending", bg: "#FEF3C7", color: "#92400E" },
+    confirmed: { label: "Confirmed", bg: "#D1FAE5", color: "#065F46" },
+    dispatched: { label: "Dispatched", bg: "#DBEAFE", color: "#1E40AF" },
+    delivered: { label: "Delivered", bg: "#F0FDF4", color: "#166534" },
+    cancelled: { label: "Cancelled", bg: "#FEE2E2", color: "#991B1B" },
   };
   const s = map[status] || { label: status, bg: "#F5E6D0", color: "#4A3728" };
   return (
@@ -60,7 +62,7 @@ const Skel = ({ w = "100%", h = "16px", mb = "0" }) => (
 );
 
 // ── Indian States ─────────────────────────────────────────────────────────────
-const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu and Kashmir","Ladakh","Puducherry","Chandigarh"];
+const STATES = ["Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu and Kashmir", "Ladakh", "Puducherry", "Chandigarh"];
 
 // ── Sidebar Nav Item ──────────────────────────────────────────────────────────
 const NavItem = ({ icon, label, active, onClick, danger }) => (
@@ -81,107 +83,6 @@ const NavItem = ({ icon, label, active, onClick, danger }) => (
     </span>
   </button>
 );
-
-// ── Address Modal ─────────────────────────────────────────────────────────────
-const AddressModal = ({ existing, onSave, onClose }) => {
-  const blank = { label: "Home", name: "", phone: "", line1: "", line2: "", city: "", state: "Maharashtra", pincode: "", country: "India" };
-  const [form, setForm] = useState(existing ? { ...blank, ...existing } : blank);
-  const [errors, setErrors] = useState({});
-  const [saving, setSaving] = useState(false);
-
-  const set = (k) => (e) => { setForm((p) => ({ ...p, [k]: e.target.value })); setErrors((p) => ({ ...p, [k]: "" })); };
-
-  const validate = () => {
-    const e = {};
-    if (!form.name.trim())                e.name    = "Required";
-    if (!/^[6-9]\d{9}$/.test(form.phone)) e.phone   = "Valid 10-digit number";
-    if (!form.line1.trim())               e.line1   = "Required";
-    if (!form.city.trim())                e.city    = "Required";
-    if (!/^\d{6}$/.test(form.pincode))    e.pincode = "Valid 6-digit PIN";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSave = async () => {
-    if (!validate()) return;
-    setSaving(true);
-    await onSave(form);
-    setSaving(false);
-  };
-
-  const inp = (err) => ({
-    width: "100%", boxSizing: "border-box", padding: "10px 12px",
-    fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#1f1b15",
-    backgroundColor: "#FDF8F1", border: err ? "1px solid #C4727A" : "1px solid #E8DDD0", outline: "none",
-  });
-
-  const Field = ({ label, k, placeholder, maxLength, type = "text" }) => (
-    <div>
-      <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#8C7B6B", marginBottom: "5px" }}>{label}</p>
-      <input type={type} value={form[k]} onChange={set(k)} placeholder={placeholder} maxLength={maxLength}
-        style={inp(errors[k])}
-        onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-        onBlur={(e) => (e.target.style.borderColor = errors[k] ? "#C4727A" : "#E8DDD0")} />
-      {errors[k] && <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", color: "#C4727A", marginTop: "3px" }}>{errors[k]}</p>}
-    </div>
-  );
-
-  return (
-    <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(43,33,18,0.5)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
-      <div style={{ backgroundColor: "#fff", width: "100%", maxWidth: "480px", maxHeight: "90vh", overflowY: "auto", padding: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: "20px", color: "#1f1b15" }}>{existing ? "Edit Address" : "Add New Address"}</h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#8C7B6B" }}><Icon name="x" /></button>
-        </div>
-
-        <div style={{ display: "flex", gap: "8px", marginBottom: "18px" }}>
-          {["Home", "Work", "Other"].map((l) => (
-            <button key={l} onClick={() => setForm((p) => ({ ...p, label: l }))}
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", padding: "6px 14px", border: "1px solid", borderColor: form.label === l ? "#AB721E" : "#E8DDD0", backgroundColor: form.label === l ? "#AB721E" : "transparent", color: form.label === l ? "#fff" : "#8C7B6B", cursor: "pointer", transition: "all 0.15s" }}>
-              {l.toUpperCase()}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-            <Field label="FULL NAME" k="name" placeholder="Name on address" />
-            <Field label="PHONE" k="phone" placeholder="10-digit number" maxLength={10} />
-          </div>
-          <Field label="STREET ADDRESS" k="line1" placeholder="House no. and street" />
-          <div>
-            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#8C7B6B", marginBottom: "5px" }}>LANDMARK / AREA <span style={{ fontWeight: 400 }}>(optional)</span></p>
-            <input value={form.line2} onChange={set("line2")} placeholder="Landmark or area" style={inp(false)}
-              onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-              onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")} />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
-            <Field label="CITY" k="city" placeholder="City" />
-            <div>
-              <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#8C7B6B", marginBottom: "5px" }}>STATE</p>
-              <select value={form.state} onChange={set("state")} style={{ ...inp(false), appearance: "none", cursor: "pointer" }}
-                onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")}>
-                {STATES.map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-            <Field label="PIN CODE" k="pincode" placeholder="6 digits" maxLength={6} />
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "12px", fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", border: "1px solid #E8DDD0", backgroundColor: "transparent", color: "#8C7B6B", cursor: "pointer" }}>CANCEL</button>
-          <button onClick={handleSave} disabled={saving}
-            style={{ flex: 2, padding: "12px", fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", backgroundColor: saving ? "#C4A882" : "#AB721E", color: "#fff", border: "none", cursor: saving ? "not-allowed" : "pointer", transition: "background 0.2s" }}
-            onMouseEnter={(e) => { if (!saving) e.currentTarget.style.backgroundColor = "#8B6914"; }}
-            onMouseLeave={(e) => { if (!saving) e.currentTarget.style.backgroundColor = "#AB721E"; }}>
-            {saving ? "SAVING..." : "SAVE ADDRESS"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ── SECTION: Profile ──────────────────────────────────────────────────────────
 const ProfileSection = ({ profile, onUpdate }) => {
@@ -265,10 +166,10 @@ const ProfileSection = ({ profile, onUpdate }) => {
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: "20px" }}>
             {[
-              { label: "FULL NAME",     value: profile.name },
+              { label: "FULL NAME", value: profile.name },
               { label: "EMAIL ADDRESS", value: profile.email || <span style={{ color: "#C4A882", fontStyle: "italic", fontSize: "13px" }}>Not added</span> },
-              { label: "PHONE NUMBER",  value: `+91 ${profile.phone}` },
-              { label: "MEMBER SINCE",  value: fmtDate(profile.createdAt) },
+              { label: "PHONE NUMBER", value: `+91 ${profile.phone}` },
+              { label: "MEMBER SINCE", value: fmtDate(profile.createdAt) },
             ].map(({ label, value }) => (
               <div key={label}>
                 <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.14em", color: "#8C7B6B", marginBottom: "6px" }}>{label}</p>
@@ -284,14 +185,18 @@ const ProfileSection = ({ profile, onUpdate }) => {
 
 // ── SECTION: Orders ───────────────────────────────────────────────────────────
 const OrdersSection = () => {
-  const [orders,   setOrders]   = useState([]);
-  const [loading,  setLoading]  = useState(true);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     api.get(USER.ORDERS)
-      .then((r) => { if (r.data.success) setOrders(r.data.data || []); })
+      .then((r) => {
+        if (r.data.success)
+          console.log(r.data.data)
+        setOrders(r.data.data || []);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -299,7 +204,7 @@ const OrdersSection = () => {
   if (loading) return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
       <Skel w="200px" h="34px" mb="20px" />
-      {[1,2,3].map((i) => <div key={i} style={{ border: "1px solid #E8DDD0", padding: "20px" }}><Skel w="50%" h="14px" mb="10px" /><Skel w="30%" h="12px" /></div>)}
+      {[1, 2, 3].map((i) => <div key={i} style={{ border: "1px solid #E8DDD0", padding: "20px" }}><Skel w="50%" h="14px" mb="10px" /><Skel w="30%" h="12px" /></div>)}
     </div>
   );
 
@@ -327,8 +232,9 @@ const OrdersSection = () => {
               <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", flexWrap: "wrap", gap: "8px" }}
                 onClick={() => setExpanded(expanded === order._id ? null : order._id)}>
                 <div>
+                  {/* ✅ Changed: Display customOrderId instead of _id */}
                   <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", color: "#8C7B6B", marginBottom: "4px" }}>
-                    ORDER #{order._id?.slice(-6).toUpperCase()}
+                    ORDER #{order.customOrderId || order._id?.slice(-6).toUpperCase()}
                   </p>
                   <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#4A3728" }}>
                     {fmtDate(order.createdAt)} · {order.items?.length} item{order.items?.length !== 1 ? "s" : ""}
@@ -345,10 +251,55 @@ const OrdersSection = () => {
 
               {expanded === order._id && (
                 <div style={{ borderTop: "1px solid #F5E6D0", padding: "14px 16px" }}>
+                  {/* ✅ NEW: Display email and customOrderId at top */}
+                  <div style={{ backgroundColor: "#F9F3EB", padding: "12px 14px", borderRadius: "4px", marginBottom: "14px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", flexWrap: "wrap" }}>
+                      <div>
+                        <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "#8C7B6B", marginBottom: "4px" }}>ORDER ID</p>
+                        <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 600, color: "#1f1b15" }}>{order.customOrderId}</p>
+                      </div>
+                      {order.email && (
+                        <div>
+                          <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "#8C7B6B", marginBottom: "4px" }}>EMAIL</p>
+                          <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#1f1b15" }}>{order.email}</p>
+                        </div>
+                      )}
+                    </div>
+                    <OrderTrackingWidget
+                      orderId={order._id}
+                      status={order.status}
+                      createdAt={order.createdAt}
+                      dispatchedAt={order.dispatchedAt}
+                      deliveredAt={order.deliveredAt}
+                      cancelledAt={order.cancelledAt}
+                      estimatedDelivery={order.estimatedDelivery}
+                    />
+                  </div>
+
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "14px" }}>
                     {order.items?.map((item, i) => (
                       <div key={i} style={{ display: "flex", gap: "10px", backgroundColor: "#F9F3EB", padding: "10px", flex: "1 1 200px" }}>
-                        <div style={{ width: "44px", aspectRatio: "3/4", backgroundColor: "#E8DDD0", flexShrink: 0 }} />
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.productName}
+                            style={{
+                              width: "44px",
+                              aspectRatio: "3/4",
+                              objectFit: "cover",
+                              flexShrink: 0
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: "44px",
+                              aspectRatio: "3/4",
+                              backgroundColor: "#E8DDD0",
+                              flexShrink: 0
+                            }}
+                          />
+                        )}
                         <div>
                           <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "14px", color: "#1f1b15", marginBottom: "2px" }}>{item.productName}</p>
                           <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#8C7B6B" }}>{item.variantName} · {item.size} · ×{item.quantity}</p>
@@ -392,7 +343,7 @@ const OrdersSection = () => {
 
 // ── SECTION: Wishlist ─────────────────────────────────────────────────────────
 const WishlistSection = () => {
-  const [items,   setItems]   = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -414,7 +365,7 @@ const WishlistSection = () => {
     <div>
       <Skel w="160px" h="34px" mb="24px" />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "14px" }}>
-        {[1,2,3,4].map((i) => <div key={i}><Skel w="100%" h="200px" mb="8px" /><Skel w="70%" h="13px" mb="5px" /><Skel w="40%" h="13px" /></div>)}
+        {[1, 2, 3, 4].map((i) => <div key={i}><Skel w="100%" h="200px" mb="8px" /><Skel w="70%" h="13px" mb="5px" /><Skel w="40%" h="13px" /></div>)}
       </div>
     </div>
   );
@@ -465,8 +416,8 @@ const WishlistSection = () => {
 // ── SECTION: Addresses ────────────────────────────────────────────────────────
 const AddressesSection = () => {
   const [addresses, setAddresses] = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [modal,     setModal]     = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(null);
 
   useEffect(() => {
     api.get(USER.ADDRESSES)
@@ -517,7 +468,7 @@ const AddressesSection = () => {
 
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "12px" }}>
-          {[1,2].map((i) => <div key={i} style={{ border: "1px solid #E8DDD0", padding: "20px" }}><Skel w="50%" h="14px" mb="10px" /><Skel w="100%" h="12px" mb="6px" /><Skel w="70%" h="12px" /></div>)}
+          {[1, 2].map((i) => <div key={i} style={{ border: "1px solid #E8DDD0", padding: "20px" }}><Skel w="50%" h="14px" mb="10px" /><Skel w="100%" h="12px" mb="6px" /><Skel w="70%" h="12px" /></div>)}
         </div>
       ) : addresses.length === 0 ? (
         <div style={{ border: "1px dashed #E8DDD0", padding: "60px 20px", textAlign: "center" }}>
@@ -573,10 +524,10 @@ const AddressesSection = () => {
 
 // ── Nav config ────────────────────────────────────────────────────────────────
 const NAV = [
-  { id: "profile",   icon: "profile",  label: "MY PROFILE" },
-  { id: "orders",    icon: "orders",   label: "ORDERS" },
-  { id: "wishlist",  icon: "wishlist", label: "WISHLIST" },
-  { id: "addresses", icon: "address",  label: "ADDRESSES" },
+  { id: "profile", icon: "profile", label: "MY PROFILE" },
+  { id: "orders", icon: "orders", label: "ORDERS" },
+  { id: "wishlist", icon: "wishlist", label: "WISHLIST" },
+  { id: "addresses", icon: "address", label: "ADDRESSES" },
 ];
 
 // ── Mobile Bottom Tab Bar ─────────────────────────────────────────────────────
@@ -620,11 +571,11 @@ const MobileTabBar = ({ activeTab, setActiveTab, onLogout }) => (
 
 // ── Main Account Page ─────────────────────────────────────────────────────────
 const AccountPage = () => {
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
-  const [profile,   setProfile]   = useState(null);
-  const [loading,   setLoading]   = useState(true);
-  const [isMobile,  setIsMobile]  = useState(window.innerWidth < 1024);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -651,7 +602,7 @@ const AccountPage = () => {
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "260px" }}>
         <Skel w="100%" h="120px" mb="8px" />
-        {[1,2,3,4].map((i) => <Skel key={i} w="100%" h="44px" />)}
+        {[1, 2, 3, 4].map((i) => <Skel key={i} w="100%" h="44px" />)}
       </div>
     </div>
   );
@@ -686,9 +637,9 @@ const AccountPage = () => {
 
             {/* Content */}
             <div>
-              {activeTab === "profile"   && <ProfileSection profile={profile} onUpdate={setProfile} />}
-              {activeTab === "orders"    && <OrdersSection />}
-              {activeTab === "wishlist"  && <WishlistSection />}
+              {activeTab === "profile" && <ProfileSection profile={profile} onUpdate={setProfile} />}
+              {activeTab === "orders" && <OrdersSection />}
+              {activeTab === "wishlist" && <WishlistSection />}
               {activeTab === "addresses" && <AddressesSection />}
             </div>
           </div>
@@ -714,9 +665,9 @@ const AccountPage = () => {
             </p>
 
             {/* Content */}
-            {activeTab === "profile"   && <ProfileSection profile={profile} onUpdate={setProfile} />}
-            {activeTab === "orders"    && <OrdersSection />}
-            {activeTab === "wishlist"  && <WishlistSection />}
+            {activeTab === "profile" && <ProfileSection profile={profile} onUpdate={setProfile} />}
+            {activeTab === "orders" && <OrdersSection />}
+            {activeTab === "wishlist" && <WishlistSection />}
             {activeTab === "addresses" && <AddressesSection />}
           </div>
         )}

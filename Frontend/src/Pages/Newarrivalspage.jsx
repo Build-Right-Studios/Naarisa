@@ -273,10 +273,7 @@ const NewArrivalsPage = () => {
                     : PRODUCT.NEW_ARRIVALS;
 
                 const res = await api.get(url);
-
-                console.log("New Arrivals:", res.data);
-
-                setProducts(res.data?.data || []);
+                setProducts(res.data.data || []);
             } catch (err) {
                 console.error("Failed to fetch new arrivals:", err);
                 setProducts([]);
@@ -451,8 +448,8 @@ const NewArrivalsPage = () => {
                     >
                         {/* Sort */}
                         <div
-                            className="hidden md:flex"
                             style={{
+                                display: "flex",
                                 alignItems: "center",
                                 gap: "8px",
                             }}

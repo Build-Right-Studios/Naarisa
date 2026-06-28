@@ -22,6 +22,8 @@ const footerLinks = {
   customerCare: [
     { title: "Contact Us", path: "/contact" },
     { title: "Return & Refund Policy", path: "/return-refund-policy" },
+    { title: "Terms of Conditions", path: "/terms-of-condition" },
+    { title: "Privacy Policy", path: "/privacy-policy" },
   ],
   company: [
     { title: "About Us", path: "/about" },
@@ -73,7 +75,7 @@ const Footer = () => {
             {/* Social Icons */}
             <div className="flex items-center gap-4 mt-1">
               <a
-                href="https://instagram.com"
+                href="https://www.instagram.com/naarisa.in"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"

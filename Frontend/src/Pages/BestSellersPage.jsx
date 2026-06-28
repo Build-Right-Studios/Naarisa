@@ -226,8 +226,8 @@ const BestSellersPage = () => {
           >
             {/* Sort */}
             <div
-              className="hidden md:flex"
               style={{
+                display: "flex",
                 alignItems: "center",
                 gap: "8px",
               }}

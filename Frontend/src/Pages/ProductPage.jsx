@@ -198,8 +198,6 @@ const WriteReviewModal = ({ variantId, onClose, onSubmitted }) => {
       setSubmitting(true);
       setError("");
 
-      console.log(variantId)
-
       await api.post(`${BASE.ROUTE}/api/product/${variantId}/reviews`, {
         name: name.trim(),
         rating,
@@ -486,6 +484,11 @@ const ProductPage = () => {
     : null;
   const totalStock = sizes.reduce((sum, s) => sum + s.quantity, 0);  // sizes already uses doc now ✓
   const lowStock = totalStock > 0 && totalStock <= 5;
+  const productDisplayName = `${product.name}${doc?.color?.name
+    ? ` - ${doc.color.name.charAt(0).toUpperCase() + doc.color.name.slice(1)}`
+    : ""
+    }`;
+  const variantId = currentVariant?._id || currentVariant?._doc?._id;
 
   const handleAddToCart = () => {
     if (!selectedSize) {
@@ -513,9 +516,15 @@ const ProductPage = () => {
   };
 
   const handleAddToWishlist = async () => {
+    const token = localStorage.getItem("naarisa-token");
+    if (!token) {
+      alert("Please login to add items to your wishlist");
+      navigate("/login");
+      return;
+    }
     try {
       setWishlistLoading(true);
-      await api.post(`${BASE.ROUTE}${USER.WISHLIST}`, { variantId: currentVariant._id }, { withCredentials: true });
+      await api.post(`${BASE.ROUTE}${USER.WISHLIST}`, { variantId }, { withCredentials: true });
       alert("Added to wishlist");
     } catch (error) {
       console.error("Wishlist error:", error);
@@ -553,9 +562,9 @@ const ProductPage = () => {
 
       {showReviewModal && (
         <WriteReviewModal
-          variantId={currentVariant?._id || currentVariant?._doc?._id}
+          variantId={variantId}
           onClose={() => setShowReviewModal(false)}
-          onSubmitted={() => fetchReviews(currentVariant?._id || currentVariant?._doc?._id)}
+          onSubmitted={() => fetchReviews(variantId)}
         />
       )}
 
@@ -621,7 +630,7 @@ const ProductPage = () => {
           {/* ── RIGHT — Details ── */}
           <div className="flex flex-col">
             <h1 className="mb-3 text-[24px] font-normal leading-tight sm:text-[28px] lg:text-[34px]" style={{ fontFamily: "'EB Garamond', serif", color: "#1f1b15" }}>
-              {product.name}
+              {productDisplayName}
             </h1>
 
             {/* Rating summary under title */}

@@ -1,4 +1,5 @@
 import { Variant } from "../../../MongoDB/models.js";
+import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
 
 /**
  * Service + query combined for category products.
@@ -30,10 +31,10 @@ export const getCategoryProductsService = async ({
 
   if (availability) {
     const av = availability.split(",").map((s) => s.trim());
-    const wantIn  = av.includes("In Stock");
+    const wantIn = av.includes("In Stock");
     const wantOut = av.includes("Out of Stock");
-    if (wantIn && !wantOut)  filter.sizes = { $elemMatch: { quantity: { $gt: 0 } } };
-    if (wantOut && !wantIn)  filter.sizes = { $not: { $elemMatch: { quantity: { $gt: 0 } } } };
+    if (wantIn && !wantOut) filter.sizes = { $elemMatch: { quantity: { $gt: 0 } } };
+    if (wantOut && !wantIn) filter.sizes = { $not: { $elemMatch: { quantity: { $gt: 0 } } } };
   }
 
   if (priceRange) {
@@ -53,10 +54,10 @@ export const getCategoryProductsService = async ({
   /* ── Sort ── */
   let sortOption = {};
   switch (sort) {
-    case "price_asc":  sortOption.discountPrice = 1;  break;
+    case "price_asc": sortOption.discountPrice = 1; break;
     case "price_desc": sortOption.discountPrice = -1; break;
-    case "discount":   sortOption.discountPrice = 1;  break;
-    default:           sortOption.createdAt = -1;     break;
+    case "discount": sortOption.discountPrice = 1; break;
+    default: sortOption.createdAt = -1; break;
   }
 
   const discountPercent = discount ? Number(discount) : null;
@@ -75,19 +76,19 @@ export const getCategoryProductsService = async ({
     // Compute and filter by discount %
     ...(discountPercent
       ? [
-          {
-            $addFields: {
-              computedDiscount: {
-                $cond: {
-                  if: { $and: [{ $gt: ["$productId.basePrice", 0] }, { $lt: ["$discountPrice", "$productId.basePrice"] }] },
-                  then: { $multiply: [{ $divide: [{ $subtract: ["$productId.basePrice", "$discountPrice"] }, "$productId.basePrice"] }, 100] },
-                  else: 0,
-                },
+        {
+          $addFields: {
+            computedDiscount: {
+              $cond: {
+                if: { $and: [{ $gt: ["$productId.basePrice", 0] }, { $lt: ["$discountPrice", "$productId.basePrice"] }] },
+                then: { $multiply: [{ $divide: [{ $subtract: ["$productId.basePrice", "$discountPrice"] }, "$productId.basePrice"] }, 100] },
+                else: 0,
               },
             },
           },
-          { $match: { computedDiscount: { $gte: discountPercent } } },
-        ]
+        },
+        { $match: { computedDiscount: { $gte: discountPercent } } },
+      ]
       : []),
 
     { $sort: sortOption },
@@ -114,34 +115,34 @@ export const getCategoryProductsService = async ({
   ];
 
   const [result] = await Variant.aggregate(pipeline);
-  const total    = result.total[0]?.count || 0;
+  const total = result.total[0]?.count || 0;
+
+  const optimizedVariants = (result.variants || []).map((variant) => ({
+    ...variant,
+    images: (variant.images || []).map((image) => ({
+      ...image,
+      url: cloudinaryTransform(
+        image.url,
+        "f_auto,q_auto,w_500,h_750,c_fill"
+      ),
+    })),
+  }));
 
   // Shape to match what CategoryPage's ProductCard expects
-  const products = (result.variants || []).map((v) => ({
-  _id: v._id,
-
-  slug: v.slug,
-
-  name: v.productId.name,
-
-  image: v.images?.[0]?.url || null,
-
-  images: v.images || [],
-
-  price: v.productId.basePrice,
-
-  discountPrice: v.discountPrice,
-
-  color: v.color,
-
-  sizes: v.sizes,
-
-  category: v.productId.category,
-
-  isBestSeller: v.isBestSeller,
-
-  isNewArrival: v.isNewArrival,
-}));
+  const products = (optimizedVariants || []).map((v) => ({
+    _id: v._id,
+    slug: v.slug,
+    name: v.productId.name,
+    image: v.images?.[0]?.url || null,
+    images: v.images || [],
+    price: v.productId.basePrice,
+    discountPrice: v.discountPrice,
+    color: v.color,
+    sizes: v.sizes,
+    category: v.productId.category,
+    isBestSeller: v.isBestSeller,
+    isNewArrival: v.isNewArrival,
+  }));
 
   return { products, total };
 };

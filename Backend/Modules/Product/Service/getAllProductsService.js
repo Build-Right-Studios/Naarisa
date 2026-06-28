@@ -1,4 +1,5 @@
 import { getAllProductsInternal } from "../Internal/getAllProductsInternal.js";
+import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
 
 export const getAllProductsService = async (data) => {
   try {
@@ -26,7 +27,7 @@ export const getAllProductsService = async (data) => {
     // Availability — derived from sizes array
     if (availability) {
       const av = availability.split(",").map((s) => s.trim());
-      const wantInStock  = av.includes("In Stock");
+      const wantInStock = av.includes("In Stock");
       const wantOutStock = av.includes("Out of Stock");
 
       if (wantInStock && !wantOutStock) {
@@ -57,10 +58,10 @@ export const getAllProductsService = async (data) => {
     /* ── Sort option ── */
     let sortOption = {};
     switch (sort) {
-      case "price_asc":  sortOption.discountPrice = 1;  break;
+      case "price_asc": sortOption.discountPrice = 1; break;
       case "price_desc": sortOption.discountPrice = -1; break;
-      case "name_asc":   sortOption.slug = 1;           break;
-      default:           sortOption.createdAt = -1;     break; // newest
+      case "name_asc": sortOption.slug = 1; break;
+      default: sortOption.createdAt = -1; break; // newest
     }
 
     /* ── Fetch from DB ──
@@ -77,13 +78,17 @@ export const getAllProductsService = async (data) => {
 
     /* ── Shape response ── */
     const products = variants.map((v) => ({
-      id:       v._id,
-      name:     v.productId.name,
+      id: v._id,
+      name: v.productId.name,
       category: v.productId.category,
-      slug:     v.slug,
-      color:    v.color,
-      image:    v.images[0]?.url || null,
-      price:    v.discountPrice ?? v.productId.basePrice,
+      slug: v.slug,
+      color: v.color,
+      image: cloudinaryTransform(
+        v.images?.[0]?.url,
+        "f_auto,q_auto,w_500,h_750,c_fill"
+      ),
+
+      price: v.discountPrice ?? v.productId.basePrice,
     }));
 
     return {

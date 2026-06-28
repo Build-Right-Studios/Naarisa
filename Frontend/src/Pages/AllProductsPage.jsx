@@ -229,7 +229,13 @@ const AllProductsPage = () => {
           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginLeft: "auto" }}>
 
             {/* Sort — desktop */}
-            <div className="hidden md:flex" style={{ alignItems: "center", gap: "8px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
               <span style={{
                 fontFamily: "'Jost', sans-serif",
                 fontSize: "11px",
