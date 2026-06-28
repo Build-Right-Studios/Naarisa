@@ -4,7 +4,7 @@ import { BASE, PRODUCT, USER } from "../Constants/apiRoutes.js";
 import api from "../utils/axiosInstance.js";
 import useInView from "../utils/useInView.js";
 import useCartStore from "../Store/useCartStore.js";
-import sizeChart from "../assets/Size Chart.jpeg";
+import sizeChart from "../assets/Size Chart.png";
 
 // ── Accordion ─────────────────────────────────────────────────────────────────
 const Accordion = ({ title, content }) => {

@@ -122,6 +122,11 @@ const ContactPage = () => {
     if (!form.email.trim()) e.email = "Please enter your email.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       e.email = "Please enter a valid email.";
+    if (!form.phone.trim()) {
+      e.phone = "Please enter your phone number.";
+    } else if (!/^[6-9]\d{9}$/.test(form.phone.replace(/\D/g, ""))) {
+      e.phone = "Please enter a valid 10-digit phone number.";
+    }
     if (!form.subject) e.subject = "Please select a subject.";
     if (!form.message.trim()) e.message = "Please write a message.";
     else if (form.message.trim().length < 10)
@@ -308,7 +313,7 @@ const ContactPage = () => {
                 </div>
 
                 {/* Phone */}
-                <Field label="Phone number (optional)" error={errors.phone}>
+                <Field label="Phone number *" error={errors.phone}>
                   <input
                     type="tel"
                     placeholder="+91 98971 39380"

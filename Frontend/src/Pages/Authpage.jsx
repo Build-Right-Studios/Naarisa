@@ -350,9 +350,9 @@ const AuthPage = () => {
           {/* Legal */}
           <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#8C7B6B", textAlign: "center", marginTop: "24px", lineHeight: 1.7 }}>
             By continuing, you agree to our{" "}
-            <span style={{ color: "#AB721E", cursor: "pointer", textDecoration: "underline" }} onClick={() => navigate("/terms")}>Terms of Service</span>
+            <span style={{ color: "#AB721E", cursor: "pointer", textDecoration: "underline" }} onClick={() => navigate("/terms-and-condition")}>Terms and Service</span>
             {" "}and{" "}
-            <span style={{ color: "#AB721E", cursor: "pointer", textDecoration: "underline" }} onClick={() => navigate("/privacy")}>Privacy Policy</span>.
+            <span style={{ color: "#AB721E", cursor: "pointer", textDecoration: "underline" }} onClick={() => navigate("/privacy-policy")}>Privacy Policy</span>.
           </p>
 
         </div>
