@@ -22,11 +22,11 @@ const footerLinks = {
   customerCare: [
     { title: "Contact Us", path: "/contact" },
     { title: "Return & Refund Policy", path: "/return-refund-policy" },
-    { title: "Terms of Conditions", path: "/terms-of-condition" },
-    { title: "Privacy Policy", path: "/privacy-policy" },
   ],
   company: [
     { title: "About Us", path: "/about" },
+    { title: "Terms and Conditions", path: "/terms-and-condition" },
+    { title: "Privacy Policy", path: "/privacy-policy" },
   ],
 };
 
