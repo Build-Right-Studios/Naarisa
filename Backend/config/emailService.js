@@ -111,9 +111,9 @@ Order ID: ${customOrderId}
 <p>
 <strong>Order Date:</strong>
 ${new Date().toLocaleString("en-IN", {
-  dateStyle: "medium",
-  timeStyle: "short",
-})}
+    dateStyle: "medium",
+    timeStyle: "short",
+  })}
 </p>
 </div>
 
@@ -236,7 +236,8 @@ If you need assistance, contact us at
 
   try {
     const response = await resend.emails.send({
-      from: "Naarisa <onboarding@resend.dev>",
+      from: "Naarisa <orders@naarisa.com>",
+      replyTo: "naarisa23@gmail.com",
       to: email,
       subject: `Order Confirmation | ${customOrderId}`,
       html: htmlContent,
@@ -493,9 +494,9 @@ ${subject}
 <div class="label">Submitted On</div>
 <div class="value">
 ${new Date().toLocaleString("en-IN", {
-  dateStyle: "medium",
-  timeStyle: "short",
-})}
+    dateStyle: "medium",
+    timeStyle: "short",
+  })}
 </div>
 </div>
 
