@@ -35,7 +35,7 @@ const trustBadges = [
   { icon: RefreshCcw, label: "Easy Returns", sub: "Hassle-free returns" },
   { icon: Truck, label: "Fast Shipping", sub: "Pan India delivery" },
   { icon: BadgeCheck, label: "Quality Assured", sub: "Premium fabrics" },
-  { icon: Banknote, label: "COD Available", sub: "Pay on delivery" },
+  // { icon: Banknote, label: "COD Available", sub: "Pay on delivery" },
 ];
 
 const ColumnHeading = ({ children }) => (
@@ -163,7 +163,7 @@ const Footer = () => {
 
       {/* Trust badges strip */}
       <div className="mx-auto max-w-[1400px] px-5 sm:px-6 md:px-10 xl:px-12">
-        <div className="grid grid-cols-2 gap-6 py-8 sm:grid-cols-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-6 py-8 sm:grid-cols-3 md:grid-cols-4">
           {trustBadges.map(({ icon: Icon, label, sub }, i) => (
             <div key={i} className="flex items-center gap-3">
               <Icon size={26} className="text-[#AB721E] shrink-0" />
