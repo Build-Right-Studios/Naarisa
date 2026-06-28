@@ -36,15 +36,7 @@ export const sendOtpService = async (phone) => {
   // await sendSMS(phone, `Your Naarisa OTP is ${otp}. Valid for 10 minutes. Do not share this with anyone.`);
 
   try {
-    if (process.env.MSG91_OTP_TEMPLATE_ID) {
       await sendSMSTemplate( process.env.MSG91_OTP_FLOW, phone, [otp] );
-    }
-    else {
-      await sendSMS(
-        phone,
-        `Your Naarisa OTP is ${otp}. Valid for 10 minutes. Do not share this with anyone.`
-      );
-    }
   } catch (smsError) {
     console.error("OTP sending failed:", smsError);
     throw {
