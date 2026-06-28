@@ -237,7 +237,7 @@ const AboutPage = () => {
               />
               <div className="absolute bottom-3 right-3">
                 <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(43,33,18,0.4)" }}>
-                  Since 1955
+                  Since 1971
                 </p>
               </div>
             </div>

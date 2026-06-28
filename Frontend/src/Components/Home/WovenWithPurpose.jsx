@@ -169,9 +169,7 @@ const WovenWithPurpose = () => {
               className="text-[13px] font-light leading-[1.8] sm:text-[14px] lg:text-[15px]"
               style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}
             >
-              Naarisa is a modern ethnic wear brand built on over 70 years of family experience in women's fashion.
-              Our journey began in Haridwar in 1955, where generations of our family served customers through a trusted retail store.
-              Today, we bring that same understanding of quality, fit and value online.
+              Naarisa is a modern ethnic wear brand built on over 50 years of family experience in women's fashion. Our journey began in Haridwar in 1971, where generations of our family served customers through a trusted retail store. Today, we bring that same understanding of quality, fit, and value online.
             </p>
 
             <Link

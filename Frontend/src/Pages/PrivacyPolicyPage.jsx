@@ -286,9 +286,14 @@ Phone: +91-9897139380`,
   ];
 
   return (
-    <div style={{ backgroundColor: T.bg, minHeight: "100vh" }}>
+    <div style={{ backgroundColor: T.bg, minHeight: "100vh", width: "100%" }}>
       {/* ── Breadcrumb ── */}
-      <div style={{ margin: "0 auto", maxWidth: "1200px", paddingLeft: "20px", paddingRight: "20px" }}>
+      <div style={{
+        width: "100%",
+        paddingLeft: "clamp(16px, 5vw, 40px)",
+        paddingRight: "clamp(16px, 5vw, 40px)",
+        boxSizing: "border-box",
+      }}>
         <p style={{
           fontFamily: T.sans, fontSize: "11px", letterSpacing: "0.14em",
           color: T.mid, textTransform: "uppercase", padding: "24px 0 0",
@@ -304,10 +309,14 @@ Phone: +91-9897139380`,
       {/* ── Hero ── */}
       <div style={{
         borderBottom: `1px solid ${T.border}`,
-        padding: "48px 20px 40px",
+        padding: "48px clamp(16px, 5vw, 40px) 40px",
         marginBottom: "0",
+        width: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        justifyContent: "center",
       }}>
-        <div style={{ margin: "0 auto", maxWidth: "1200px" }}>
+        <div style={{ maxWidth: "900px", width: "100%" }}>
           <p style={{
             fontFamily: T.sans, fontSize: "11px", fontWeight: 700,
             letterSpacing: "0.2em", textTransform: "uppercase",
@@ -324,22 +333,27 @@ Phone: +91-9897139380`,
           </h1>
           <p style={{
             fontFamily: T.sans, fontSize: "14px", color: T.mid,
-            lineHeight: 1.7, maxWidth: "480px",
+            lineHeight: 1.7, maxWidth: "900px",
           }}>
-            Learn how we collect, use, and protect your personal information.
-          </p>
-          <p style={{
-            fontFamily: T.sans, fontSize: "12px", color: T.light,
-            marginTop: "16px",
-          }}>
-            Effective Date: 17 June 2026
+            <strong>Effective Date:</strong>  17 June 2026 <br />
+            Welcome to <strong>Naarisa.</strong> <br />
+            Naarisa is a women's ethnic wear brand created to bring beautiful, everyday Indian fashion to the modern Naari. This Privacy Policy explains how we collect, use, store, share, and protect your personal information when you visit our website, browse our products, create an account, place an order, contact us, or use any of our services.
+            By accessing or using our website www.naarisa.com, you agree to the terms of this Privacy Policy.
+
           </p>
         </div>
       </div>
 
       {/* ── Content ── */}
-      <div style={{ margin: "0 auto", maxWidth: "1200px", paddingLeft: "20px", paddingRight: "20px" }}>
-        <div style={{ padding: "48px 0", maxWidth: "850px" }}>
+      <div style={{
+        width: "100%",
+        paddingLeft: "clamp(16px, 5vw, 40px)",
+        paddingRight: "clamp(16px, 5vw, 40px)",
+        boxSizing: "border-box",
+        display: "flex",
+        justifyContent: "center",
+      }}>
+        <div style={{ padding: "48px 0", maxWidth: "900px", width: "100%" }}>
 
           {sections.map((section) => (
             <div

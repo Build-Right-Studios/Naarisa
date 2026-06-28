@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { BASE, COUPON } from "../Constants/apiRoutes.js";
 import useCartStore from "../Store/useCartStore.js";
 import useCheckoutStore from "../Store/useCheckoutStore.js";
 
@@ -12,21 +10,6 @@ const TrashIcon = () => (
     <path d="M19 6l-1 14H6L5 6" />
     <path d="M10 11v6M14 11v6" />
     <path d="M9 6V4h6v2" />
-  </svg>
-);
-
-// ── Tag Icon ──────────────────────────────────────────────────────────────────
-const TagIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
-    <line x1="7" y1="7" x2="7.01" y2="7" />
-  </svg>
-);
-
-// ── Check Icon ────────────────────────────────────────────────────────────────
-const CheckIcon = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 
@@ -46,74 +29,6 @@ const TruckIcon = () => (
     <circle cx="18.5" cy="18.5" r="2.5" />
   </svg>
 );
-
-// ── Coupon Card ───────────────────────────────────────────────────────────────
-const CouponCard = ({ coupon, onApply, appliedCode, subtotal }) => {
-  const isApplied = appliedCode === coupon.code;
-  const isEligible = subtotal >= (coupon.minOrderValue || 0);
-
-  const discountLabel =
-    coupon.discountType === "percentage"
-      ? `${coupon.discountValue}% OFF`
-      : `₹${coupon.discountValue.toLocaleString("en-IN")} OFF`;
-
-  const savingsText =
-    coupon.discountType === "percentage"
-      ? coupon.maxDiscountAmount
-        ? `Save up to ₹${coupon.maxDiscountAmount.toLocaleString("en-IN")}`
-        : `Save ${coupon.discountValue}% on your order`
-      : `Save ₹${coupon.discountValue.toLocaleString("en-IN")} on your order`;
-
-  return (
-    <div
-      style={{
-        border: isApplied ? "1.5px solid #AB721E" : "1px solid #E8DDD0",
-        backgroundColor: isApplied ? "#FDF8F1" : "#fff",
-        padding: "14px 16px",
-        marginBottom: "10px",
-        transition: "all 0.2s",
-        opacity: isEligible ? 1 : 0.55,
-      }}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em", color: "#1f1b15", backgroundColor: "#F5E6D0", padding: "2px 8px" }}>
-              {coupon.code}
-            </span>
-            <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, color: "#2D6B5A", letterSpacing: "0.08em" }}>
-              {discountLabel}
-            </span>
-          </div>
-          <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#4A3728", fontWeight: 400, marginBottom: "2px" }}>
-            {savingsText}
-          </p>
-          {coupon.minOrderValue > 0 && (
-            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: isEligible ? "#8C7B6B" : "#C4727A", fontWeight: 400 }}>
-              {isEligible
-                ? `Min. order ₹${coupon.minOrderValue.toLocaleString("en-IN")} ✓`
-                : `Min. order ₹${coupon.minOrderValue.toLocaleString("en-IN")} required`}
-            </p>
-          )}
-        </div>
-        <button
-          onClick={() => isEligible && onApply(coupon)}
-          disabled={!isEligible}
-          style={{
-            fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-            padding: "7px 14px", flexShrink: 0,
-            cursor: isEligible ? "pointer" : "not-allowed", transition: "all 0.2s",
-            backgroundColor: isApplied ? "#2B2112" : "transparent",
-            color: isApplied ? "#F5E6D0" : "#AB721E",
-            border: isApplied ? "1px solid #2B2112" : "1px solid #AB721E",
-          }}
-        >
-          {isApplied ? <span className="flex items-center gap-1.5"><CheckIcon /> APPLIED</span> : "APPLY"}
-        </button>
-      </div>
-    </div>
-  );
-};
 
 // ── Cart Item ─────────────────────────────────────────────────────────────────
 const CartItem = ({ item, onRemove, onQtyChange }) => (
@@ -206,73 +121,16 @@ const CartPage = () => {
   const updateQty       = useCartStore((state) => state.updateQty);
   const setOrderSummary = useCheckoutStore((state) => state.setOrderSummary);
 
-  const [websiteCoupons, setWebsiteCoupons] = useState([]);
-  const [appliedCoupon,  setAppliedCoupon]  = useState(null);
-  const [manualCode,     setManualCode]     = useState("");
-  const [couponError,    setCouponError]    = useState("");
-  const [couponsLoading, setCouponsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCoupons = async () => {
-      try {
-        const res = await axios.get(`${BASE.ROUTE}${COUPON.GET_WEBSITE}`);
-        if (res.data.success) setWebsiteCoupons(res.data.coupons);
-      } catch (err) {
-        console.error("Failed to fetch coupons:", err);
-      } finally {
-        setCouponsLoading(false);
-      }
-    };
-    fetchCoupons();
-  }, []);
-
-  // Drop coupon if cart no longer meets minimum order value
-  useEffect(() => {
-    if (appliedCoupon && subtotal < (appliedCoupon.minOrderValue || 0)) {
-      setAppliedCoupon(null);
-    }
-  }, [items]);
-
   const handleRemove    = (id) => removeItem(id);
   const handleQtyChange = (id, newQty) => updateQty(id, newQty);
 
-  const handleApplyCoupon = (coupon) => {
-    if (appliedCoupon?.code === coupon.code) {
-      setAppliedCoupon(null);
-    } else {
-      setAppliedCoupon(coupon);
-      setManualCode("");
-      setCouponError("");
-    }
-  };
-
-  const handleManualApply = () => {
-    const code = manualCode.trim().toUpperCase();
-    if (!code) return;
-    const match = websiteCoupons.find((c) => c.code === code);
-    if (!match) { setCouponError("Invalid or expired coupon code."); return; }
-    if (subtotal < (match.minOrderValue || 0)) {
-      setCouponError(`Min. order value ₹${match.minOrderValue.toLocaleString("en-IN")} required.`);
-      return;
-    }
-    setAppliedCoupon(match);
-    setCouponError("");
-    setManualCode("");
-  };
-
   // ── Calculations (no tax) ──
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-
-  const discountAmount = appliedCoupon
-    ? appliedCoupon.discountType === "percentage"
-      ? Math.min((subtotal * appliedCoupon.discountValue) / 100, appliedCoupon.maxDiscountAmount ?? Infinity)
-      : Math.min(appliedCoupon.discountValue, subtotal)
-    : 0;
-
-  const total = subtotal - discountAmount;
+  const total = subtotal;
 
   const handleCheckout = () => {
-    setOrderSummary({ subtotal, discountAmount, appliedCoupon, total });
+    // Clear any previous coupon state when going to checkout
+    setOrderSummary({ subtotal, discountAmount: 0, appliedCoupon: null, total });
     navigate("/checkout");
   };
 
@@ -323,78 +181,6 @@ const CartPage = () => {
           {/* Right — Summary Panel */}
           <div className="lg:sticky lg:top-24">
 
-            {/* Offers & Coupons */}
-            <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "20px", marginBottom: "12px" }}>
-              <div className="flex items-center gap-2 mb-4">
-                <TagIcon />
-                <h2 style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", color: "#1f1b15" }}>
-                  OFFERS & COUPONS
-                </h2>
-              </div>
-
-              <div className="flex gap-2 mb-4">
-                <input
-                  value={manualCode}
-                  onChange={(e) => { setManualCode(e.target.value.toUpperCase()); setCouponError(""); }}
-                  onKeyDown={(e) => e.key === "Enter" && handleManualApply()}
-                  placeholder="Enter coupon code"
-                  style={{ flex: 1, padding: "10px 12px", fontFamily: "'Jost', sans-serif", fontSize: "13px", letterSpacing: "0.06em", color: "#1f1b15", backgroundColor: "#F9F3EB", border: couponError ? "1px solid #C4727A" : "1px solid #E8DDD0", outline: "none" }}
-                />
-                <button
-                  onClick={handleManualApply}
-                  style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", padding: "10px 16px", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none", cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#AB721E")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#2B2112")}
-                >
-                  APPLY
-                </button>
-              </div>
-
-              {couponError && (
-                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#C4727A", marginBottom: "12px", marginTop: "-8px" }}>
-                  {couponError}
-                </p>
-              )}
-
-              {appliedCoupon && (
-                <div style={{ backgroundColor: "#F0FAF4", border: "1px solid #2D6B5A", padding: "10px 14px", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div className="flex items-center gap-2">
-                    <span style={{ color: "#2D6B5A" }}><CheckIcon /></span>
-                    <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", fontWeight: 700, color: "#2D6B5A", letterSpacing: "0.08em" }}>
-                      {appliedCoupon.code} — saving ₹{Math.round(discountAmount).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setAppliedCoupon(null)}
-                    style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "#C4727A", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                  >
-                    REMOVE
-                  </button>
-                </div>
-              )}
-
-              {couponsLoading ? (
-                <div style={{ padding: "12px 0" }}>
-                  {[1, 2].map((i) => (
-                    <div key={i} style={{ height: "70px", backgroundColor: "#F5E6D0", marginBottom: "10px", borderRadius: "2px" }} />
-                  ))}
-                </div>
-              ) : websiteCoupons.length > 0 ? (
-                <div>
-                  <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#8C7B6B", letterSpacing: "0.06em", marginBottom: "10px" }}>
-                    Available offers
-                  </p>
-                  {websiteCoupons.map((coupon) => (
-                    <CouponCard key={coupon.code} coupon={coupon} onApply={handleApplyCoupon} appliedCode={appliedCoupon?.code} subtotal={subtotal} />
-                  ))}
-                </div>
-              ) : (
-                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B", fontStyle: "italic" }}>
-                  No active offers available right now.
-                </p>
-              )}
-            </div>
-
             {/* Order Summary */}
             <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "20px", marginBottom: "12px" }}>
               <h2 style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", color: "#1f1b15", marginBottom: "16px" }}>
@@ -404,9 +190,6 @@ const CartPage = () => {
               {[
                 { label: `Subtotal (${items.length} ${items.length === 1 ? "item" : "items"})`, value: `₹${subtotal.toLocaleString("en-IN")}`, accent: false },
                 { label: "Shipping", value: "FREE", accent: true },
-                ...(appliedCoupon
-                  ? [{ label: `Discount (${appliedCoupon.code})`, value: `− ₹${Math.round(discountAmount).toLocaleString("en-IN")}`, accent: true }]
-                  : []),
               ].map(({ label, value, accent }) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                   <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#4A3728", fontWeight: 400 }}>{label}</span>
@@ -423,11 +206,9 @@ const CartPage = () => {
                 </span>
               </div>
 
-              {appliedCoupon && (
-                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#2D6B5A", fontWeight: 600, textAlign: "right", marginTop: "6px" }}>
-                  You're saving ₹{Math.round(discountAmount).toLocaleString("en-IN")} on this order
-                </p>
-              )}
+              <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B", fontStyle: "italic", marginTop: "12px", textAlign: "center" }}>
+                Apply coupons at checkout
+              </p>
             </div>
 
             {/* Checkout — Desktop */}

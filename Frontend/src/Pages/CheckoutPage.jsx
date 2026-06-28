@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import useCartStore from "../Store/useCartStore.js";
 import useCheckoutStore from "../Store/useCheckoutStore.js";
 import api from "../utils/axiosInstance.js";
-import { ORDER, PAYMENT, USER } from "../Constants/apiRoutes.js";
+import axios from "axios";
+import { ORDER, PAYMENT, USER, BASE, COUPON } from "../Constants/apiRoutes.js";
 
 // ── Indian States ─────────────────────────────────────────────────────────────
 const INDIAN_STATES = [
@@ -15,6 +16,88 @@ const INDIAN_STATES = [
   "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
   "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
 ];
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+const TagIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+    <line x1="7" y1="7" x2="7.01" y2="7" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+// ── Coupon Card ───────────────────────────────────────────────────────────────
+const CouponCard = ({ coupon, onApply, appliedCode, subtotal }) => {
+  const isApplied = appliedCode === coupon.code;
+  const isEligible = subtotal >= (coupon.minOrderValue || 0);
+
+  const discountLabel =
+    coupon.discountType === "percentage"
+      ? `${coupon.discountValue}% OFF`
+      : `₹${coupon.discountValue.toLocaleString("en-IN")} OFF`;
+
+  const savingsText =
+    coupon.discountType === "percentage"
+      ? coupon.maxDiscountAmount
+        ? `Save up to ₹${coupon.maxDiscountAmount.toLocaleString("en-IN")}`
+        : `Save ${coupon.discountValue}% on your order`
+      : `Save ₹${coupon.discountValue.toLocaleString("en-IN")} on your order`;
+
+  return (
+    <div
+      style={{
+        border: isApplied ? "1.5px solid #AB721E" : "1px solid #E8DDD0",
+        backgroundColor: isApplied ? "#FDF8F1" : "#fff",
+        padding: "14px 16px",
+        marginBottom: "10px",
+        transition: "all 0.2s",
+        opacity: isEligible ? 1 : 0.55,
+      }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 700, letterSpacing: "0.1em", color: "#1f1b15", backgroundColor: "#F5E6D0", padding: "2px 8px" }}>
+              {coupon.code}
+            </span>
+            <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, color: "#2D6B5A", letterSpacing: "0.08em" }}>
+              {discountLabel}
+            </span>
+          </div>
+          <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#4A3728", fontWeight: 400, marginBottom: "2px" }}>
+            {savingsText}
+          </p>
+          {coupon.minOrderValue > 0 && (
+            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: isEligible ? "#8C7B6B" : "#C4727A", fontWeight: 400 }}>
+              {isEligible
+                ? `Min. order ₹${coupon.minOrderValue.toLocaleString("en-IN")} ✓`
+                : `Min. order ₹${coupon.minOrderValue.toLocaleString("en-IN")} required`}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => isEligible && onApply(coupon)}
+          disabled={!isEligible}
+          style={{
+            fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
+            padding: "7px 14px", flexShrink: 0,
+            cursor: isEligible ? "pointer" : "not-allowed", transition: "all 0.2s",
+            backgroundColor: isApplied ? "#2B2112" : "transparent",
+            color: isApplied ? "#F5E6D0" : "#AB721E",
+            border: isApplied ? "1px solid #2B2112" : "1px solid #AB721E",
+          }}
+        >
+          {isApplied ? <span className="flex items-center gap-1.5"><CheckIcon /> APPLIED</span> : "APPLY"}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // ── Field wrapper ─────────────────────────────────────────────────────────────
 const Field = ({ label, error, children }) => (
@@ -117,7 +200,7 @@ const CheckoutPage = () => {
 
   const items = useCartStore((state) => state.items);
   const clearCart = useCartStore((state) => state.clearCart);
-  const { subtotal, discountAmount, appliedCoupon, total } = useCheckoutStore();
+  const { subtotal: initialSubtotal } = useCheckoutStore();
   const clearOrderSummary = useCheckoutStore((state) => state.clearOrderSummary);
 
   const [user] = useState(() => {
@@ -125,6 +208,14 @@ const CheckoutPage = () => {
     catch { return null; }
   });
 
+  // ── Coupon State ──────────────────────────────────────────────────────────
+  const [websiteCoupons, setWebsiteCoupons] = useState([]);
+  const [appliedCoupon,  setAppliedCoupon]  = useState(null);
+  const [manualCode,     setManualCode]     = useState("");
+  const [couponError,    setCouponError]    = useState("");
+  const [couponsLoading, setCouponsLoading] = useState(true);
+
+  // ── Address Form State ────────────────────────────────────────────────────
   const [form, setForm] = useState(() => {
     const firstName = user?.name?.split(" ")[0] || "";
     const lastName = user?.name?.split(" ").slice(1).join(" ") || "";
@@ -139,6 +230,40 @@ const CheckoutPage = () => {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const skipCartRedirect = useRef(false);
 
+  // ── Calculations ──────────────────────────────────────────────────────────
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  const discountAmount = appliedCoupon
+    ? appliedCoupon.discountType === "percentage"
+      ? Math.min((subtotal * appliedCoupon.discountValue) / 100, appliedCoupon.maxDiscountAmount ?? Infinity)
+      : Math.min(appliedCoupon.discountValue, subtotal)
+    : 0;
+
+  const total = subtotal - discountAmount;
+
+  // ── Fetch Coupons ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const res = await axios.get(`${BASE.ROUTE}${COUPON.GET_WEBSITE}`);
+        if (res.data.success) setWebsiteCoupons(res.data.coupons);
+      } catch (err) {
+        console.error("Failed to fetch coupons:", err);
+      } finally {
+        setCouponsLoading(false);
+      }
+    };
+    fetchCoupons();
+  }, []);
+
+  // ── Drop coupon if cart no longer meets minimum order value
+  useEffect(() => {
+    if (appliedCoupon && subtotal < (appliedCoupon.minOrderValue || 0)) {
+      setAppliedCoupon(null);
+    }
+  }, [items]);
+
+  // ── Auth Check ────────────────────────────────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem("naarisa-token");
     if (!token || !user) navigate("/auth?redirect=/checkout");
@@ -149,6 +274,7 @@ const CheckoutPage = () => {
     if (items.length === 0) navigate("/cart");
   }, [items]);
 
+  // ── Fetch Addresses ───────────────────────────────────────────────────────
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
@@ -182,6 +308,32 @@ const CheckoutPage = () => {
     fetchAddresses();
   }, []);
 
+  // ── Coupon Handlers ───────────────────────────────────────────────────────
+  const handleApplyCoupon = (coupon) => {
+    if (appliedCoupon?.code === coupon.code) {
+      setAppliedCoupon(null);
+    } else {
+      setAppliedCoupon(coupon);
+      setManualCode("");
+      setCouponError("");
+    }
+  };
+
+  const handleManualApply = () => {
+    const code = manualCode.trim().toUpperCase();
+    if (!code) return;
+    const match = websiteCoupons.find((c) => c.code === code);
+    if (!match) { setCouponError("Invalid or expired coupon code."); return; }
+    if (subtotal < (match.minOrderValue || 0)) {
+      setCouponError(`Min. order value ₹${match.minOrderValue.toLocaleString("en-IN")} required.`);
+      return;
+    }
+    setAppliedCoupon(match);
+    setCouponError("");
+    setManualCode("");
+  };
+
+  // ── Address Validation ────────────────────────────────────────────────────
   const validate = () => {
     if (selectedAddressId && !showAddressForm) return true;
     const e = {};
@@ -291,28 +443,84 @@ const CheckoutPage = () => {
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
 
-      {/* Minimal Header */}
-      <div style={{ borderBottom: "1px solid #E8DDD0", backgroundColor: "#F9F3EB", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span onClick={() => navigate("/")} style={{ fontFamily: "'EB Garamond', serif", fontSize: "22px", fontWeight: 400, color: "#1f1b15", cursor: "pointer", letterSpacing: "0.02em" }}>
-          Naarisa
-        </span>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8C7B6B" strokeWidth="1.5">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" />
-          </svg>
-          <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", color: "#8C7B6B" }}>
-            SECURE CHECKOUT
-          </span>
-        </div>
-      </div>
-
       {/* Body */}
       <div className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6 md:px-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_420px] lg:items-start">
 
-          {/* Left — Addresses + Form */}
+          {/* Left — Coupons + Addresses + Form */}
           <div>
+
+            {/* Offers & Coupons Section */}
+            <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "20px", marginBottom: "24px" }}>
+              <div className="flex items-center gap-2 mb-4">
+                <TagIcon />
+                <h2 style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", color: "#1f1b15" }}>
+                  OFFERS & COUPONS
+                </h2>
+              </div>
+
+              <div className="flex gap-2 mb-4">
+                <input
+                  value={manualCode}
+                  onChange={(e) => { setManualCode(e.target.value.toUpperCase()); setCouponError(""); }}
+                  onKeyDown={(e) => e.key === "Enter" && handleManualApply()}
+                  placeholder="Enter coupon code"
+                  style={{ flex: 1, padding: "10px 12px", fontFamily: "'Jost', sans-serif", fontSize: "13px", letterSpacing: "0.06em", color: "#1f1b15", backgroundColor: "#F9F3EB", border: couponError ? "1px solid #C4727A" : "1px solid #E8DDD0", outline: "none" }}
+                />
+                <button
+                  onClick={handleManualApply}
+                  style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", padding: "10px 16px", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none", cursor: "pointer", flexShrink: 0, transition: "background 0.2s" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#AB721E")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#2B2112")}
+                >
+                  APPLY
+                </button>
+              </div>
+
+              {couponError && (
+                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#C4727A", marginBottom: "12px", marginTop: "-8px" }}>
+                  {couponError}
+                </p>
+              )}
+
+              {appliedCoupon && (
+                <div style={{ backgroundColor: "#F0FAF4", border: "1px solid #2D6B5A", padding: "10px 14px", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: "#2D6B5A" }}><CheckIcon /></span>
+                    <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", fontWeight: 700, color: "#2D6B5A", letterSpacing: "0.08em" }}>
+                      {appliedCoupon.code} — saving ₹{Math.round(discountAmount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setAppliedCoupon(null)}
+                    style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "#C4727A", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                  >
+                    REMOVE
+                  </button>
+                </div>
+              )}
+
+              {couponsLoading ? (
+                <div style={{ padding: "12px 0" }}>
+                  {[1, 2].map((i) => (
+                    <div key={i} style={{ height: "70px", backgroundColor: "#F5E6D0", marginBottom: "10px", borderRadius: "2px" }} />
+                  ))}
+                </div>
+              ) : websiteCoupons.length > 0 ? (
+                <div>
+                  <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#8C7B6B", letterSpacing: "0.06em", marginBottom: "10px" }}>
+                    Available offers
+                  </p>
+                  {websiteCoupons.map((coupon) => (
+                    <CouponCard key={coupon.code} coupon={coupon} onApply={handleApplyCoupon} appliedCode={appliedCoupon?.code} subtotal={subtotal} />
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B", fontStyle: "italic" }}>
+                  No active offers available right now.
+                </p>
+              )}
+            </div>
 
             {/* Saved Addresses */}
             {addresses.length > 0 && (

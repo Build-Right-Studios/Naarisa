@@ -12,24 +12,24 @@ import { useState, useEffect } from "react";
 
 /* ─── Brand tokens ─────────────────────────────────────────────────────────── */
 const T = {
-  bg:        "#F9F3EB",
-  border:    "#E8DDD0",
-  textDark:  "#1f1b15",
-  textMid:   "#8C7B6B",
-  gold:      "#AB721E",
+  bg: "#F9F3EB",
+  border: "#E8DDD0",
+  textDark: "#1f1b15",
+  textMid: "#8C7B6B",
+  gold: "#AB721E",
   fontSerif: "'EB Garamond', serif",
-  fontSans:  "'Jost', sans-serif",
+  fontSans: "'Jost', sans-serif",
 };
 
 /* ─── Filter options ───────────────────────────────────────────────────────── */
 const AVAILABILITY_OPTIONS = ["In Stock", "Out of Stock"];
 
 const PRICE_RANGES = [
-  { label: "Under ₹1,000",     value: "0-1000" },
+  { label: "Under ₹1,000", value: "0-1000" },
   { label: "₹1,000 – ₹2,000", value: "1000-2000" },
   { label: "₹2,000 – ₹3,500", value: "2000-3500" },
   { label: "₹3,500 – ₹5,000", value: "3500-5000" },
-  { label: "Above ₹5,000",     value: "5000-999999" },
+  { label: "Above ₹5,000", value: "5000-999999" },
 ];
 
 const DISCOUNT_OPTIONS = [
@@ -40,34 +40,38 @@ const DISCOUNT_OPTIONS = [
 ];
 
 const COLOUR_OPTIONS = [
-  { name: "Black",    hex: "#1a1a1a" },
-  { name: "White",    hex: "#f5f5f5" },
-  { name: "Ivory",    hex: "#FFFFF0" },
-  { name: "Beige",    hex: "#C4A882" },
-  { name: "Blush",    hex: "#FFB6C1" },
-  { name: "Red",      hex: "#C0392B" },
-  { name: "Maroon",   hex: "#800000" },
-  { name: "Orange",   hex: "#E8831A" },
-  { name: "Yellow",   hex: "#F4C430" },
-  { name: "Mustard",  hex: "#C8A951" },
-  { name: "Sage",     hex: "#8FAF73" },
-  { name: "Green",    hex: "#2D6B5A" },
-  { name: "Teal",     hex: "#008080" },
-  { name: "Blue",     hex: "#2C5F8A" },
-  { name: "Navy",     hex: "#1B2A4A" },
-  { name: "Lavender", hex: "#967BB6" },
-  { name: "Purple",   hex: "#6B2FA0" },
-  { name: "Pink",     hex: "#D6427A" },
-  { name: "Grey",     hex: "#9E9E9E" },
-  { name: "Brown",    hex: "#795548" },
+  { name: "Beige", hex: "#E6D5B8" },
+  { name: "Black", hex: "#1A1A1A" },
+  { name: "Blue", hex: "#2C5F8A" },
+  { name: "Brown", hex: "#7B4F2C" },
+  { name: "Dusty Pink", hex: "#D8A7B1" },
+  { name: "Green", hex: "#2D6B5A" },
+  { name: "Indigo", hex: "#3F4A8A" },
+  { name: "Ivory", hex: "#FFFFF0" },
+  { name: "Lilac", hex: "#C8A2C8" },
+  { name: "Magenta", hex: "#C2185B" },
+  { name: "Multicolour", hex: "linear-gradient(135deg,#E53935,#FB8C00,#FDD835,#43A047,#1E88E5,#8E24AA)" },
+  { name: "Mustard", hex: "#C8A951" },
+  { name: "Navy", hex: "#1B2A4A" },
+  { name: "Off-white", hex: "#F8F6F0" },
+  { name: "Olive", hex: "#6B8E23" },
+  { name: "Pink", hex: "#E91E63" },
+  { name: "Powder Blue", hex: "#B0E0E6" },
+  { name: "Rani Pink", hex: "#E75480" },
+  { name: "Red", hex: "#C0392B" },
+  { name: "Rosewood", hex: "#65000B" },
+  { name: "Rust", hex: "#B7410E" },
+  { name: "Teal", hex: "#008080" },
+  { name: "White", hex: "#FFFFFF" },
+  { name: "Yellow", hex: "#F4C430" },
 ];
 
 /* ─── Defaults (exported so pages can initialise state) ────────────────────── */
 export const FILTER_DEFAULTS = {
   availability: [],
-  priceRange:   [],
-  discount:     null,
-  colours:      [],
+  priceRange: [],
+  discount: null,
+  colours: [],
   // fabrics + occasions omitted until schema fields are added
 };
 
@@ -138,13 +142,24 @@ function ColourSwatch({ colour, active, onClick }) {
       display: "flex", flexDirection: "column", alignItems: "center",
       gap: "5px", background: "none", border: "none", cursor: "pointer", padding: "4px",
     }}>
-      <div style={{
-        width: "28px", height: "28px", borderRadius: "50%",
-        backgroundColor: colour.hex,
-        border: active ? `2px solid ${T.textDark}` : `1.5px solid ${T.border}`,
-        boxShadow: active ? `0 0 0 2px ${T.bg}, 0 0 0 3px ${T.textDark}` : "none",
-        transition: "all 0.18s",
-      }} />
+      <div
+        style={{
+          width: "28px",
+          height: "28px",
+          borderRadius: "50%",
+          background:
+            colour.name === "Multicolour"
+              ? "linear-gradient(135deg,#E53935,#FB8C00,#FDD835,#43A047,#1E88E5,#8E24AA)"
+              : colour.hex,
+          border: active
+            ? `2px solid ${T.textDark}`
+            : `1.5px solid ${T.border}`,
+          boxShadow: active
+            ? `0 0 0 2px ${T.bg}, 0 0 0 3px ${T.textDark}`
+            : "none",
+          transition: "all 0.18s",
+        }}
+      />
       <span style={{
         fontFamily: T.fontSans, fontSize: "9px", letterSpacing: "0.04em",
         color: active ? T.textDark : T.textMid, fontWeight: active ? 600 : 400,
@@ -339,7 +354,7 @@ export function FilterTriggerButton({ activeCount = 0, onClick, style = {} }) {
         <line x1="4" y1="6" x2="20" y2="6" />
         <line x1="4" y1="12" x2="20" y2="12" />
         <line x1="4" y1="18" x2="20" y2="18" />
-        <circle cx="8"  cy="6"  r="2" fill="#F9F3EB" strokeWidth="1.75" />
+        <circle cx="8" cy="6" r="2" fill="#F9F3EB" strokeWidth="1.75" />
         <circle cx="16" cy="12" r="2" fill="#F9F3EB" strokeWidth="1.75" />
         <circle cx="10" cy="18" r="2" fill="#F9F3EB" strokeWidth="1.75" />
       </svg>

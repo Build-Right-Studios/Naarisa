@@ -496,10 +496,14 @@ Phone: +91-9897139380`,
       {/* ── Hero ── */}
       <div style={{
         borderBottom: `1px solid ${T.border}`,
-        padding: "48px 20px 40px",
+        padding: "48px clamp(16px, 5vw, 40px) 40px",
         marginBottom: "0",
+        width: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        justifyContent: "center",
       }}>
-        <div style={{ margin: "0 auto", maxWidth: "1200px" }}>
+        <div style={{ maxWidth: "900px", width: "100%" }}>
           <p style={{
             fontFamily: T.sans, fontSize: "11px", fontWeight: 700,
             letterSpacing: "0.2em", textTransform: "uppercase",
@@ -516,22 +520,27 @@ Phone: +91-9897139380`,
           </h1>
           <p style={{
             fontFamily: T.sans, fontSize: "14px", color: T.mid,
-            lineHeight: 1.7, maxWidth: "480px",
+            lineHeight: 1.7, maxWidth: "900px",
           }}>
-            These Terms & Conditions govern your access to and use of our website, products, and services.
-          </p>
-          <p style={{
-            fontFamily: T.sans, fontSize: "12px", color: T.light,
-            marginTop: "16px",
-          }}>
-            Effective Date: 17 June 2026
+            <strong>Effective Date:</strong>  17 June 2026 <br />
+            Welcome to <strong>Naarisa.</strong> <br />
+            These Terms & Conditions govern your access to and use of our website www.naarisa.com, including browsing products, creating an account, placing orders, making payments, requesting returns/exchanges, and using any services provided through the website.
+            By accessing or using our website, you agree to be bound by these Terms & Conditions. Please read them carefully before using the website or placing an order.
+
           </p>
         </div>
       </div>
 
       {/* ── Content ── */}
-      <div style={{ margin: "0 auto", maxWidth: "1200px", paddingLeft: "20px", paddingRight: "20px" }}>
-        <div style={{ padding: "48px 0", maxWidth: "850px" }}>
+      <div style={{
+        width: "100%",
+        paddingLeft: "clamp(16px, 5vw, 40px)",
+        paddingRight: "clamp(16px, 5vw, 40px)",
+        boxSizing: "border-box",
+        display: "flex",
+        justifyContent: "center",
+      }}>
+        <div style={{ padding: "48px 0", maxWidth: "900px", width: "100%" }}>
 
           {sections.map((section) => (
             <div

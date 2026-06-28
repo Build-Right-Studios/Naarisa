@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CONTACT } from "../Constants/apiRoutes";
+import api from "../utils/axiosInstance.js"
 
 /* ─── Brand tokens ─────────────────────────────────────────────────────────── */
 const T = {
@@ -19,7 +21,7 @@ const INFO = [
   {
     label: "Email us",
     value: "naarisa23@gmail.com",
-    hint: "We reply within 24 hours",
+    hint: "We usually respond within 24–48 working hours",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
         stroke={T.gold} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -134,7 +136,7 @@ const ContactPage = () => {
 
     setStatus("sending");
     try {
-      await api.post("/api/contact", form);
+      await api.post(CONTACT.SEND_MAIL, form);
       setStatus("sent");
     } catch (err) {
       console.error("Contact form error:", err);
@@ -233,11 +235,18 @@ const ContactPage = () => {
           }}>
             Get in touch
           </h1>
-          <p style={{
-            fontFamily: T.sans, fontSize: "14px", color: T.mid,
-            lineHeight: 1.7, maxWidth: "480px",
-          }}>
-            Questions about an order, styling advice, or just want to say hello — we're here.
+          <p
+            style={{
+              fontFamily: T.sans,
+              fontSize: "14px",
+              color: T.mid,
+              lineHeight: 1.7,
+              maxWidth: "650px",
+            }}
+          >
+            We're here to help you. Whether you have a question about your order,
+            size, delivery, return, exchange, or anything else, the Naarisa team
+            will be happy to assist you.
           </p>
         </div>
       </div>
@@ -269,7 +278,7 @@ const ContactPage = () => {
                   display: "grid",
                   gridTemplateColumns: "1fr",
                   gap: "16px",
-                  "@media (min-width: 768px)": {
+                  "@media (minWidth: 768px)": {
                     gridTemplateColumns: "1fr 1fr",
                   },
                 }}>
@@ -417,7 +426,7 @@ const ContactPage = () => {
               gridTemplateColumns: "1fr",
               gap: "32px",
               marginBottom: "48px",
-              "@media (min-width: 768px)": {
+              "@media (minWidth: 768px)": {
                 gridTemplateColumns: "repeat(3, 1fr)",
               },
             }}>
@@ -455,7 +464,7 @@ const ContactPage = () => {
                 {[
                   {
                     label: "Instagram",
-                    url:"https://www.instagram.com/naarisa.in",
+                    url: "https://www.instagram.com/naarisa.in",
                     icon: (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="2" y="2" width="20" height="20" rx="5" />
@@ -466,7 +475,7 @@ const ContactPage = () => {
                   },
                   {
                     label: "WhatsApp",
-                    url:"https://wa.me/919897139380",
+                    url: "https://wa.me/919897139380",
                     icon: (
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />

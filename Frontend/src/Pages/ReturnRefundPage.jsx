@@ -21,12 +21,12 @@ const sections = [
   {
     icon: MessageCircle,
     title: "How to raise a request",
-    body: "To start a return or exchange, simply contact our support team with your order details. Please keep your order number ready for faster assistance.",
+    body: "To start a return , simply contact our support team with your order details. Please keep your order number ready for faster assistance.",
   },
   {
     icon: Tag,
     title: "Important notes",
-    body: "Items bought during special sale offers, customized products, or clearly marked non-returnable items may not be eligible for return or exchange unless they arrive damaged or incorrect. Any return request may be declined if the product shows signs of use, damage, missing tags, or missing packaging.",
+    body: "Items bought during special sale offers, customized products, or clearly marked non-returnable items may not be eligible for return unless they arrive damaged or incorrect. Any return request may be declined if the product shows signs of use, damage, missing tags, or missing packaging.",
   },
 ];
 

@@ -361,6 +361,196 @@ export const sendOrderShippedEmail = async (email, customOrderId, orderData = {}
   }
 };
 
+export const sendContactFormEmail = async (contactData) => {
+  const {
+    name,
+    email,
+    phone,
+    subject,
+    message,
+  } = contactData;
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<style>
+
+body{
+    margin:0;
+    padding:0;
+    background:#f5f5f5;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    color:#222;
+}
+
+.container{
+    max-width:600px;
+    margin:30px auto;
+    background:#ffffff;
+    border:1px solid #e5e7eb;
+}
+
+.header{
+    padding:28px;
+    border-bottom:1px solid #e5e7eb;
+}
+
+.section{
+    padding:24px;
+    border-bottom:1px solid #f1f1f1;
+}
+
+.info-row{
+    margin-bottom:18px;
+}
+
+.label{
+    font-size:12px;
+    font-weight:600;
+    color:#6b7280;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin-bottom:6px;
+}
+
+.value{
+    font-size:15px;
+    color:#111827;
+    word-break:break-word;
+}
+
+.message-box{
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    padding:16px;
+    white-space:pre-wrap;
+    line-height:1.7;
+    color:#374151;
+}
+
+.footer{
+    padding:20px;
+    text-align:center;
+    font-size:12px;
+    color:#6b7280;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+
+<h2 style="margin:0;">
+New Contact Form Submission
+</h2>
+
+<p style="margin-top:10px;">
+A customer has submitted a new enquiry from the Naarisa website.
+</p>
+
+</div>
+
+
+<div class="section">
+
+<div class="info-row">
+<div class="label">Full Name</div>
+<div class="value">${name}</div>
+</div>
+
+<div class="info-row">
+<div class="label">Email</div>
+<div class="value">
+<a href="mailto:${email}">
+${email}
+</a>
+</div>
+</div>
+
+<div class="info-row">
+<div class="label">Phone</div>
+<div class="value">
+${phone || "Not provided"}
+</div>
+</div>
+
+<div class="info-row">
+<div class="label">Subject</div>
+<div class="value">
+${subject}
+</div>
+</div>
+
+<div class="info-row">
+<div class="label">Submitted On</div>
+<div class="value">
+${new Date().toLocaleString("en-IN", {
+  dateStyle: "medium",
+  timeStyle: "short",
+})}
+</div>
+</div>
+
+</div>
+
+
+<div class="section">
+
+<div class="label">
+Customer Message
+</div>
+
+<div class="message-box">
+${message}
+</div>
+
+</div>
+
+
+<div class="footer">
+
+This email was automatically generated from the Naarisa Contact Us form.
+
+</div>
+
+</div>
+
+</body>
+</html>
+`;
+
+  try {
+    const response = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL,
+      to: process.env.CONTACT_EMAIL || "naarisa23@gmail.com",
+      // to: "aryeshsrivastava@gmail.com",
+      replyTo: email,
+      subject: `New Contact Form | ${subject}`,
+      html: htmlContent,
+    });
+
+    if (response.error) {
+      console.error("Resend error:", response.error);
+      throw new Error(response.error.message);
+    }
+
+    console.log(`Contact form email received from ${email}`);
+
+    return response.data;
+  } catch (error) {
+    console.error("Failed to send contact form email:", error);
+    throw error;
+  }
+};
+
 // export const sendPaymentFailedEmail = async (email, customOrderId, reason = "") => {
 //   const htmlContent = `
 //     <!DOCTYPE html>

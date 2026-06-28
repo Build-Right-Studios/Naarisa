@@ -1,39 +1,40 @@
-// ─── contactService.js ───────────────────────────────────────────────────────
-// npm install resend
-//
-// Required env variable:
-//   RESEND_API_KEY — from resend.com/api-keys
-//
-// Until your domain is verified, use: from: "onboarding@resend.dev"
-// Once naarisa.com is verified, switch to: from: "contact@naarisa.com"
+// Modules/Contact/Service/contactService.js
 
-import { Resend } from "resend";
+import { sendContactFormEmail } from "../../../config/emailService.js";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+export const sendContactMailService = async (data) => {
 
-export const sendContactEmailService = async ({ name, email, phone, subject, message }) => {
-    try {
-        const response = await resend.emails.send({
-            from:    "onboarding@resend.dev",       // ← swap to "contact@naarisa.com" after domain verify
-            to:      "aryesh@srivastava.com",            // ← your personal/team inbox
-            subject: `[${subject}] Message from ${name}`,
-            html: `
-                <h2>New Contact Form Submission</h2>
-                <p><b>Name:</b> ${name}</p>
-                <p><b>Email:</b> ${email}</p>
-                <p><b>Phone:</b> ${phone || "Not provided"}</p>
-                <p><b>Subject:</b> ${subject}</p>
-                <p><b>Message:</b><br/>${message.replace(/\n/g, "<br/>")}</p>
-            `,
-        });
+  const {
+    name,
+    email,
+    phone,
+    subject,
+    message,
+  } = data;
 
-        if (!response || response.error) {
-            console.error("Resend Error:", response?.error);
-            throw new Error("Email service failed");
-        }
+  if (!name?.trim())
+    throw new Error("Name is required.");
 
-    } catch (error) {
-        console.error("contactService Error:", error);
-        throw error;
-    }
+  if (!email?.trim())
+    throw new Error("Email is required.");
+
+  if (!subject?.trim())
+    throw new Error("Subject is required.");
+
+  if (!message?.trim())
+    throw new Error("Message is required.");
+
+  const emailRegex =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(email))
+    throw new Error("Invalid email address.");
+
+  return await sendContactFormEmail({
+    name,
+    email,
+    phone,
+    subject,
+    message,
+  });
 };

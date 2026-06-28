@@ -46,3 +46,6 @@ export const USER = {
   WISHLIST_ITEM: (id) => `/api/user/wishlist/${id}`,
 };
 
+export const CONTACT = {
+  SEND_MAIL: "/api/contact/contact-mail",
+};
