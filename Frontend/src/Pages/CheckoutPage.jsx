@@ -210,9 +210,9 @@ const CheckoutPage = () => {
 
   // ── Coupon State ──────────────────────────────────────────────────────────
   const [websiteCoupons, setWebsiteCoupons] = useState([]);
-  const [appliedCoupon,  setAppliedCoupon]  = useState(null);
-  const [manualCode,     setManualCode]     = useState("");
-  const [couponError,    setCouponError]    = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [manualCode, setManualCode] = useState("");
+  const [couponError, setCouponError] = useState("");
   const [couponsLoading, setCouponsLoading] = useState(true);
 
   // ── Address Form State ────────────────────────────────────────────────────
@@ -344,7 +344,11 @@ const CheckoutPage = () => {
     if (!form.state) e.state = "Required";
     if (!/^\d{6}$/.test(form.pinCode)) e.pinCode = "Enter a valid 6-digit PIN";
     if (!/^[6-9]\d{9}$/.test(form.phone.replace(/\s/g, ""))) e.phone = "Enter a valid 10-digit mobile number";
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Enter a valid email";
+    if (!form.email.trim()) {
+      e.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      e.email = "Enter a valid email";
+    }
 
     setErrors(e);
     return Object.keys(e).length === 0;
