@@ -33,13 +33,6 @@ const ProductCard = ({
     ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
     : 0;
 
-  const discountPercent =
-    discountedPrice && originalPrice
-      ? Math.round(
-        ((originalPrice - discountedPrice) / originalPrice) * 100
-      )
-      : 0;
-
   return (
 
     <div
