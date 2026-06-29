@@ -15,9 +15,9 @@ const ProductCard = ({
   const productName = product.name || product.productId?.name;
 
   const name = `${productName} - ${product.color?.name
-      ? product.color.name.charAt(0).toUpperCase() +
-      product.color.name.slice(1)
-      : ""
+    ? product.color.name.charAt(0).toUpperCase() +
+    product.color.name.slice(1)
+    : ""
     }`;
 
   const originalPrice =
@@ -26,6 +26,12 @@ const ProductCard = ({
 
   const discountedPrice =
     product.discountPrice ?? null;
+
+  const hasDiscount = discountedPrice && originalPrice && discountedPrice < originalPrice;
+
+  const discountPercent = hasDiscount
+    ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100)
+    : 0;
 
   const discountPercent =
     discountedPrice && originalPrice

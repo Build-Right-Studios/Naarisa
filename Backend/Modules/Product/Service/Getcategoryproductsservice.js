@@ -197,20 +197,32 @@ export const getCategoryProductsService = async ({
   }));
 
   // Shape to match what CategoryPage's ProductCard expects
-  const products = (optimizedVariants || []).map((v) => ({
-    _id: v._id,
-    slug: v.slug,
-    name: v.productId.name,
-    image: v.images?.[0]?.url || null,
-    images: v.images || [],
-    price: v.productId.basePrice,
-    discountPrice: v.sellingPrice,
-    color: v.color,
-    sizes: v.sizes,
-    category: v.productId.category,
-    isBestSeller: v.isBestSeller,
-    isNewArrival: v.isNewArrival,
-  }));
+  const products = (optimizedVariants || []).map((v) => {
+    const basePrice = v.productId.basePrice;
+    const sellingPrice = v.sellingPrice;
+
+    // Only include discountPrice if it's actually different from basePrice
+    const productData = {
+      _id: v._id,
+      slug: v.slug,
+      name: v.productId.name,
+      image: v.images?.[0]?.url || null,
+      images: v.images || [],
+      price: basePrice,
+      color: v.color,
+      sizes: v.sizes,
+      category: v.productId.category,
+      isBestSeller: v.isBestSeller,
+      isNewArrival: v.isNewArrival,
+    };
+
+    // Only add discountPrice if there's an actual discount
+    if (sellingPrice < basePrice) {
+      productData.discountPrice = sellingPrice;
+    }
+
+    return productData;
+  });
 
   return { products, total };
 };
