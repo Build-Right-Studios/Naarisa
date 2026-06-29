@@ -77,6 +77,8 @@ export default function OrderDetail() {
   const [selectedCourierId, setSelectedCourierId] = useState(null);
   const [assigningCourier, setAssigningCourier] = useState(false);
   const [shipmentError, setShipmentError] = useState("");
+  const [showDimensionsModal, setShowDimensionsModal] = useState(false);
+  const [dimensions, setDimensions] = useState({ length: "", breadth: "", height: "", weight: "" });
 
   const width = useWindowWidth();
   const isMobile = width < 640;
@@ -108,21 +110,20 @@ export default function OrderDetail() {
   }, [id]);
 
   const handleCreateShipment = async () => {
+    const { length, breadth, height, weight } = dimensions;
+    if (!length || !breadth || !height || !weight) return;
+
     try {
       setCreatingShipment(true);
       setShipmentError("");
-      alert(id)
+      setShowDimensionsModal(false);
+
       const response = await axios.post(
         `${BASE.ROUTE}${ORDER.CREATE_SHIPMENT(id)}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { length: Number(length), breadth: Number(breadth), height: Number(height), weight: Number(weight) },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Update order with shipment details
       setOrder((prev) => ({
         ...prev,
         delivery: {
@@ -133,14 +134,12 @@ export default function OrderDetail() {
         },
       }));
 
-      // Reset courier selection
       setCouriers(null);
       setSelectedCourierId(null);
+      setDimensions({ length: "", breadth: "", height: "", weight: "" });
     } catch (err) {
       console.error(err);
-      setShipmentError(
-        err.response?.data?.message || "Unable to create shipment."
-      );
+      setShipmentError(err.response?.data?.message || "Unable to create shipment.");
     } finally {
       setCreatingShipment(false);
     }
@@ -308,7 +307,7 @@ export default function OrderDetail() {
           {!hasShipment && (
             <button
               style={D.shipmentBtn}
-              onClick={handleCreateShipment}
+              onClick={() => setShowDimensionsModal(true)}
               disabled={creatingShipment}
             >
               <TruckIcon /> {creatingShipment ? "Creating..." : "Create Shipment"}
@@ -619,6 +618,14 @@ export default function OrderDetail() {
           )}
         </div>
       </div>
+      <DimensionsModal
+        open={showDimensionsModal}
+        onClose={() => setShowDimensionsModal(false)}
+        dimensions={dimensions}
+        onChange={(key, val) => setDimensions(prev => ({ ...prev, [key]: val }))}
+        onSubmit={handleCreateShipment}
+        loading={creatingShipment}
+      />
     </div>
   );
 }
@@ -1057,6 +1064,83 @@ const AVATAR_COLORS = [
 
 function avatarColor(name = "") {
   return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
+}
+
+function DimensionsModal({ open, onClose, dimensions, onChange, onSubmit, loading }) {
+  if (!open) return null;
+
+  const fields = [
+    { key: "length", label: "Length", placeholder: "30", unit: "cm" },
+    { key: "breadth", label: "Breadth", placeholder: "25", unit: "cm" },
+    { key: "height", label: "Height", placeholder: "5", unit: "cm" },
+    { key: "weight", label: "Weight", placeholder: "0.7", unit: "kg", step: "0.1" },
+  ];
+
+  const allFilled = fields.every(f => dimensions[f.key]);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 1000, padding: 16,
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 16, padding: 28,
+        width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111", margin: 0 }}>Package dimensions</h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#888", lineHeight: 1 }}>×</button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+          {fields.map(f => (
+            <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                {f.label}
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type="number"
+                  placeholder={f.placeholder}
+                  min="0.1"
+                  step={f.step || "1"}
+                  value={dimensions[f.key]}
+                  onChange={e => onChange(f.key, e.target.value)}
+                  style={{
+                    width: "100%", border: "1px solid #e5e7eb", borderRadius: 8,
+                    padding: "9px 36px 9px 12px", fontSize: 14, color: "#111",
+                    outline: "none", fontFamily: "inherit",
+                  }}
+                />
+                <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#aaa", fontWeight: 600 }}>
+                  {f.unit}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <p style={{ fontSize: 11, color: "#aaa", marginBottom: 24 }}>
+          Used to calculate shipping rates and select the right courier.
+        </p>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose} style={{ flex: 1, background: "none", border: "1px solid #e5e7eb", borderRadius: 10, padding: 10, fontSize: 14, fontWeight: 600, color: "#666", cursor: "pointer", fontFamily: "inherit" }}>
+            Cancel
+          </button>
+          <button
+            onClick={onSubmit}
+            disabled={!allFilled || loading}
+            style={{ flex: 2, background: !allFilled || loading ? "#e5e7eb" : "#111", border: "none", borderRadius: 10, padding: 10, fontSize: 14, fontWeight: 600, color: !allFilled || loading ? "#aaa" : "#fff", cursor: !allFilled || loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit" }}
+          >
+            <TruckIcon />
+            {loading ? "Creating..." : "Create shipment"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
