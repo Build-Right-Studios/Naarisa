@@ -62,6 +62,7 @@ export default function Orders() {
   const [loading, setLoading]   = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage]         = useState(1);
+  const [exportLoading, setExportLoading] = useState(false);
   const navigate = useNavigate();
   const width    = useWindowWidth();
   const isMobile = width < 640;
@@ -81,7 +82,7 @@ export default function Orders() {
       
       const data = await res.json();
       if (data.success) {
-        console.log(data.orders[0].pricing.total)
+        console.log(data.orders)
         setOrders(data.orders || data.data || []);
         setTotalCount(data.totalOrders || data.count || 0);
       }
@@ -92,24 +93,163 @@ export default function Orders() {
   useEffect(() => { setPage(1); }, [tab]);
   useEffect(() => { fetchOrders(); }, [tab, page]);
 
-  const handleExportCSV = () => {
+  // ─── FETCH ALL ORDERS FOR EXPORT ───────────────────────────────────────────
+  const fetchAllOrdersForExport = async () => {
+    try {
+      const url = tab === "active" ? ORDER.ACTIVE : ORDER.DELIVERED;
+      const allOrders = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const res = await fetch(`${BASE_URL}${url}?page=${currentPage}&limit=100`, {
+          credentials: "include",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        if (data.success && data.orders?.length > 0) {
+          allOrders.push(...data.orders);
+          if (data.orders.length < 100) {
+            hasMore = false;
+          } else {
+            currentPage++;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+
+      return allOrders;
+    } catch (e) {
+      console.error("Error fetching all orders:", e);
+      throw e;
+    }
+  };
+
+  // ─── EXPORT CSV WITH ITEMS FLATTENED (ONE ROW PER ITEM) ─────────────────────
+  const handleExportCSV = async () => {
     if (!orders.length) return;
-    const headers = ["Order ID", "Date", "Customer", "Email", "Items", "Total", "Status"];
-    const rows = orders.map((o) => [
-      o.orderId || o._id,
-      new Date(o.createdAt).toLocaleDateString(),
-      o.user?.name || "—",
-      o.user?.email || "—",
-      o.items?.length || 0,
-      o.totalAmount || 0,
-      o.status,
-    ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = `${tab}-orders.csv`; a.click();
-    URL.revokeObjectURL(url);
+    
+    setExportLoading(true);
+    try {
+      const allOrders = await fetchAllOrdersForExport();
+      
+      if (allOrders.length === 0) {
+        alert("No orders found to export");
+        return;
+      }
+
+      const headers = [
+        "Order ID",
+        "Date",
+        "Customer Name",
+        "Email",
+        "Phone",
+        "Product Name",
+        "Quantity",
+        "Price Per Item",
+        "Subtotal",
+        "Discount",
+        "Shipping",
+        "Total",
+        "Order Status",
+        "Payment Status",
+        "Delivery Status",
+      ];
+      
+      // Flatten orders by items - create a row for each item
+      const rows = [];
+      let totalItems = 0;
+
+      allOrders.forEach((o) => {
+        const date = new Date(o.createdAt).toLocaleDateString("en-IN");
+        const customerName = o.user?.name || "—";
+        const email = o.user?.email || "—";
+        const phone = o.user?.phone || "—";
+        const subtotal = o.pricing?.subtotal || 0;
+        const discount = o.pricing?.discount || 0;
+        const shipping = o.pricing?.shippingCharge || 0;
+        const total = o.pricing?.total || 0;
+        const orderStatus = o.status || "—";
+        const paymentStatus = o.payment?.status || "—";
+        const deliveryStatus = o.delivery?.status || "—";
+
+        // Create a row for each item in the order
+        if (o.items && o.items.length > 0) {
+          o.items.forEach((item) => {
+            // Format product name as: {productName}-{variantName}
+            const productName = `${item.productName}-${item.variantName}`;
+            
+            rows.push([
+              o.customOrderId || o._id,
+              date,
+              customerName,
+              email,
+              phone,
+              productName,
+              item.quantity || 0,
+              item.priceAtOrder || 0,
+              subtotal,
+              discount,
+              shipping,
+              total,
+              orderStatus,
+              paymentStatus,
+              deliveryStatus,
+            ]);
+            totalItems++;
+          });
+        } else {
+          // Fallback: if no items (shouldn't happen), create one row
+          rows.push([
+            o.customOrderId || o._id,
+            date,
+            customerName,
+            email,
+            phone,
+            "—",
+            0,
+            0,
+            subtotal,
+            discount,
+            shipping,
+            total,
+            orderStatus,
+            paymentStatus,
+            deliveryStatus,
+          ]);
+          totalItems++;
+        }
+      });
+      
+      const csv = [headers, ...rows]
+        .map((r) =>
+          r
+            .map((cell) =>
+              typeof cell === "string" && (cell.includes(",") || cell.includes('"'))
+                ? `"${cell.replace(/"/g, '""')}"`
+                : cell
+            )
+            .join(",")
+        )
+        .join("\n");
+      
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${tab}-orders-all-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      alert(`✓ Successfully exported ${totalItems} items from ${allOrders.length} orders!`);
+    } catch (e) {
+      console.error("Export error:", e);
+      alert("Failed to export orders. Please try again.");
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   // responsive
@@ -176,8 +316,17 @@ export default function Orders() {
         <button style={S.filterBtn}>
           <CalendarIcon /> This Month
         </button>
-        <button style={S.exportBtn} onClick={handleExportCSV}>
-          <DownloadIcon /> Export CSV
+        <button 
+          style={{
+            ...S.exportBtn,
+            opacity: exportLoading ? 0.7 : 1,
+            cursor: exportLoading ? "not-allowed" : "pointer",
+          }} 
+          onClick={handleExportCSV}
+          disabled={exportLoading}
+        >
+          <DownloadIcon /> 
+          {exportLoading ? "Exporting..." : `Export All CSV (${totalCount})`}
         </button>
       </div>
 
@@ -207,13 +356,11 @@ export default function Orders() {
                 const email = order.user?.email || order.customerEmail || "";
                 const initials = getInitials(name);
                 const itemCount = order.items?.length || order.itemCount || 0;
-                // const total = order.totalAmount || order.total || 0;
-                const total = order.pricing.total || 0;
+                const total = order.pricing?.total || 0;
 
                 return (
                   <tr key={order._id} style={S.tr}>
                     <td style={{ ...S.td, padding: tdPad, fontWeight: 700, color: "#111", fontSize: 14 }}>
-                      {/* #{order.orderId || order._id?.slice(-5).toUpperCase()} */}
                       {order.customOrderId}
                     </td>
                     <td style={{ ...S.td, padding: tdPad }}>

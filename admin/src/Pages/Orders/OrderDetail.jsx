@@ -575,7 +575,7 @@ export default function OrderDetail() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <InfoRow
                 label="Order ID"
-                value={`#${order.orderId || id.slice(-6).toUpperCase()}`}
+                value={`${order.customOrderId || id.slice(-6).toUpperCase()}`}
               />
               <InfoRow label="Placed" value={formatDate(order.createdAt)} />
               {order.updatedAt && (

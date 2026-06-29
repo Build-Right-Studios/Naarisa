@@ -84,7 +84,9 @@ function BannerCard({ banner, index, onDelete }) {
 
                 <button
                     style={S.deleteFullBtn}
-                    onClick={() => onDelete(banner._id)}
+                    onClick={() => {
+                        onDelete(banner._id);
+                    }}
                 >
                     <TrashIcon />
                     Delete Banner

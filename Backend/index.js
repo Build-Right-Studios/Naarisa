@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectMongoDB from "./config/mongodb.js";
 import { cleanupExpiredOtps, cleanupPendingOrders } from "./Utils/cleanupExpiredOtps.js";
+import { keepServerlive } from "./Utils/keepServerlive.js";
 
 dotenv.config();
 
@@ -37,5 +38,6 @@ app.get("/", (req, res) => {
   res.json("Server is running fine.")
 })
 
+keepServerlive();
 cleanupExpiredOtps();
 cleanupPendingOrders();
