@@ -55,8 +55,24 @@ const gridImages = [
 const AboutPage = () => {
   const navigate = useNavigate();
   const story = useInView(0.1);
-  const values = useInView(0.1);
   const grid = useInView(0.1);
+
+  const [valuesInView, setValuesInView] = useState(false);
+  const valuesRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !valuesInView) {
+          setValuesInView(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (valuesRef.current) observer.observe(valuesRef.current);
+    return () => observer.disconnect();
+  }, [valuesInView]);
 
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
@@ -333,12 +349,14 @@ const AboutPage = () => {
         className="w-full overflow-hidden px-4 py-16 sm:px-6 sm:py-20 md:px-10 xl:px-12"
         style={{ backgroundColor: "#F5E6D0" }}
       >
+        {/* Header */}
         <div
-          ref={values.ref}
-          className="mb-12 text-center transition-all duration-700"
+          ref={valuesRef}
+          className="mb-12 text-center"
           style={{
-            opacity: values.inView ? 1 : 0,
-            transform: values.inView ? "translateY(0)" : "translateY(20px)",
+            opacity: valuesInView ? 1 : 0,
+            transform: valuesInView ? "translateY(0)" : "translateY(20px)",
+            transition: "opacity 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
           }}
         >
           <h2
@@ -354,33 +372,41 @@ const AboutPage = () => {
             The values behind every piece we make
           </p>
           <div
-            className="mx-auto mt-4 h-[1px] transition-all duration-1000"
             style={{
               backgroundColor: "#AB721E",
-              width: values.inView ? "40px" : "0px",
-              transitionDelay: "300ms",
+              height: "1px",
+              width: valuesInView ? "40px" : "0px",
+              margin: "16px auto 0",
+              transition: "width 1s cubic-bezier(0.34, 1.56, 0.64, 1) 300ms",
             }}
           />
         </div>
 
-        {/* Cards */}
+        {/* Cards Grid */}
         <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-5 sm:grid-cols-3">
           {coreValues.map((val, index) => (
             <div
               key={index}
-              className="transition-all duration-700"
               style={{
-                opacity: values.inView ? 1 : 0,
-                transform: values.inView ? "translateY(0)" : "translateY(28px)",
-                transitionDelay: `${index * 120}ms`,
                 backgroundColor: "#fff",
                 border: "1px solid #E8DDD0",
                 padding: "32px 28px",
+                opacity: valuesInView ? 1 : 0,
+                transform: valuesInView
+                  ? "translateY(0) scale(1)"
+                  : "translateY(30px) scale(0.95)",
+                transition: `opacity 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 100}ms,
+    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 100}ms`,
+                willChange: "opacity, transform",
               }}
             >
               <div
                 className="mb-5 flex h-11 w-11 items-center justify-center"
-                style={{ backgroundColor: "#F5E6D0", border: "1px solid #E8DDD0" }}
+                style={{
+                  backgroundColor: "#F5E6D0",
+                  border: "1px solid #E8DDD0",
+                  transition: "background-color 0.3s ease",
+                }}
               >
                 {val.icon}
               </div>
@@ -398,11 +424,11 @@ const AboutPage = () => {
               </p>
             </div>
           ))}
-        </div>
-      </section>
+        </div >
+      </section >
 
       {/* ── LIFESTYLE GRID ── */}
-      <section
+      < section
         ref={grid.ref}
         className="w-full"
         style={{ backgroundColor: "#2B2112" }}
@@ -418,7 +444,7 @@ const AboutPage = () => {
               <img
                 src={item.image}
                 alt={item.title}
-               className="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-auto block transition-transform duration-500 group-hover:scale-105"
               />
 
               {/* Dark Overlay */}
@@ -443,9 +469,9 @@ const AboutPage = () => {
             </div>
           ))}
         </div>
-      </section>
+      </section >
       <div style={{ height: "16px", backgroundColor: "#F5E6D0" }} />
-    </div>
+    </div >
   );
 };
 
