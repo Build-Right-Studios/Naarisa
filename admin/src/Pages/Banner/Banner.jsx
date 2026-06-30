@@ -181,9 +181,17 @@ export default function Banner() {
                 credentials: "include",
                 headers: { Authorization: `Bearer ${token}` },
             });
+
             const data = await res.json();
-            console.log(data.data[0].desktopImage)
-            if (data.success) setBanners(data.data);
+            console.log(data)
+            if (data.success) {
+                // Flatten the structure
+                const flatBanners = data.data.map(banner => ({
+                    ...banner._doc,
+                    _id: banner._doc._id,
+                }));
+                setBanners(flatBanners);
+            }
             else console.error("Failed to fetch banners:", data.message);
         } catch (err) {
             console.error("Failed to fetch banners:", err);
