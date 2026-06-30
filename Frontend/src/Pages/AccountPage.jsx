@@ -220,7 +220,7 @@ const OrdersSection = () => {
           <Icon name="package" size={36} color="#C4A882" />
           <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "20px", color: "#1f1b15", margin: "16px 0 8px" }}>No orders yet</p>
           <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#8C7B6B", marginBottom: "20px" }}>Your orders will appear here once you place one.</p>
-          <button onClick={() => navigate("/products")} style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", padding: "12px 24px", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none", cursor: "pointer" }}>EXPLORE COLLECTION</button>
+          <button onClick={() => navigate("/all-products")} style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", padding: "12px 24px", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none", cursor: "pointer" }}>EXPLORE COLLECTION</button>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
@@ -349,7 +349,10 @@ const WishlistSection = () => {
 
   useEffect(() => {
     api.get(USER.WISHLIST)
-      .then((r) => { if (r.data.success) setItems(r.data.data || []); })
+      .then((r) => { if (r.data.success) {
+        console.log(r.data)
+        setItems(r.data.data || []);
+      }})
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -403,7 +406,7 @@ const WishlistSection = () => {
                 </div>
                 <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "14px", color: "#1f1b15", marginBottom: "2px", lineHeight: 1.3 }}>{item.productName || variant.productId?.name}</p>
                 <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#8C7B6B", marginBottom: "4px" }}>{variant.color?.name}</p>
-                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 600, color: "#AB721E" }}>{fmtPrice(variant.discountPrice || 0)}</p>
+                <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 600, color: "#AB721E" }}>{fmtPrice(variant.discountPrice ?? variant.productId?.basePrice ?? 0)}</p>
               </div>
             );
           })}
