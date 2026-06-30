@@ -519,7 +519,7 @@ const ProductPage = () => {
     const token = localStorage.getItem("naarisa-token");
     if (!token) {
       alert("Please login to add items to your wishlist");
-      navigate("/login");
+      navigate("/auth?redirect=/account");
       return;
     }
     try {
