@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BASE, PRODUCT, USER } from "../Constants/apiRoutes.js";
+import { buildImageUrls, generateLQIPUrl } from "../utils/imageOptimization.js";
 import api from "../utils/axiosInstance.js";
 import useInView from "../utils/useInView.js";
 import useCartStore from "../Store/useCartStore.js";
@@ -125,7 +126,27 @@ const MobileImageSlider = ({ images, badge }) => {
     <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/5" }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {images.map((img, i) => (
         <div key={i} className="absolute inset-0 transition-opacity duration-500" style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}>
-          <img src={img.url} alt={`Product ${i + 1}`} className="h-full w-full object-cover" />
+          {/* ✅ Inline blur placeholder */}
+          <img
+            src={img.blurUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            aria-hidden="true"
+            style={{ filter: "blur(8px)", transform: "scale(1.05)" }}
+          />
+
+          {/* ✅ Main image */}
+          <img
+            src={img.url}
+            srcSet={img.srcSet}
+            sizes="(max-width: 768px) 100vw, 50vw"
+            alt={`Product ${i + 1}`}
+            className="relative z-10 h-full w-full object-cover"
+            loading={i === current ? "eager" : "lazy"}
+            fetchPriority={i === current ? "high" : "low"}
+            decoding={i === current ? "sync" : "async"}
+            style={{ contentVisibility: "auto" }}
+          />
         </div>
       ))}
       {badge && (
@@ -447,6 +468,27 @@ const ProductPage = () => {
     fetchReviews(data.currentVariant._id);
   }, [data?.currentVariant?._id]);
 
+  // Preload first image
+  useEffect(() => {
+    if (data?.currentVariant?.images?.length > 0) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = data.currentVariant.images[0]?.url;
+      link.imagesrcset = data.currentVariant.images[0]?.srcSet;
+      document.head.appendChild(link);
+    }
+  }, [data?.currentVariant?.images]);
+
+  useEffect(() => {
+    if (!data?.currentVariant?.images.length) return;
+
+    data?.currentVariant?.images.forEach((img) => {
+      const preload = new Image();
+      preload.src = img.url;
+    });
+  }, [data?.currentVariant?.images]);
+
   const fetchReviews = async (variantId) => {
     try {
       setReviewsLoading(true);
@@ -476,7 +518,12 @@ const ProductPage = () => {
 
   const { product, currentVariant, allVariants } = data;
   const doc = currentVariant?._doc || currentVariant;
-  const images = doc?.images || [];
+  const images = (currentVariant.images || []).map((img, i) => ({
+    ...img,
+    ...buildImageUrls(img.url),  // ← Adds srcSet, sizes
+    lqip: generateLQIPUrl(img.url),  // ← Real 20px image
+  }));
+  console.log(currentVariant.images?.[0]?.url)
   const sizes = doc?.sizes || [];
   const discountPrice = doc?.discountPrice;
   const discount = product.basePrice && discountPrice
@@ -507,7 +554,7 @@ const ProductPage = () => {
       color: doc.color?.name || "",
       size: selectedSize,
       price: doc.discountPrice || product.basePrice,
-      image: doc.images?.[0]?.url || null,
+      image: currentVariant.images?.[0]?.url || null,
       slug: doc.slug,
     });
 
@@ -572,26 +619,16 @@ const ProductPage = () => {
         <SizeChartModal onClose={() => setShowSizeChart(false)} />
       )}
 
-      {/* ── Breadcrumb ── */}
-      <div className="mx-auto max-w-[1200px] px-4 pt-5 sm:px-6 md:px-10 xl:px-12">
-        <p className="text-[11px] uppercase tracking-[0.14em]" style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>
-          <span className="cursor-pointer hover:text-[#C47B1E] transition-colors" onClick={() => navigate("/")}>Home</span>
-          <span className="mx-2">/</span>
-          <span className="cursor-pointer hover:text-[#C47B1E] transition-colors" onClick={() => navigate("/products")}>{product.category}</span>
-          <span className="mx-2">/</span>
-          <span style={{ color: "#1f1b15" }}>{product.name}</span>
-        </p>
-      </div>
-
       {/* ── Main Product Section ── */}
       <div className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 md:px-10 xl:px-12">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-16">
 
           {/* ── LEFT — Images ── */}
           <div className="lg:sticky lg:top-24 lg:self-start">
+            {/* Mobile */}
             <div className="lg:hidden">
               {images.length > 0 ? (
-                <MobileImageSlider images={images} badge={currentVariant.isActive} />
+                <MobileImageSlider images={images} badge={doc?.isActive} />
               ) : (
                 <div className="w-full" style={{ aspectRatio: "4/5", background: "linear-gradient(135deg, #F5E6D0, #C4A882)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "#8C7B6B" }}>Naarisa</span>
@@ -599,27 +636,64 @@ const ProductPage = () => {
               )}
             </div>
 
+            {/* Desktop */}
             <div className="hidden lg:flex gap-3">
               {images.length > 1 && (
                 <div className="flex flex-col gap-2">
                   {images.map((img, i) => (
-                    <button key={i} onClick={() => setSelectedImage(i)} className="overflow-hidden transition-all duration-200 flex-shrink-0"
-                      style={{ width: "68px", aspectRatio: "3/4", border: selectedImage === i ? "2px solid #C47B1E" : "2px solid transparent" }}>
-                      <img src={img.url} alt={`View ${i + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      key={i}
+                      onClick={() => setSelectedImage(i)}
+                      className="overflow-hidden transition-all duration-200 flex-shrink-0"
+                      style={{
+                        width: "68px",
+                        aspectRatio: "3/4",
+                        border: selectedImage === i ? "2px solid #C47B1E" : "2px solid transparent",
+                        background: "#F5E6D0"
+                      }}
+                    >
+                      <img
+                        src={img.thumbnail}  // ← LQIP: Real 20px image (super fast)
+                        alt={`View ${i + 1}`}
+                        className="h-full w-full object-cover"
+                        loading="eager"
+                        decoding="async"
+                      />
                     </button>
                   ))}
                 </div>
               )}
               <div className="relative flex-1 overflow-hidden" style={{ aspectRatio: "3/4" }}>
                 {images.length > 0 ? (
-                  <img src={images[selectedImage]?.url} alt={product.name} className="h-full w-full object-cover" />
+                  <>
+                    {/* LQIP with blur */}
+                    <img
+                      src={images[selectedImage]?.lqip}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                      aria-hidden="true"
+                      style={{ filter: "blur(6px)" }}
+                    />
+
+                    {/* Main responsive image */}
+                    <img
+                      src={images[selectedImage]?.url}
+                      srcSet={images[selectedImage]?.srcSet}
+                      sizes={images[selectedImage]?.sizes}
+                      alt={product.name}
+                      className="relative z-10 h-full w-full object-cover"
+                      loading={selectedImage === 0 ? "eager" : "lazy"}
+                      fetchPriority={selectedImage === 0 ? "high" : "auto"}
+                      decoding="async"
+                    />
+                  </>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center" style={{ background: "linear-gradient(135deg, #F5E6D0, #C4A882)" }}>
                     <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "#8C7B6B" }}>Naarisa</span>
                   </div>
                 )}
                 {doc?.isActive && (
-                  <div className="absolute left-0 top-4 px-3 py-1.5" style={{ backgroundColor: "#2B2112", fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#F5E6D0" }}>
+                  <div className="absolute left-0 top-4 px-3 py-1.5 z-20" style={{ backgroundColor: "#2B2112", fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#F5E6D0" }}>
                     NEW COLLECTION
                   </div>
                 )}

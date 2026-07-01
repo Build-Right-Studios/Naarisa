@@ -2,7 +2,7 @@ import axios from "axios";
 import { Order } from "../../../MongoDB/models.js";
 import { getShiprocketToken } from "../../../config/shiprocket.js";
 
-export const createShipmentService = async (orderId) => {
+export const createShipmentService = async (orderId, length, breadth, height, weight) => {
 
     const order = await Order.findById(orderId);
 
@@ -78,13 +78,13 @@ export const createShipmentService = async (orderId) => {
 
         sub_total:order.pricing.total,
 
-        length:30,
+        length:Number(length),
 
-        breadth:25,
+        breadth:Number(breadth),
 
-        height:5,
+        height:Number(height),
 
-        weight:0.7
+        weight:Number(weight),
     };
 
     const response = await axios.post(
@@ -129,7 +129,7 @@ export const createShipmentService = async (orderId) => {
 
     await order.save();
 
-    console.log(data)
+    // console.log(data)
 
     return data;
 

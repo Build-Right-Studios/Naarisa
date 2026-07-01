@@ -17,3 +17,12 @@ html, body {
   color: #aaa;
   pointer-events: none;
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
