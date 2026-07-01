@@ -193,9 +193,11 @@ const OrdersSection = () => {
   useEffect(() => {
     api.get(USER.ORDERS)
       .then((r) => {
-        if (r.data.success)
+        if (r.data.success) {
           console.log(r.data.data)
-        setOrders(r.data.data || []);
+          const paidOrders = r.data.data.filter(order => order.payment?.status === "paid");
+          setOrders(paidOrders);
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));

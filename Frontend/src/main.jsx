@@ -9,6 +9,10 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
+
 if (typeof window !== "undefined") {
   const findOverflow = () => {
     document.querySelectorAll("*").forEach((el) => {

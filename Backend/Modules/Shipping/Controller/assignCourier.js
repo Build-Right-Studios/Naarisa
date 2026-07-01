@@ -1,31 +1,27 @@
-import { assignCourierService } from "../Service/assignCourierService.js"
+import { assignCourierService } from "../Service/assignCourierService.js";
 
-export const assignCourier = async (req,res)=>{
-
-    try{
-
-        const data = await assignCourierService(
-
-            req.params.orderId,
-
-            req.body.courierId
-
-        );
-
-        res.json(data);
-
+export const assignCourier = async (req, res) => {
+  try {
+    // ✅ Validate inputs
+    if (!req.body.courierId) {
+      return res.status(400).json({
+        success: false,
+        message: "courierId is required in request body",
+      });
     }
 
-    catch(err){
+    const data = await assignCourierService(
+      req.params.orderId,
+      req.body.courierId
+    );
 
-        console.error(err);
-
-        res.status(err.status||500).json({
-
-            message:err.message
-
-        });
-
-    }
-
+    // ✅ Return with success status
+    return res.status(200).json(data);
+  } catch (err) {
+    console.error("assignCourier Error:", err);
+    return res.status(err.status || 500).json({
+      success: false,
+      message: err.message || "Failed to assign courier",
+    });
+  }
 };
