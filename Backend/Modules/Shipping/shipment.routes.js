@@ -12,13 +12,15 @@ router.post("/:orderId/create-shipment", createShipment);
 router.post("/:orderId/couriers", getCouriers);
 router.post("/:orderId/assign-courier", assignCourier);
 
+
+// Shiprocket Tracking Webhook
+router.post("/tracking/webhook", trackingWebhook);
+
 // Customer/Admin - Get tracking details
 router.get("/tracking/:orderId", getTracking);
 
 // Admin - Manually sync tracking from Shiprocket
 router.post("/tracking/:orderId/sync", syncTracking);
 
-// Shiprocket Tracking Webhook
-router.post("/tracking/webhook", trackingWebhook);
 
 export default router;
