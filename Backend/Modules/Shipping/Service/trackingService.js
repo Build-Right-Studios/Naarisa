@@ -159,75 +159,93 @@ export const syncOrderTracking = async (orderId) => {
 
 export const processTrackingWebhook = async (payload) => {
   try {
-    console.log("Processing webhook payload:", payload);
+    console.log("========== WEBHOOK PAYLOAD ==========");
+    console.log(JSON.stringify(payload, null, 2));
+    console.log("====================================");
 
-    // ✅ Extract shipment_id from webhook
-    const shipmentId = payload?.data?.shipment_id;
-    
-    if (!shipmentId) {
+    // ✅ Extract from Shiprocket webhook
+    const srOrderId = payload?.sr_order_id;  // Shiprocket Order ID
+    const awbCode = payload?.awb;            // AWB code
+    const currentStatus = payload?.current_status; // Status
+    const scans = payload?.scans || [];       // Tracking events
+
+    if (!srOrderId && !awbCode) {
       throw {
         status: 400,
-        message: "Missing shipment_id in webhook",
+        message: "Missing sr_order_id or awb in webhook",
       };
     }
 
-    // ✅ FIND order by shipment_id (don't create new order!)
-    const order = await Order.findOne({
-      "delivery.shipmentId": shipmentId,
+    // ✅ Find order by shiprocketOrderId or awbCode
+    let order = await Order.findOne({
+      "delivery.shiprocketOrderId": srOrderId,
     });
 
+    if (!order && awbCode) {
+      order = await Order.findOne({
+        "delivery.awbCode": awbCode,
+      });
+    }
+
     if (!order) {
-      console.warn(`Order not found for shipment_id: ${shipmentId}`);
+      console.warn(`Order not found for sr_order_id: ${srOrderId} or awb: ${awbCode}`);
       throw {
         status: 404,
-        message: `Order not found for shipment ${shipmentId}`,
+        message: `Order not found for this shipment`,
       };
     }
 
-    // ✅ Check customOrderId exists (don't let it be undefined)
-    if (!order.customOrderId) {
-      console.warn(`Order ${order._id} missing customOrderId`);
-      throw {
-        status: 400,
-        message: "Order missing customOrderId",
-      };
+    console.log(`✅ Found order: ${order.customOrderId}`);
+
+    // ✅ Update delivery status
+    order.delivery.status = currentStatus?.toLowerCase().replace(/ /g, "_") || "in_transit";
+    order.delivery.lastTrackingUpdate = new Date();
+    order.delivery.lastWebhookReceivedAt = new Date();
+    order.delivery.lastWebhookPayload = payload; // Save for debugging
+
+    // ✅ Add tracking events from scans (MATCH YOUR SCHEMA)
+    if (!order.delivery.trackingEvents) {
+      order.delivery.trackingEvents = [];
     }
 
-    // ✅ Update tracking events
-    const eventType = payload?.event_type;
-    const eventData = payload?.data;
-
-    if (eventData?.status) {
-      // Update delivery status
-      order.delivery.status = eventData.status;
-      order.delivery.lastTrackingUpdate = new Date();
-
-      // Add to tracking events
-      if (!order.delivery.trackingEvents) {
-        order.delivery.trackingEvents = [];
-      }
-
+    // Add scans as tracking events - using your schema field names
+    scans.forEach((scan) => {
       order.delivery.trackingEvents.push({
-        status: eventData.status,
-        message: eventData.message || eventData.status,
-        timestamp: new Date(),
-        rawData: eventData,
+        status: scan.status,
+        activity: scan.activity,  // ✅ Your schema uses 'activity'
+        location: scan.location,
+        date: new Date(scan.date),  // ✅ Your schema uses 'date'
       });
+    });
 
-      // Add to status history
-      if (!order.delivery.statusHistory) {
-        order.delivery.statusHistory = [];
-      }
-
-      order.delivery.statusHistory.push({
-        status: eventData.status,
-        message: eventData.message || eventData.status,
-        timestamp: new Date(),
-      });
+    // ✅ Add to status history
+    if (!order.delivery.statusHistory) {
+      order.delivery.statusHistory = [];
     }
 
-    // ✅ Save (customOrderId already exists, no validation error)
+    order.delivery.statusHistory.push({
+      status: currentStatus,
+      message: `Updated to ${currentStatus}`,
+      timestamp: new Date(),
+    });
+
+    // ✅ Map status to main order status if needed
+    const statusMap = {
+      "Delivered": "delivered",
+      "Out for Delivery": "out_for_delivery",
+      "Picked up": "picked_up",
+      "In Transit": "in_transit",
+      "Delivery Failed": "delivery_failed",
+    };
+
+    if (statusMap[currentStatus]) {
+      order.status = statusMap[currentStatus];
+    }
+
+    // ✅ Save order
     await order.save();
+
+    console.log(`✅ Order updated: ${order.customOrderId}`);
 
     return {
       success: true,
@@ -235,6 +253,7 @@ export const processTrackingWebhook = async (payload) => {
       orderId: order._id,
       customOrderId: order.customOrderId,
       status: order.delivery.status,
+      awb: awbCode,
     };
   } catch (error) {
     console.error("processTrackingWebhook Error:", error);
