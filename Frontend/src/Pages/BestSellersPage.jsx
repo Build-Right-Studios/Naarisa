@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHero from "../Components/Common/PageHero.jsx";
 import ProductCard from "../Components/Common/ProductCard.jsx";
-import FilterPanel, { FilterTriggerButton, FILTER_DEFAULTS, countActiveFilters } from "./FilterPanel";
+import FilterPanel, { FilterTriggerButton, countActiveFilters } from "./FilterPanel";
 import api from "../utils/axiosInstance.js";
 import { PRODUCT } from "../Constants/apiRoutes.js";
+import { useProductQueryState } from "../Components/Common/useProductQueryState";
 
 /* -------------------------------------------------------------------------- */
 /* Skeleton                                                                    */
@@ -52,10 +53,10 @@ const ActiveChip = ({ label, onRemove }) => (
 );
 
 const SORT_OPTIONS = [
-  { label: "Newest First",    value: "newest"       },
-  { label: "Price: Low–High", value: "price_asc"    },
-  { label: "Price: High–Low", value: "price_desc"   },
-  { label: "Name: A–Z",       value: "alphabetical" }, // was "name_asc" — now synced with backend
+  { label: "Newest First", value: "newest" },
+  { label: "Price: Low–High", value: "price_asc" },
+  { label: "Price: High–Low", value: "price_desc" },
+  { label: "Name: A–Z", value: "alphabetical" }, // was "name_asc" — now synced with backend
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -71,87 +72,58 @@ const BestSellersPage = () => {
   const [error, setError] = useState(null);
 
   // ── Filter state ──
-  const [filters, setFilters] = useState(FILTER_DEFAULTS);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [sort, setSort] = useState("newest");
 
   // ── Build filter query params ──
-  const buildParams = useCallback((f = filters, sortBy = sort) => {
-    const p = new URLSearchParams();
+  const {
+    sort,
+    filters,
+    appliedFilters,
+    setFilterKey,
+    resetDraftToApplied,
+    applyFilters,
+    clearFilters,
+    removeFilterValue,
+    updateParam,
+    buildApiParams,
+  } = useProductQueryState({
+    defaultSort: "newest",
+  });
 
-    p.set("sort", sortBy);
-
-    if (f.availability && f.availability.length > 0) {
-      p.set("availability", f.availability.join(","));
-    }
-    if (f.priceRange && f.priceRange.length > 0) {
-      p.set("priceRange", f.priceRange.join(","));
-    }
-    if (f.discount) {
-      p.set("discount", f.discount);
-    }
-    if (f.colours && f.colours.length > 0) {
-      p.set("colours", f.colours.join(","));
-    }
-
-    return p;
-  }, []);
-
-  // ── Fetch products ──
-  const fetchProducts = useCallback(
-    async (filtersToUse = filters, sortToUse = sort) => {
+  useEffect(() => {
+    const fetchProducts = async () => {
       setLoading(true);
       setError(null);
+
       try {
-        const params = buildParams(filtersToUse, sortToUse);
-        const query = params.toString();
-        const url = query 
-          ? `${PRODUCT.BEST_SELLERS}?${query}` 
-          : PRODUCT.BEST_SELLERS;
+        const params = buildApiParams();
 
-        const res = await api.get(url);
+        const res = await api.get(
+          `${PRODUCT.BEST_SELLERS}?${params.toString()}`
+        );
 
-        console.log(res.data)
+        const productsArray = Array.isArray(res.data?.data)
+          ? res.data.data
+          : [];
 
-        // ✅ CORRECT: res.data.data IS the array (not nested under .products)
-        const productsArray = Array.isArray(res.data?.data) ? res.data.data : [];
         setProducts(productsArray);
 
-        // Store total count only when no filters are active
-        if (countActiveFilters(filtersToUse) === 0) {
+        if (countActiveFilters(appliedFilters) === 0) {
           setTotalCount(productsArray.length);
         }
       } catch (err) {
-        console.error("Error fetching products:", err);
+        console.error(err);
         setError("Failed to load products. Please try again.");
         setProducts([]);
       } finally {
         setLoading(false);
       }
-    },
-    [buildParams]
-  );
+    };
 
-  // ── Initial fetch and fetch on sort change ──
-  useEffect(() => {
-    fetchProducts(filters, sort);
-  }, [sort, fetchProducts]);
+    fetchProducts();
+  }, [buildApiParams]);
 
-  const activeFilterCount = countActiveFilters(filters);
-
-  const handleFilterChange = (key, val) => {
-    setFilters((prev) => ({ ...prev, [key]: val }));
-  };
-
-  const handleFilterApply = () => {
-    setFilterOpen(false);
-    fetchProducts(filters, sort);
-  };
-
-  const handleFilterClear = () => {
-    setFilters(FILTER_DEFAULTS);
-    fetchProducts(FILTER_DEFAULTS, sort);
-  };
+  const activeFilterCount = countActiveFilters(appliedFilters);
 
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
@@ -167,9 +139,12 @@ const BestSellersPage = () => {
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
         filters={filters}
-        onChange={handleFilterChange}
-        onApply={handleFilterApply}
-        onClear={handleFilterClear}
+        onChange={setFilterKey}
+        onApply={() => {
+          applyFilters();
+          setFilterOpen(false);
+        }}
+        onClear={clearFilters}
         resultCount={products.length}
       />
 
@@ -184,8 +159,8 @@ const BestSellersPage = () => {
           textTransform: "uppercase",
           padding: "24px 0 0",
         }}>
-          <span 
-            onClick={() => navigate("/")} 
+          <span
+            onClick={() => navigate("/")}
             className="cursor-pointer hover:text-[#AB721E]"
           >
             Home
@@ -251,7 +226,7 @@ const BestSellersPage = () => {
 
               <select
                 value={sort}
-                onChange={(e) => setSort(e.target.value)}
+                onChange={(e) => updateParam("sort", e.target.value)}
                 style={{
                   fontFamily: "'Jost', sans-serif",
                   fontSize: "12px",
@@ -279,7 +254,10 @@ const BestSellersPage = () => {
             {/* Filter Button */}
             <FilterTriggerButton
               activeCount={activeFilterCount}
-              onClick={() => setFilterOpen(true)}
+              onClick={() => {
+                resetDraftToApplied();
+                setFilterOpen(true);
+              }}
             />
           </div>
         </div>
@@ -307,63 +285,48 @@ const BestSellersPage = () => {
             </span>
 
             {/* Availability Filters */}
-            {filters.availability &&
-              filters.availability.map((v) => (
+            {appliedFilters.availability &&
+              appliedFilters.availability.map((v) => (
                 <ActiveChip
                   key={v}
                   label={v}
-                  onRemove={() =>
-                    handleFilterChange(
-                      "availability",
-                      filters.availability.filter((x) => x !== v)
-                    )
-                  }
+                  onRemove={() => removeFilterValue("availability", v)}
                 />
               ))}
 
             {/* Price Range Filters */}
-            {filters.priceRange &&
-              filters.priceRange.map((v) => (
+            {appliedFilters.priceRange &&
+              appliedFilters.priceRange.map((v) => (
                 <ActiveChip
                   key={v}
                   label={v.replace(/(\d+)-(\d+)/, (_, a, b) =>
                     `₹${Number(a).toLocaleString("en-IN")}–₹${Number(b).toLocaleString("en-IN")}`
                   )}
-                  onRemove={() =>
-                    handleFilterChange(
-                      "priceRange",
-                      filters.priceRange.filter((x) => x !== v)
-                    )
-                  }
+                  onRemove={() => removeFilterValue("priceRange", v)}
                 />
               ))}
 
             {/* Discount Filter */}
-            {filters.discount && (
+            {appliedFilters.discount && (
               <ActiveChip
-                label={`${filters.discount}%+ off`}
-                onRemove={() => handleFilterChange("discount", null)}
+                label={`${appliedFilters.discount}%+ off`}
+                onRemove={() => removeFilterValue("discount")}
               />
             )}
 
             {/* Colour Filters */}
-            {filters.colours &&
-              filters.colours.map((v) => (
+            {appliedFilters.colours &&
+              appliedFilters.colours.map((v) => (
                 <ActiveChip
                   key={v}
                   label={v}
-                  onRemove={() =>
-                    handleFilterChange(
-                      "colours",
-                      filters.colours.filter((x) => x !== v)
-                    )
-                  }
+                  onRemove={() => removeFilterValue("colours", v)}
                 />
               ))}
 
             {/* Clear All Button */}
             <button
-              onClick={handleFilterClear}
+              onClick={clearFilters}
               style={{
                 fontFamily: "'Jost', sans-serif",
                 fontSize: "11px",
@@ -441,7 +404,7 @@ const BestSellersPage = () => {
                 Try adjusting or clearing your filters
               </p>
               <button
-                onClick={handleFilterClear}
+                onClick={clearFilters}
                 style={{
                   marginTop: "20px",
                   padding: "10px 24px",

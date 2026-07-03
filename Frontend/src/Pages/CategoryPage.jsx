@@ -6,6 +6,7 @@ import PageHero from "../Components/Common/PageHero.jsx";
 import ProductCard from "../Components/Common/ProductCard.jsx";
 import { BASE, PRODUCT } from "../Constants/apiRoutes.js";
 import useCartStore from "../Store/useCartStore.js";
+import { useProductQueryState } from "../Components/Common/useProductQueryState";
 
 // ── Banner imports ────────────────────────────────────────────────────────────
 import shortKurtisBanner from "../assets/Short Kurtis Banner.png";
@@ -94,60 +95,55 @@ const CategoryPage = () => {
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState("newest");
-  const [filters, setFilters] = useState(FILTER_DEFAULTS);
   const [filterOpen, setFilterOpen] = useState(false);
   const [toastVisible, setToast] = useState(false);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const activeFilterCount = countActiveFilters(filters)
-    // filters.availability.length +
-    // filters.priceRange.length +
-    // (filters.discount ? 1 : 0) +
-    // filters.colours.length
+  // const [page, setPage] = useState(1);
+  // const activeFilterCount = countActiveFilters(filters)
+  // filters.availability.length +
+  // filters.priceRange.length +
+  // (filters.discount ? 1 : 0) +
+  // filters.colours.length
   const LIMIT = 12;
+
+  const {
+    page,
+    sort,
+    filters,
+    appliedFilters,
+    setFilterKey,
+    resetDraftToApplied,
+    applyFilters,
+    clearFilters,
+    removeFilterValue,
+    updateParam,
+    buildApiParams,
+  } = useProductQueryState({
+    fixedCategory: config.category,
+    defaultSort: "newest",
+    limit: LIMIT,
+  });
+
+  const activeFilterCount = countActiveFilters(appliedFilters);
 
   // ── Fetch ──
   useEffect(() => {
     if (!config) return;
-    setLoading(true);
-    setProducts([]);
-    setPage(1);
 
     const fetchProducts = async () => {
+      setLoading(true);
+
       try {
-        const params = new URLSearchParams({
-          limit: LIMIT,
-          page: 1,
-          sort,
-        });
-
-        if (filters.availability?.length) {
-          params.append("availability", filters.availability.join(","));
-        }
-
-        if (filters.priceRange?.length) {
-          params.append("priceRange", filters.priceRange.join(","));
-        }
-
-        if (filters.discount) {
-          params.append("discount", filters.discount);
-        }
-
-        if (filters.colours?.length) {
-          params.append("colours", filters.colours.join(","));
-        }
+        const params = buildApiParams();
 
         const res = await api.get(
           `${PRODUCT.BY_CATEGORY(encodeURIComponent(config.category))}&${params.toString()}`
         );
-        console.log(res.data)
-        const data = res.data?.data || [];
 
-        setProducts(data);
-        setHasMore(res.data?.hasMore || false);
+        setProducts(res.data.data || []);
+        setHasMore(res.data.hasMore || false);
       } catch (err) {
-        console.error("Failed to fetch category products:", err);
+        console.error(err);
         setProducts([]);
       } finally {
         setLoading(false);
@@ -155,34 +151,15 @@ const CategoryPage = () => {
     };
 
     fetchProducts();
-  }, [slug, sort, filters]);
+  }, [config, buildApiParams]);
 
   // ── Load more ──
   const handleLoadMore = async () => {
-    const nextPage = page + 1;
-
     try {
-      const params = new URLSearchParams({
-        limit: LIMIT,
-        page: nextPage,
-        sort,
-      });
+      const nextPage = page + 1;
 
-      if (filters.availability?.length) {
-        params.append("availability", filters.availability.join(","));
-      }
-
-      if (filters.priceRange?.length) {
-        params.append("priceRange", filters.priceRange.join(","));
-      }
-
-      if (filters.discount) {
-        params.append("discount", filters.discount);
-      }
-
-      if (filters.colours?.length) {
-        params.append("colours", filters.colours.join(","));
-      }
+      const params = buildApiParams();
+      params.set("page", String(nextPage));
 
       const res = await api.get(
         `${PRODUCT.BY_CATEGORY(
@@ -191,10 +168,11 @@ const CategoryPage = () => {
       );
 
       setProducts((prev) => [...prev, ...(res.data.data || [])]);
-      setPage(nextPage);
-      setHasMore(res.data.hasMore);
+      setHasMore(res.data.hasMore || false);
+
+      updateParam("page", String(nextPage));
     } catch (err) {
-      console.error("Load more failed:", err);
+      console.error(err);
     }
   };
 
@@ -240,14 +218,12 @@ const CategoryPage = () => {
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
         filters={filters}
-        onChange={(key, val) =>
-          setFilters((prev) => ({
-            ...prev,
-            [key]: val,
-          }))
-        }
-        onApply={() => setFilterOpen(false)}
-        onClear={() => setFilters(FILTER_DEFAULTS)}
+        onChange={setFilterKey}
+        onApply={() => {
+          applyFilters();
+          setFilterOpen(false);
+        }}
+        onClear={clearFilters}
         resultCount={products.length}
       />
 
@@ -341,7 +317,7 @@ const CategoryPage = () => {
 
               <select
                 value={sort}
-                onChange={(e) => setSort(e.target.value)}
+                onChange={(e) => updateParam("sort", e.target.value)}
                 style={{
                   fontFamily: "'Jost', sans-serif",
                   fontSize: "12px",
@@ -369,7 +345,10 @@ const CategoryPage = () => {
             {/* Filter */}
             <FilterTriggerButton
               activeCount={activeFilterCount}
-              onClick={() => setFilterOpen(true)}
+              onClick={() => {
+                resetDraftToApplied();
+                setFilterOpen(true);
+              }}
             />
           </div>
           {/* <div
