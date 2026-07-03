@@ -22,7 +22,7 @@ const T = {
 };
 
 /* ─── Filter options ───────────────────────────────────────────────────────── */
-const AVAILABILITY_OPTIONS = ["In Stock", "Out of Stock"];
+const AVAILABILITY_OPTIONS = ["In Stock"];
 
 const PRICE_RANGES = [
   { label: "Under ₹1,000", value: "0-1000" },

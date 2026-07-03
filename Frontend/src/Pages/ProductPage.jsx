@@ -106,8 +106,76 @@ const StarPicker = ({ value, onChange }) => {
   );
 };
 
+// ── Zoomable Image (hover lens, desktop) ──────────────────────────────────────
+const ZoomableImage = ({ src, srcSet, sizes, alt, lqip, onClick, priority }) => {
+  const containerRef = useRef(null);
+  const [zoomStyle, setZoomStyle] = useState({});
+  const [isZooming, setIsZooming] = useState(false);
+
+  const handleMouseMove = (e) => {
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomStyle({
+      transformOrigin: `${x}% ${y}%`,
+      transform: "scale(2.2)",
+    });
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative h-full w-full overflow-hidden"
+      onMouseEnter={() => setIsZooming(true)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => { setIsZooming(false); setZoomStyle({}); }}
+      onClick={onClick}
+      style={{ cursor: "zoom-in" }}
+    >
+      <img
+        src={lqip}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ filter: "blur(6px)" }}
+      />
+      <img
+        src={src}
+        srcSet={srcSet}
+        sizes={sizes}
+        alt={alt}
+        className="relative z-10 h-full w-full object-cover"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
+        decoding="async"
+        style={{
+          ...zoomStyle,
+          transition: isZooming ? "transform 0.05s linear" : "transform 0.3s ease",
+        }}
+      />
+      {/* Zoom hint icon */}
+      <div
+        className="absolute bottom-3 right-3 z-20 pointer-events-none transition-opacity duration-200"
+        style={{ opacity: isZooming ? 0 : 1 }}
+      >
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-full"
+          style={{ backgroundColor: "rgba(43,33,18,0.55)", backdropFilter: "blur(4px)" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F5E6D0" strokeWidth="2">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            <line x1="11" y1="8" x2="11" y2="14" />
+            <line x1="8" y1="11" x2="14" y2="11" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── Mobile Image Slider ───────────────────────────────────────────────────────
-const MobileImageSlider = ({ images, badge }) => {
+const MobileImageSlider = ({ images, badge, onImageClick }) => {
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef(null);
 
@@ -126,16 +194,7 @@ const MobileImageSlider = ({ images, badge }) => {
     <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/5" }} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {images.map((img, i) => (
         <div key={i} className="absolute inset-0 transition-opacity duration-500" style={{ opacity: i === current ? 1 : 0, zIndex: i === current ? 1 : 0 }}>
-          {/* ✅ Inline blur placeholder */}
-          <img
-            src={img.blurUrl}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover"
-            aria-hidden="true"
-            style={{ filter: "blur(8px)", transform: "scale(1.05)" }}
-          />
-
-          {/* ✅ Main image */}
+          <img src={img.blurUrl} alt="" className="absolute inset-0 h-full w-full object-cover" aria-hidden="true" style={{ filter: "blur(8px)", transform: "scale(1.05)" }} />
           <img
             src={img.url}
             srcSet={img.srcSet}
@@ -146,6 +205,7 @@ const MobileImageSlider = ({ images, badge }) => {
             fetchPriority={i === current ? "high" : "low"}
             decoding={i === current ? "sync" : "async"}
             style={{ contentVisibility: "auto" }}
+            onClick={() => onImageClick?.(current)}
           />
         </div>
       ))}
@@ -409,6 +469,188 @@ const SizeChartModal = ({ onClose }) => {
   );
 };
 
+// ── Full-screen Image Zoom Modal ──────────────────────────────────────────────
+const ImageZoomModal = ({ images, initialIndex = 0, onClose }) => {
+  const [index, setIndex] = useState(initialIndex);
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const [isInteracting, setIsInteracting] = useState(false);
+  const dragState = useRef({ dragging: false, startX: 0, startY: 0, originX: 0, originY: 0, swipeX: null });
+  const pinchState = useRef({ pinching: false, startDist: 0, startScale: 1 });
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft") goPrev();
+    };
+    document.addEventListener("keydown", handleKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  const resetZoom = () => { setScale(1); setTranslate({ x: 0, y: 0 }); };
+  const goNext = () => { resetZoom(); setIndex((p) => (p + 1) % images.length); };
+  const goPrev = () => { resetZoom(); setIndex((p) => (p - 1 + images.length) % images.length); };
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    setScale((s) => {
+      const next = Math.min(4, Math.max(1, s - e.deltaY * 0.0015));
+      if (next <= 1) setTranslate({ x: 0, y: 0 });
+      return next;
+    });
+  };
+
+  const handleDoubleClick = () => (scale > 1 ? resetZoom() : setScale(2.5));
+
+  const handleMouseDown = (e) => {
+    if (scale === 1) return;
+    setIsInteracting(true);
+    dragState.current = { ...dragState.current, dragging: true, startX: e.clientX, startY: e.clientY, originX: translate.x, originY: translate.y };
+  };
+  const handleMouseMove = (e) => {
+    if (!dragState.current.dragging) return;
+    const dx = e.clientX - dragState.current.startX;
+    const dy = e.clientY - dragState.current.startY;
+    setTranslate({ x: dragState.current.originX + dx, y: dragState.current.originY + dy });
+  };
+  const stopDrag = () => { dragState.current.dragging = false; setIsInteracting(false); };
+
+  const getDist = (touches) => {
+    const [a, b] = touches;
+    return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      setIsInteracting(true);
+      pinchState.current = { pinching: true, startDist: getDist(e.touches), startScale: scale };
+    } else if (e.touches.length === 1) {
+      dragState.current = {
+        dragging: true,
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        originX: translate.x,
+        originY: translate.y,
+        swipeX: e.touches[0].clientX,
+      };
+    }
+  };
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && pinchState.current.pinching) {
+      const ratio = getDist(e.touches) / pinchState.current.startDist;
+      setScale(Math.min(4, Math.max(1, pinchState.current.startScale * ratio)));
+    } else if (e.touches.length === 1 && dragState.current.dragging && scale > 1) {
+      const dx = e.touches[0].clientX - dragState.current.startX;
+      const dy = e.touches[0].clientY - dragState.current.startY;
+      setTranslate({ x: dragState.current.originX + dx, y: dragState.current.originY + dy });
+    }
+  };
+  const handleTouchEnd = () => {
+    if (pinchState.current.pinching) {
+      pinchState.current.pinching = false;
+      if (scale < 1.05) resetZoom();
+    } else if (scale === 1 && dragState.current.dragging && dragState.current.swipeX != null) {
+      const diff = dragState.current.startX - dragState.current.swipeX;
+      // swipeX gets updated live via startX reuse — recompute using last touch position instead
+    }
+    dragState.current.dragging = false;
+    setIsInteracting(false);
+  };
+
+  // simpler, reliable swipe-to-change-image when not zoomed
+  const swipeRef = useRef(null);
+  const onTouchStartSwipe = (e) => { if (scale === 1 && e.touches.length === 1) swipeRef.current = e.touches[0].clientX; };
+  const onTouchEndSwipe = (e) => {
+    if (scale === 1 && swipeRef.current !== null) {
+      const diff = swipeRef.current - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) diff > 0 ? goNext() : goPrev();
+    }
+    swipeRef.current = null;
+  };
+
+  const img = images[index];
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center"
+      style={{ backgroundColor: "rgba(20,15,8,0.96)" }}
+      onClick={(e) => { if (e.target === e.currentTarget && scale === 1) onClose(); }}
+    >
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        style={{ position: "absolute", top: "20px", right: "20px", zIndex: 20, width: "38px", height: "38px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5E6D0" strokeWidth="2">
+          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+
+      {images.length > 1 && (
+        <div style={{ position: "absolute", top: "24px", left: "50%", transform: "translateX(-50%)", zIndex: 20, fontFamily: "'Jost', sans-serif", fontSize: "12px", letterSpacing: "0.1em", color: "#F5E6D0" }}>
+          {index + 1} / {images.length}
+        </div>
+      )}
+
+      {images.length > 1 && scale === 1 && (
+        <>
+          <button onClick={(e) => { e.stopPropagation(); goPrev(); }} style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", zIndex: 20, width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5E6D0" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); goNext(); }} style={{ position: "absolute", right: "16px", top: "50%", transform: "translateY(-50%)", zIndex: 20, width: "40px", height: "40px", borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F5E6D0" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+          </button>
+        </>
+      )}
+
+      <div
+        className="relative flex h-full w-full items-center justify-center overflow-hidden px-4"
+        onWheel={handleWheel}
+        onDoubleClick={handleDoubleClick}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={stopDrag}
+        onMouseLeave={stopDrag}
+        onTouchStart={(e) => { handleTouchStart(e); onTouchStartSwipe(e); }}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={(e) => { handleTouchEnd(); onTouchEndSwipe(e); }}
+        style={{ cursor: scale > 1 ? "grab" : "zoom-in", touchAction: "none" }}
+      >
+        <img
+          src={img?.url}
+          srcSet={img?.srcSet}
+          alt="Product zoom"
+          draggable={false}
+          style={{
+            maxHeight: "90vh",
+            maxWidth: "90vw",
+            objectFit: "contain",
+            transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+            transition: isInteracting ? "none" : "transform 0.2s ease",
+            userSelect: "none",
+          }}
+        />
+      </div>
+
+      {scale === 1 && (
+        <div className="lg:hidden" style={{ position: "absolute", bottom: "24px", left: "50%", transform: "translateX(-50%)", zIndex: 20, fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "rgba(245,230,208,0.7)" }}>
+          Pinch to zoom · Swipe to browse
+        </div>
+      )}
+      {scale === 1 && (
+        <div className="hidden lg:block" style={{ position: "absolute", bottom: "24px", left: "50%", transform: "translateX(-50%)", zIndex: 20, fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "rgba(245,230,208,0.7)" }}>
+          Scroll or double-click to zoom · Drag to pan
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Main Component ────────────────────────────────────────────────────────────
 const ProductPage = () => {
   const { slug } = useParams();
@@ -425,6 +667,7 @@ const ProductPage = () => {
   const [toastVisible, setToastVisible] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [showSizeChart, setShowSizeChart] = useState(false);
+  const [showZoomModal, setShowZoomModal] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState([]);
@@ -619,6 +862,14 @@ const ProductPage = () => {
         <SizeChartModal onClose={() => setShowSizeChart(false)} />
       )}
 
+      {showZoomModal && images.length > 0 && (
+        <ImageZoomModal
+          images={images}
+          initialIndex={selectedImage}
+          onClose={() => setShowZoomModal(false)}
+        />
+      )}
+
       {/* ── Main Product Section ── */}
       <div className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 md:px-10 xl:px-12">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-16">
@@ -628,7 +879,7 @@ const ProductPage = () => {
             {/* Mobile */}
             <div className="lg:hidden">
               {images.length > 0 ? (
-                <MobileImageSlider images={images} badge={doc?.isActive} />
+                <MobileImageSlider images={images} badge={doc?.isActive} onImageClick={() => setShowZoomModal(true)} />
               ) : (
                 <div className="w-full" style={{ aspectRatio: "4/5", background: "linear-gradient(135deg, #F5E6D0, #C4A882)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "#8C7B6B" }}>Naarisa</span>
@@ -665,28 +916,15 @@ const ProductPage = () => {
               )}
               <div className="relative flex-1 overflow-hidden" style={{ aspectRatio: "3/4" }}>
                 {images.length > 0 ? (
-                  <>
-                    {/* LQIP with blur */}
-                    <img
-                      src={images[selectedImage]?.lqip}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
-                      aria-hidden="true"
-                      style={{ filter: "blur(6px)" }}
-                    />
-
-                    {/* Main responsive image */}
-                    <img
-                      src={images[selectedImage]?.url}
-                      srcSet={images[selectedImage]?.srcSet}
-                      sizes={images[selectedImage]?.sizes}
-                      alt={product.name}
-                      className="relative z-10 h-full w-full object-cover"
-                      loading={selectedImage === 0 ? "eager" : "lazy"}
-                      fetchPriority={selectedImage === 0 ? "high" : "auto"}
-                      decoding="async"
-                    />
-                  </>
+                  <ZoomableImage
+                    src={images[selectedImage]?.url}
+                    srcSet={images[selectedImage]?.srcSet}
+                    sizes={images[selectedImage]?.sizes}
+                    lqip={images[selectedImage]?.lqip}
+                    alt={product.name}
+                    priority={selectedImage === 0}
+                    onClick={() => setShowZoomModal(true)}
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center" style={{ background: "linear-gradient(135deg, #F5E6D0, #C4A882)" }}>
                     <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "#8C7B6B" }}>Naarisa</span>
@@ -732,11 +970,6 @@ const ProductPage = () => {
                 </>
               )}
             </div>
-
-            {/* <div className="mb-4 flex items-center justify-between px-4 py-3" style={{ backgroundColor: "#F5E6D0", border: "1px solid #E8DDD0" }}>
-              <span className="text-[12px] font-normal" style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}>Flat discount on first order</span>
-              <span className="px-3 py-1 text-[11px] font-bold" style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "#2B2112", color: "#F5E6D0", letterSpacing: "0.08em" }}>EXTRA 10% OFF</span>
-            </div> */}
 
             {lowStock && (
               <div className="mb-4 flex items-center gap-2">

@@ -140,6 +140,11 @@ const NewArrivals = () => {
 
 const ProductCard = ({ product, index, onClick }) => {
   const { ref, inView } = useInView(0.1);
+  const [hasAppeared, setHasAppeared] = useState(false);
+
+  useEffect(() => {
+    if (inView && !hasAppeared) setHasAppeared(true);
+  }, [inView, hasAppeared]);
 
   const basePrice = product.productId?.basePrice || 0;
   const sellingPrice = product.discountPrice || basePrice;
@@ -156,10 +161,10 @@ const ProductCard = ({ product, index, onClick }) => {
       className="flex-shrink-0 cursor-pointer"
       style={{
         width: "260px",
-        opacity: inView ? 1 : 0,
-        transform: inView ? "translateY(0)" : "translateY(24px)",
-        transition: "all 0.6s ease",
-        transitionDelay: `${index * 80}ms`,
+        opacity: hasAppeared ? 1 : 0,
+        transform: hasAppeared ? "translateY(0)" : "translateY(24px)",
+        transition: "opacity 0.4s ease, transform 0.4s ease",
+        transitionDelay: hasAppeared ? "0ms" : `${index * 60}ms`,
       }}
       onClick={onClick}
     >

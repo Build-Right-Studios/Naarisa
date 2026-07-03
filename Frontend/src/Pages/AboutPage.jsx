@@ -1,9 +1,12 @@
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import useInView from "../utils/useInView.js";
 import shortkurtibanner from "../assets/Short Kurtis Banner.png";
 import longkurtibanner from "../assets/Long Kurtis Banner.png";
 import dressesbanner from "../assets/Dresses Banner.png";
 import kurtisetbanner from "../assets/Kurti Set Banner.png"
+import frontImage from "../assets/About Us Front Image.png"
+import backImage from "../assets/About Us Background Image.png"
 
 // ── Core Values Data ──────────────────────────────────────────────────────────
 const coreValues = [
@@ -232,61 +235,61 @@ const AboutPage = () => {
               height: "460px",
             }}
           >
-            {/* Main large block */}
+            {/* Main large block with front image */}
             <div
               className="absolute right-0 top-0 overflow-hidden"
               style={{
                 width: "72%",
                 height: "62%",
-                background: "linear-gradient(135deg, #F5E6D0 0%, #C4A882 50%, #8B6914 100%)",
               }}
             >
+              <img
+                src={backImage}
+                alt="About Us Front"
+                className="w-full h-full sm:object-cover"
+              />
+
+              {/* Overlay for "Since 1971" text */}
               <div
-                className="absolute inset-0 opacity-40"
+                className="absolute inset-0"
                 style={{
-                  backgroundImage: `repeating-linear-gradient(
-                    45deg,
-                    rgba(43,33,18,0.1) 0px, rgba(43,33,18,0.1) 1px,
-                    transparent 1px, transparent 8px
-                  )`,
+                  background: "linear-gradient(135deg, rgba(245,230,208,0.2) 0%, rgba(196,123,30,0.1) 100%)"
                 }}
               />
+
               <div className="absolute bottom-3 right-3">
-                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(43,33,18,0.4)" }}>
+                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(245,230,208,0.8)" }}>
                   Since 1971
                 </p>
               </div>
             </div>
 
-            {/* Overlapping smaller block */}
+            {/* Overlapping smaller block with back image */}
             <div
               className="absolute bottom-0 left-0 overflow-hidden"
               style={{
                 width: "58%",
                 height: "55%",
-                background: "linear-gradient(160deg, #2B2112 0%, #4A3728 40%, #8B6914 80%, #C47B1E 100%)",
                 border: "4px solid #F9F3EB",
                 zIndex: 2,
               }}
             >
-              <div
-                className="absolute inset-0 opacity-30"
-                style={{
-                  backgroundImage: `repeating-linear-gradient(
-                    0deg, transparent, transparent 4px,
-                    rgba(255,255,255,0.08) 4px, rgba(255,255,255,0.08) 5px
-                  ), repeating-linear-gradient(
-                    90deg, transparent, transparent 8px,
-                    rgba(255,255,255,0.05) 8px, rgba(255,255,255,0.05) 9px
-                  )`,
-                }}
+              <img
+                src={frontImage}
+                alt="About Us Background"
+                className="w-full h-full sm:object-contain"
               />
+
+              {/* Overlay for darker tone */}
               <div
                 className="absolute inset-0"
-                style={{ background: "radial-gradient(ellipse at 60% 30%, rgba(196,123,30,0.5) 0%, transparent 60%)" }}
+                style={{
+                  background: "linear-gradient(160deg, rgba(43,33,18,0.3) 0%, rgba(74,55,40,0.2) 100%)"
+                }}
               />
+
               <div className="absolute bottom-3 left-3">
-                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(245,230,208,0.6)" }}>
+                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: "rgba(245,230,208,0.9)" }}>
                   Haridwar
                 </p>
               </div>

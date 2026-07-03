@@ -5,6 +5,7 @@ import ProductCard from "../Components/Common/ProductCard.jsx";
 import PageHero from "../Components/Common/PageHero.jsx";
 import api from "../utils/axiosInstance.js";
 import { PRODUCT } from "../Constants/apiRoutes.js";
+import { useProductQueryState } from "../Components/Common/useProductQueryState";
 
 // Import banners only if they exist — swap these paths when you add real assets.
 // If you don't have banners yet, simply set these to null or remove the imports.
@@ -54,185 +55,6 @@ const SkeletonCard = () => (
     </div>
 );
 
-/* -------------------------------------------------------------------------- */
-/* Product Card                                                                */
-/* -------------------------------------------------------------------------- */
-
-// const ProductCard = ({ product }) => {
-//     const navigate = useNavigate();
-//     const [hovered, setHovered] = useState(false);
-
-//     const image = product.images?.[0]?.url;
-//     const name = product.productId?.name;
-//     const price = product.discountPrice ?? product.productId?.basePrice;
-
-//     return (
-//         <div
-//             onClick={() => navigate(`/product/${product.slug}`)}
-//             onMouseEnter={() => setHovered(true)}
-//             onMouseLeave={() => setHovered(false)}
-//             style={{ cursor: "pointer", backgroundColor: "#fff" }}
-//         >
-//             <div
-//                 style={{
-//                     position: "relative",
-//                     aspectRatio: "3/4",
-//                     overflow: "hidden",
-//                     backgroundColor: "#F5E6D0",
-//                 }}
-//             >
-//                 {/* "New" badge */}
-//                 <div
-//                     style={{
-//                         position: "absolute",
-//                         top: "10px",
-//                         left: "10px",
-//                         zIndex: 1,
-//                         backgroundColor: "#1f1b15",
-//                         color: "#F9F3EB",
-//                         fontFamily: "'Jost', sans-serif",
-//                         fontSize: "10px",
-//                         letterSpacing: "0.12em",
-//                         textTransform: "uppercase",
-//                         padding: "3px 8px",
-//                     }}
-//                 >
-//                     New
-//                 </div>
-
-//                 {image ? (
-//                     <img
-//                         src={image}
-//                         alt={name}
-//                         style={{
-//                             width: "100%",
-//                             height: "100%",
-//                             objectFit: "cover",
-//                             transition: "transform .5s ease",
-//                             transform: hovered ? "scale(1.04)" : "scale(1)",
-//                         }}
-//                     />
-//                 ) : (
-//                     <div
-//                         style={{
-//                             width: "100%",
-//                             height: "100%",
-//                             display: "flex",
-//                             alignItems: "center",
-//                             justifyContent: "center",
-//                             fontFamily: "'Jost', sans-serif",
-//                             color: "#8C7B6B",
-//                         }}
-//                     >
-//                         NAARISA
-//                     </div>
-//                 )}
-//             </div>
-
-//             <div style={{ padding: "12px 4px 16px" }}>
-//                 <p
-//                     style={{
-//                         fontFamily: "'EB Garamond', serif",
-//                         fontSize: "15px",
-//                         color: "#1f1b15",
-//                         lineHeight: 1.35,
-//                         marginBottom: "6px",
-//                         overflow: "hidden",
-//                         display: "-webkit-box",
-//                         WebkitLineClamp: 2,
-//                         WebkitBoxOrient: "vertical",
-//                     }}
-//                 >
-//                     {name}
-//                 </p>
-
-//                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-//                     <span
-//                         style={{
-//                             fontFamily: "'Jost', sans-serif",
-//                             fontWeight: 600,
-//                             fontSize: "14px",
-//                             color: "#1f1b15",
-//                         }}
-//                     >
-//                         ₹{price?.toLocaleString("en-IN")}
-//                     </span>
-//                 </div>
-
-//                 {product.color?.hex && (
-//                     <div style={{ display: "flex", gap: "5px", marginTop: "8px" }}>
-//                         <div
-//                             title={product.color.name}
-//                             style={{
-//                                 width: "14px",
-//                                 height: "14px",
-//                                 borderRadius: "50%",
-//                                 backgroundColor: product.color.hex,
-//                                 border: "1px solid #E8DDD0",
-//                             }}
-//                         />
-//                     </div>
-//                 )}
-//             </div>
-//         </div>
-//     );
-// };
-
-/* -------------------------------------------------------------------------- */
-/* Fallback hero shown when no banner image is available                       */
-/* -------------------------------------------------------------------------- */
-
-// const TextHero = () => (
-//     <div
-//         style={{
-//             backgroundColor: "#1f1b15",
-//             padding: "60px 24px",
-//             textAlign: "center",
-//         }}
-//     >
-//         <p
-//             style={{
-//                 fontFamily: "'Jost', sans-serif",
-//                 fontSize: "11px",
-//                 letterSpacing: "0.22em",
-//                 textTransform: "uppercase",
-//                 color: "#AB721E",
-//                 marginBottom: "12px",
-//             }}
-//         >
-//             Just landed
-//         </p>
-
-//         <h1
-//             style={{
-//                 fontFamily: "'EB Garamond', serif",
-//                 fontSize: "clamp(32px, 5vw, 56px)",
-//                 color: "#F9F3EB",
-//                 fontWeight: 400,
-//                 lineHeight: 1.15,
-//             }}
-//         >
-//             New Arrivals
-//         </h1>
-
-//         <p
-//             style={{
-//                 fontFamily: "'Jost', sans-serif",
-//                 fontSize: "13px",
-//                 color: "#8C7B6B",
-//                 marginTop: "14px",
-//                 letterSpacing: "0.06em",
-//             }}
-//         >
-//             Fresh styles, first to you
-//         </p>
-//     </div>
-// );
-
-/* -------------------------------------------------------------------------- */
-/* Page                                                                        */
-/* -------------------------------------------------------------------------- */
-
 const SORT_OPTIONS = [
     { label: "Newest First", value: "newest" },
     { label: "Price: Low–High", value: "price_asc" },
@@ -246,112 +68,45 @@ const NewArrivalsPage = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const [filters, setFilters] = useState(FILTER_DEFAULTS);
-    const [draftFilters, setDraftFilters] = useState(FILTER_DEFAULTS);
-
     const [filterOpen, setFilterOpen] = useState(false);
 
-    const [sort, setSort] = useState("newest");
-
-    const [resultCount, setResultCount] = useState(0);
-    const [countLoading, setCountLoading] = useState(false);
+    const {
+        sort,
+        filters,
+        appliedFilters,
+        setFilterKey,
+        resetDraftToApplied,
+        applyFilters,
+        clearFilters,
+        updateParam,
+        buildApiParams,
+    } = useProductQueryState({
+        defaultSort: "newest",
+    });
 
     useEffect(() => {
         const fetchProducts = async () => {
+            setLoading(true);
+
             try {
-                const params = new URLSearchParams();
+                const params = buildApiParams();
 
-                params.append("sort", sort);
-
-                if (filters.availability?.length) {
-                    params.append("availability", filters.availability.join(","));
-                }
-
-                if (filters.priceRange?.length) {
-                    params.append("priceRange", filters.priceRange.join(","));
-                }
-
-                if (filters.discount) {
-                    params.append("discount", filters.discount);
-                }
-
-                if (filters.colours?.length) {
-                    params.append("colours", filters.colours.join(","));
-                }
-
-                const url = params.toString()
-                    ? `${PRODUCT.NEW_ARRIVALS}?${params.toString()}`
-                    : PRODUCT.NEW_ARRIVALS;
-
-                const res = await api.get(url);
+                const res = await api.get(
+                    `${PRODUCT.NEW_ARRIVALS}?${params.toString()}`
+                );
                 setProducts(res.data.data || []);
-            } catch (err) {
-                console.error("Failed to fetch new arrivals:", err);
+            }
+            catch (err) {
+                console.error(err);
                 setProducts([]);
-            } finally {
+            }
+            finally {
                 setLoading(false);
             }
         };
+
         fetchProducts();
-    }, [filters, sort]);
-
-    useEffect(() => {
-        if (!filterOpen) return;
-
-        const fetchCount = async () => {
-            try {
-                setCountLoading(true);
-
-                const params = new URLSearchParams();
-
-                params.append("sort", sort);
-
-                if (draftFilters.availability?.length) {
-                    params.append(
-                        "availability",
-                        draftFilters.availability.join(",")
-                    );
-                }
-
-                if (draftFilters.priceRange?.length) {
-                    params.append(
-                        "priceRange",
-                        draftFilters.priceRange.join(",")
-                    );
-                }
-
-                if (draftFilters.discount) {
-                    params.append(
-                        "discount",
-                        draftFilters.discount
-                    );
-                }
-
-                if (draftFilters.colours?.length) {
-                    params.append(
-                        "colours",
-                        draftFilters.colours.join(",")
-                    );
-                }
-
-                const url = params.toString()
-                    ? `${PRODUCT.NEW_ARRIVALS_COUNT}?${params.toString()}`
-                    : PRODUCT.NEW_ARRIVALS_COUNT;
-
-                const res = await api.get(url);
-
-                setResultCount(res.data.count ?? 0);
-
-            } catch (err) {
-                console.error(err);
-            } finally {
-                setCountLoading(false);
-            }
-        };
-
-        fetchCount();
-
-    }, [draftFilters, sort, filterOpen]);
+    }, [buildApiParams]);
 
     const hasBanner = Boolean(desktopBanner || mobileBanner);
 
@@ -365,21 +120,14 @@ const NewArrivalsPage = () => {
             <FilterPanel
                 open={filterOpen}
                 onClose={() => setFilterOpen(false)}
-                filters={draftFilters}
-                onChange={(key, value) =>
-                    setDraftFilters(prev => ({
-                        ...prev,
-                        [key]: value,
-                    }))
-                }
+                filters={filters}
+                onChange={setFilterKey}
                 onApply={() => {
-                    setFilters(draftFilters);
+                    applyFilters();
                     setFilterOpen(false);
                 }}
-                onClear={() => {
-                    setDraftFilters(FILTER_DEFAULTS);
-                }}
-                resultCount={countLoading ? null : resultCount}
+                onClear={clearFilters}
+                resultCount={products.length}
             />
             {/* ------------------------------------------------------------------ */}
             {/* Banner — only rendered when image assets are present                */}
@@ -542,7 +290,7 @@ const NewArrivalsPage = () => {
 
                             <select
                                 value={sort}
-                                onChange={(e) => setSort(e.target.value)}
+                                onChange={(e) => updateParam("sort", e.target.value)}
                                 style={{
                                     fontFamily: "'Jost', sans-serif",
                                     fontSize: "12px",
@@ -569,9 +317,9 @@ const NewArrivalsPage = () => {
 
                         {/* Filters */}
                         <FilterTriggerButton
-                            activeCount={countActiveFilters(filters)}
+                            activeCount={countActiveFilters(appliedFilters)}
                             onClick={() => {
-                                setDraftFilters(filters);
+                                resetDraftToApplied();
                                 setFilterOpen(true);
                             }}
                         />

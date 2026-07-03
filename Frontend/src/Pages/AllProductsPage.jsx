@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import FilterPanel, { FilterTriggerButton, FILTER_DEFAULTS, countActiveFilters } from "./FilterPanel";
+import { useNavigate } from "react-router-dom";
+import FilterPanel, { FilterTriggerButton, countActiveFilters } from "./FilterPanel";
 import PageHero from "../Components/Common/PageHero.jsx";
 import ProductCard from "../Components/Common/ProductCard.jsx";
 import api from "../utils/axiosInstance.js";
 import { PRODUCT } from "../Constants/apiRoutes.js";
+import { useProductQueryState } from "../Components/Common/useProductQueryState.js";
 
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                   */
@@ -19,10 +20,10 @@ const CATEGORIES = [
 ];
 
 const SORT_OPTIONS = [
-  { label: "Newest First",    value: "newest" },
+  { label: "Newest First", value: "newest" },
   { label: "Price: Low–High", value: "price_asc" },
   { label: "Price: High–Low", value: "price_desc" },
-  { label: "Name: A–Z",       value: "alphabetical" },
+  { label: "Name: A–Z", value: "alphabetical" },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -48,50 +49,28 @@ const SkeletonCard = () => (
 
 const AllProductsPage = () => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12 });
-
-  // ── Filter state ──
-  const [filters, setFilters] = useState(FILTER_DEFAULTS);
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const activeCategory = searchParams.get("category") || "All";
-  const activeSort = searchParams.get("sort") || "newest";
-  const activePage = parseInt(searchParams.get("page") || "1", 10);
+  // ── All category/sort/page/filter <-> URL logic lives in this hook now ──
+  const {
+    category, sort, page,
+    filters, appliedFilters,
+    setFilterKey, resetDraftToApplied,
+    applyFilters, clearFilters, removeFilterValue,
+    updateParam,
+    buildApiParams,
+  } = useProductQueryState();
 
-  const updateParam = (key, value) => {
-    const next = new URLSearchParams(searchParams);
-    next.set(key, value);
-    if (key !== "page") next.set("page", "1");
-    setSearchParams(next);
-  };
-
-  // ── Build query params including active filters ──
-  const buildParams = useCallback((f = filters) => {
-    const p = new URLSearchParams();
-    if (activeCategory !== "All") p.set("category", activeCategory);
-    p.set("sort", activeSort);
-    p.set("page", activePage);
-    p.set("limit", 12);
-
-    if (f.availability.length) p.set("availability", f.availability.join(","));
-    if (f.priceRange.length) p.set("priceRange", f.priceRange.join(","));
-    if (f.discount) p.set("discount", f.discount);
-    if (f.colours.length) p.set("colours", f.colours.join(","));
-
-    return p;
-  }, [activeCategory, activeSort, activePage, filters]);
-
-  // ── Fetch ──
-  const fetchProducts = useCallback(async (f = filters) => {
+  // ── Fetch ── always reads current URL state via buildApiParams
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const params = buildParams(f);
+      const params = buildApiParams();
       const res = await api.get(`${PRODUCT.GET_ALL}?${params.toString()}`);
-      console.log(res.data)
       setProducts(res.data?.data?.products || []);
       setPagination(res.data?.data?.pagination || { total: 0, page: 1, limit: 12 });
     } catch (err) {
@@ -100,27 +79,22 @@ const AllProductsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [buildParams]);
+  }, [buildApiParams]);
 
-  // Re-fetch when URL params change
+  // Re-fetch whenever the URL (category, sort, page, or filters) changes
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   const totalPages = Math.ceil(pagination.total / pagination.limit);
-  const activeFilterCount = countActiveFilters(filters);
-
-  const handleFilterChange = (key, val) =>
-    setFilters(prev => ({ ...prev, [key]: val }));
+  const activeFilterCount = countActiveFilters(appliedFilters);
 
   const handleFilterApply = () => {
     setFilterOpen(false);
-    updateParam("page", "1"); // reset to page 1 on new filter apply
-    fetchProducts(filters);
+    applyFilters(); // writes filters to URL, resets page to 1, triggers fetch via useEffect
   };
 
-  const handleFilterClear = () => {
-    const cleared = FILTER_DEFAULTS;
-    setFilters(cleared);
-    fetchProducts(cleared);
+  const openFilterPanel = () => {
+    resetDraftToApplied();
+    setFilterOpen(true);
   };
 
   return (
@@ -137,9 +111,9 @@ const AllProductsPage = () => {
         open={filterOpen}
         onClose={() => setFilterOpen(false)}
         filters={filters}
-        onChange={handleFilterChange}
+        onChange={setFilterKey}
         onApply={handleFilterApply}
-        onClear={handleFilterClear}
+        onClear={clearFilters}
         resultCount={pagination.total}
       />
 
@@ -165,16 +139,6 @@ const AllProductsPage = () => {
 
         {/* Heading */}
         <div style={{ padding: "16px 0 0" }}>
-          {/* <h1
-            style={{
-              fontFamily: "'EB Garamond', serif",
-              fontSize: "clamp(24px,3vw,36px)",
-              color: "#1f1b15",
-              fontWeight: 400,
-            }}
-          >
-            {activeCategory === "All" ? "All Products" : activeCategory}
-          </h1> */}
           {!loading && (
             <p style={{
               fontFamily: "'Jost', sans-serif",
@@ -214,10 +178,10 @@ const AllProductsPage = () => {
                   cursor: "pointer",
                   border: "1px solid",
                   transition: "all 0.2s",
-                  borderColor: activeCategory === cat ? "#1f1b15" : "#E8DDD0",
-                  backgroundColor: activeCategory === cat ? "#1f1b15" : "transparent",
-                  color: activeCategory === cat ? "#F9F3EB" : "#1f1b15",
-                  fontWeight: activeCategory === cat ? 600 : 400,
+                  borderColor: category === cat ? "#1f1b15" : "#E8DDD0",
+                  backgroundColor: category === cat ? "#1f1b15" : "transparent",
+                  color: category === cat ? "#F9F3EB" : "#1f1b15",
+                  fontWeight: category === cat ? 600 : 400,
                 }}
               >
                 {cat}
@@ -246,7 +210,7 @@ const AllProductsPage = () => {
                 Sort:
               </span>
               <select
-                value={activeSort}
+                value={sort}
                 onChange={(e) => updateParam("sort", e.target.value)}
                 style={{
                   fontFamily: "'Jost', sans-serif",
@@ -272,90 +236,13 @@ const AllProductsPage = () => {
             {/* Filter trigger — shown on both mobile and desktop */}
             <FilterTriggerButton
               activeCount={activeFilterCount}
-              onClick={() => setFilterOpen(true)}
+              onClick={openFilterPanel}
             />
-
-            {/* Mobile: category + sort inside filter panel, so just show the trigger */}
-            {/* The old mobile-only FilterDrawer is removed — FilterPanel handles both */}
-
           </div>
         </div>
 
         {/* ── Active filter chips (quick-clear) ── */}
-        {activeFilterCount > 0 && (
-          <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "8px",
-            padding: "16px 0 0",
-            alignItems: "center",
-          }}>
-            <span style={{
-              fontFamily: "'Jost', sans-serif",
-              fontSize: "11px",
-              color: "#8C7B6B",
-              letterSpacing: "0.06em",
-            }}>
-              Active filters:
-            </span>
-
-            {filters.availability.map((v) => (
-              <ActiveChip
-                key={v} label={v}
-                onRemove={() => handleFilterChange("availability", filters.availability.filter(x => x !== v))}
-              />
-            ))}
-            {filters.priceRange.map((v) => (
-              <ActiveChip
-                key={v} label={v.replace("-", "–").replace(/(\d+)/g, (m) => `₹${Number(m).toLocaleString("en-IN")}`)}
-                onRemove={() => handleFilterChange("priceRange", filters.priceRange.filter(x => x !== v))}
-              />
-            ))}
-            {filters.discount && (
-              <ActiveChip
-                label={`${filters.discount}%+ off`}
-                onRemove={() => handleFilterChange("discount", null)}
-              />
-            )}
-            {filters.colours.map((v) => (
-              <ActiveChip
-                key={v} label={v}
-                onRemove={() => handleFilterChange("colours", filters.colours.filter(x => x !== v))}
-              />
-            ))}
-            {/* {filters.fabrics.map((v) => (
-              <ActiveChip
-                key={v} label={v}
-                onRemove={() => handleFilterChange("fabrics", filters.fabrics.filter(x => x !== v))}
-              />
-            ))}
-            {filters.occasions.map((v) => (
-              <ActiveChip
-                key={v} label={v}
-                onRemove={() => handleFilterChange("occasions", filters.occasions.filter(x => x !== v))}
-              />
-            ))} */}
-
-            <button
-              onClick={handleFilterClear}
-              style={{
-                fontFamily: "'Jost', sans-serif",
-                fontSize: "11px",
-                fontWeight: 600,
-                letterSpacing: "0.06em",
-                color: "#AB721E",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-                padding: "4px 0",
-              }}
-            >
-              Clear all
-            </button>
-          </div>
-        )}
+        
 
         {/* ── Grid ── */}
         <div
@@ -369,7 +256,6 @@ const AllProductsPage = () => {
               <ProductCard
                 key={product._id}
                 product={product}
-                badge="Shop All"
               />
             ))
           ) : (
@@ -381,7 +267,7 @@ const AllProductsPage = () => {
                 Try a different category or clear your filters
               </p>
               <button
-                onClick={handleFilterClear}
+                onClick={clearFilters}
                 style={{
                   marginTop: "20px",
                   padding: "10px 24px",
@@ -412,15 +298,15 @@ const AllProductsPage = () => {
             paddingBottom: "80px",
           }}>
             <button
-              onClick={() => updateParam("page", activePage - 1)}
-              disabled={activePage === 1}
+              onClick={() => updateParam("page", page - 1)}
+              disabled={page === 1}
               style={{
                 width: "36px", height: "36px",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: "1px solid #E8DDD0",
                 backgroundColor: "transparent",
-                cursor: activePage === 1 ? "not-allowed" : "pointer",
-                opacity: activePage === 1 ? 0.4 : 1,
+                cursor: page === 1 ? "not-allowed" : "pointer",
+                opacity: page === 1 ? 0.4 : 1,
                 transition: "all 0.2s",
               }}
             >
@@ -429,37 +315,37 @@ const AllProductsPage = () => {
               </svg>
             </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
               <button
-                key={page}
-                onClick={() => updateParam("page", page)}
+                key={pageNum}
+                onClick={() => updateParam("page", pageNum)}
                 style={{
                   width: "36px", height: "36px",
                   fontFamily: "'Jost', sans-serif",
                   fontSize: "13px",
-                  fontWeight: activePage === page ? 700 : 400,
+                  fontWeight: page === pageNum ? 700 : 400,
                   border: "1px solid",
-                  borderColor: activePage === page ? "#1f1b15" : "#E8DDD0",
-                  backgroundColor: activePage === page ? "#1f1b15" : "transparent",
-                  color: activePage === page ? "#F9F3EB" : "#1f1b15",
+                  borderColor: page === pageNum ? "#1f1b15" : "#E8DDD0",
+                  backgroundColor: page === pageNum ? "#1f1b15" : "transparent",
+                  color: page === pageNum ? "#F9F3EB" : "#1f1b15",
                   cursor: "pointer",
                   transition: "all 0.2s",
                 }}
               >
-                {page}
+                {pageNum}
               </button>
             ))}
 
             <button
-              onClick={() => updateParam("page", activePage + 1)}
-              disabled={activePage === totalPages}
+              onClick={() => updateParam("page", page + 1)}
+              disabled={page === totalPages}
               style={{
                 width: "36px", height: "36px",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: "1px solid #E8DDD0",
                 backgroundColor: "transparent",
-                cursor: activePage === totalPages ? "not-allowed" : "pointer",
-                opacity: activePage === totalPages ? 0.4 : 1,
+                cursor: page === totalPages ? "not-allowed" : "pointer",
+                opacity: page === totalPages ? 0.4 : 1,
                 transition: "all 0.2s",
               }}
             >
