@@ -20,6 +20,5 @@ export const getVariantsByProductQuery = async ({ id }) => {
   }).select(
     "color slug description stylingTips fabricCare returnExchange images sizes discountPrice"
   );
-  console.log(variant)
   return variant;
 };
