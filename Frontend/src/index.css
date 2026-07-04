@@ -6,6 +6,7 @@ body {
   background-color: #F9F3EB;
   color: #1f1b15;
   -webkit-font-smoothing: antialiased;
+  overflow-anchor: none;
 }
 
 html, body {
