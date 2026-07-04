@@ -18,7 +18,7 @@ app.use(cors({
     'https://naarisa-frontend-git-dev-aryeshs-projects.vercel.app',
     'https://naarisa-admin-git-dev-aryeshs-projects.vercel.app',
     'https://naarisa-admin.vercel.app',
-    'https://www.naarisa.com/'
+    'https://www.naarisa.com'
   ],
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
