@@ -5,6 +5,7 @@ import cors from "cors";
 import connectMongoDB from "./config/mongodb.js";
 import { cleanupExpiredOtps, cleanupPendingOrders } from "./Utils/cleanupExpiredOtps.js";
 import { keepServerlive } from "./Utils/keepServerlive.js";
+import { razorpayWebhook } from "./Modules/Payment/Controller/razorpayWebhookController.js";
 
 dotenv.config();
 
@@ -24,6 +25,12 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
+
+app.post(
+  "/api/payment/razorpay",
+  express.raw({ type: "application/json" }),
+  razorpayWebhook
+);
 
 app.use(express.json());
 

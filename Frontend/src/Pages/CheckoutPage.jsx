@@ -296,6 +296,7 @@ const CheckoutPage = () => {
             state: defaultAddress.state || "Maharashtra",
             pinCode: defaultAddress.pincode || "",
             phone: defaultAddress.phone || prev.phone,
+            email: defaultAddress.email || ""
           }));
         } else {
           setShowAddressForm(true);
@@ -365,6 +366,42 @@ const CheckoutPage = () => {
     setLoading(true);
 
     try {
+      // Save address if user chose "Save this information for next time"
+      if (showAddressForm && form.saveInfo) {
+        try {
+          const saveRes = await api.post(USER.ADDRESSES, {
+            label: "Home",
+            name: `${form.firstName} ${form.lastName}`.trim(),
+            email: form.email.toLowerCase().trim(),
+            phone: form.phone.replace(/\s/g, ""),
+            line1: form.street,
+            line2: "",
+            city: form.city,
+            state: form.state,
+            pincode: form.pinCode,
+            country: "India",
+          });
+
+          if (saveRes.data.success) {
+            setAddresses(saveRes.data.data);
+
+            const savedAddress =
+              saveRes.data.data.find(
+                (a) =>
+                  a.phone === form.phone.replace(/\s/g, "") &&
+                  a.line1 === form.street &&
+                  a.pincode === form.pinCode
+              ) || saveRes.data.data.at(-1);
+
+            if (savedAddress) {
+              setSelectedAddressId(savedAddress._id);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to save address:", err);
+          // Don't stop checkout if saving address fails.
+        }
+      }
       const payload = {
         items: items.map((item) => ({
           productId: item.productId,
@@ -544,6 +581,7 @@ const CheckoutPage = () => {
                         lastName: user?.name?.split(" ").slice(1).join(" ") || "",
                         street: "", city: "", state: "Maharashtra", pinCode: "",
                         phone: user?.phone || "", saveInfo: false,
+                        email: user?.email || ""
                       });
                     }}
                     style={{ border: "none", background: "transparent", cursor: "pointer", color: "#AB721E", fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 600, letterSpacing: "0.05em" }}
@@ -570,6 +608,7 @@ const CheckoutPage = () => {
                           state: address.state || "Maharashtra",
                           pinCode: address.pincode || "",
                           phone: address.phone || "",
+                          email: address.email || ""
                         }));
                       }}
                       style={{

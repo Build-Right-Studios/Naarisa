@@ -3,6 +3,7 @@ import { findOrderByRazorpayOrderId, confirmOrder } from "../Query/verifyPayment
 import { sendSMS } from "../../../config/twilio.js";
 import { sendSMSTemplate } from "../../../config/msg91.js";
 import { sendOrderConfirmationEmail } from "../../../config/emailService.js";
+import { confirmOrderAndNotify } from "./orderConfirmationService.js";
 
 export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId, razorpaySignature }) => {
   console.log("Verify Payment Service called.")
@@ -27,80 +28,41 @@ export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId,
 
   // Step 4 — Check order isn't already confirmed
   if (order.status !== "payment_pending") {
-    throw { status: 400, message: "Order already processed" };
-  }
-
-  // Step 5 — Confirm the order
-  const confirmedOrder = await confirmOrder(order._id, razorpayPaymentId);
-  console.log("Confirmed Order : ", confirmedOrder)
-
-
-  // Step 6 — Get user email (populate might have it)
-  const userEmail = confirmedOrder.address.email;
-
-  // Step 7 — Send SMS
-  try {
-    if (process.env.MSG91_ORDER_CONFIRMATION_FLOW) {
-      await sendSMSTemplate(
-        process.env.MSG91_ORDER_CONFIRMATION_FLOW,
-        confirmedOrder.address.phone,
-        [
-          confirmedOrder.customOrderId,
-        ]
-      );
-    } else {
-      // Fallback to Twilio
-      await sendSMS(
-        confirmedOrder.address.phone,
-        `Thank you for shopping with Naarisa. Order #${confirmedOrder.customOrderId} has been confirmed. We'll notify you once it is shipped.`
-      );
+    if (order.status === "confirmed") {
+      // console.log("Order already confirmed (likely by webhook) — returning success");
+      return buildResponse(order);
     }
-  } catch (smsError) {
-    console.error("Order Confirmation SMS failed:", smsError);
+    // any other unexpected status (e.g. "cancelled", "failed") is a genuine problem
+    throw { status: 400, message: `Order in unexpected status: ${order.status}` };
   }
 
-  // Step 8 — Send Email
-  console.log("UserEmail :", userEmail)
-  if (userEmail) {
-    try {
-      await sendOrderConfirmationEmail(userEmail, {
-        customOrderId: confirmedOrder.customOrderId,
-        items: confirmedOrder.items,
-        pricing: confirmedOrder.pricing,
-        address: confirmedOrder.address
-      });
-    } catch (emailError) {
-      console.error("Email sending failed:", emailError);
-      // Don't throw - SMS was already sent, payment is confirmed
-    }
-  }
 
-  console.log("Verify Payment Service ending.")
-
-  return {
-    orderId: confirmedOrder._id,
-    customOrderId: confirmedOrder.customOrderId,
-    status: confirmedOrder.status,
-    paidAt: confirmedOrder.payment.paidAt,
-
-    items: confirmedOrder.items.map(item => ({
-      productName: item.productName,
-      variantName: item.variantName,
-      size: item.size,
-      quantity: item.quantity,
-      priceAtOrder: item.priceAtOrder,
-    })),
-
-    pricing: {
-      subtotal: confirmedOrder.pricing.subtotal,
-      discount: confirmedOrder.pricing.discount,
-      total: confirmedOrder.pricing.total,
-    },
-
-    address: {
-      name: confirmedOrder.address.name,
-      city: confirmedOrder.address.city,
-      state: confirmedOrder.address.state,
-    },
-  };
+  // Step 5 — Confirm the order + fire notifications in background
+  const confirmedOrder = await confirmOrderAndNotify(order._id, razorpayPaymentId);
+  console.log("Verify Payment Service ending.");
+  return buildResponse(confirmedOrder);
 };
+
+const buildResponse = (confirmedOrder) => ({
+  orderId: confirmedOrder._id,
+  customOrderId: confirmedOrder.customOrderId,
+  status: confirmedOrder.status,
+  paidAt: confirmedOrder.payment.paidAt,
+  items: confirmedOrder.items.map(item => ({
+    productName: item.productName,
+    variantName: item.variantName,
+    size: item.size,
+    quantity: item.quantity,
+    priceAtOrder: item.priceAtOrder,
+  })),
+  pricing: {
+    subtotal: confirmedOrder.pricing.subtotal,
+    discount: confirmedOrder.pricing.discount,
+    total: confirmedOrder.pricing.total,
+  },
+  address: {
+    name: confirmedOrder.address.name,
+    city: confirmedOrder.address.city,
+    state: confirmedOrder.address.state,
+  },
+});
