@@ -2,6 +2,7 @@ import { verifyWebhookSignature, handleRazorpayWebhook } from "../Service/razorp
 
 export const razorpayWebhook = async (req, res) => {
   try {
+    console.log("razorPay Webhook started")
     const signature = req.headers["x-razorpay-signature"];
 
     if (!signature) {
