@@ -28,8 +28,14 @@ export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId,
 
   // Step 4 — Check order isn't already confirmed
   if (order.status !== "payment_pending") {
-    throw { status: 400, message: "Order already processed" };
+    if (order.status === "confirmed") {
+      // console.log("Order already confirmed (likely by webhook) — returning success");
+      return buildResponse(order);
+    }
+    // any other unexpected status (e.g. "cancelled", "failed") is a genuine problem
+    throw { status: 400, message: `Order in unexpected status: ${order.status}` };
   }
+
 
   // Step 5 — Confirm the order + fire notifications in background
   const confirmedOrder = await confirmOrderAndNotify(order._id, razorpayPaymentId);
