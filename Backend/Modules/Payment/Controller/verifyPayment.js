@@ -19,7 +19,6 @@ export const verifyPayment = async (req, res) => {
       message: "Payment verified successfully",
       ...result
     });
-
   } catch (error) {
     if (error.status) {
       return res.status(error.status).json({ message: error.message });
