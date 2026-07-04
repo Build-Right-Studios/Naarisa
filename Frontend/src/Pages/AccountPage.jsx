@@ -387,7 +387,7 @@ const WishlistSection = () => {
           <Icon name="wishlist" size={36} color="#C4A882" />
           <p style={{ fontFamily: "'EB Garamond', serif", fontSize: "20px", color: "#1f1b15", margin: "16px 0 8px" }}>Your wishlist is empty</p>
           <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#8C7B6B", marginBottom: "20px" }}>Save items you love to buy them later.</p>
-          <button onClick={() => navigate("/products")} style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", padding: "12px 24px", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none", cursor: "pointer" }}>EXPLORE COLLECTION</button>
+          <button onClick={() => navigate("/all-products")} style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em", padding: "12px 24px", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none", cursor: "pointer" }}>EXPLORE COLLECTION</button>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "14px" }}>
