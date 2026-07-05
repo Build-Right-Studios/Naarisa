@@ -4,17 +4,17 @@ import axios from "axios";
 import { BASE, ADMIN_USERS } from "../../Constants/apiroutes.js";
 
 const statusConfig = {
-  payment_pending: { label: "Pending",    bg: "#F1EFE8", color: "#5F5E5A" },
-  confirmed:       { label: "Confirmed",  bg: "#E6F1FB", color: "#185FA5" },
-  dispatched:      { label: "Dispatched", bg: "#FAEEDA", color: "#854F0B" },
-  delivered:       { label: "Delivered",  bg: "#EAF3DE", color: "#3B6D11" },
-  cancelled:       { label: "Cancelled",  bg: "#FCEBEB", color: "#A32D2D" },
+  payment_pending: { label: "Pending", bg: "#F1EFE8", color: "#5F5E5A" },
+  confirmed: { label: "Confirmed", bg: "#E6F1FB", color: "#185FA5" },
+  dispatched: { label: "Dispatched", bg: "#FAEEDA", color: "#854F0B" },
+  delivered: { label: "Delivered", bg: "#EAF3DE", color: "#3B6D11" },
+  cancelled: { label: "Cancelled", bg: "#FCEBEB", color: "#A32D2D" },
 };
 
 const paymentConfig = {
-  paid:    { label: "Paid",     bg: "#EAF3DE", color: "#3B6D11" },
-  pending: { label: "Pending",  bg: "#F1EFE8", color: "#5F5E5A" },
-  failed:  { label: "Refunded", bg: "#FCEBEB", color: "#A32D2D" },
+  paid: { label: "Paid", bg: "#EAF3DE", color: "#3B6D11" },
+  pending: { label: "Pending", bg: "#F1EFE8", color: "#5F5E5A" },
+  failed: { label: "Refunded", bg: "#FCEBEB", color: "#A32D2D" },
 };
 
 const MetricCard = ({ label, value, purple }) => (
@@ -49,11 +49,14 @@ const CustomerDetail = () => {
     const fetchUser = async () => {
       try {
         const url = `${BASE.ROUTE}${ADMIN_USERS.GET_BY_ID(id)}`;
-        console.log("Fetching:", url);
 
         const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` }
         });
+
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("Unauthorized");
+        }
 
         console.log("Response:", res.data);
         setData(res.data.data);
@@ -104,7 +107,7 @@ const CustomerDetail = () => {
         }}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         Back to customers
       </button>
@@ -254,7 +257,7 @@ const CustomerDetail = () => {
                           <span style={{
                             width: "6px", height: "6px", borderRadius: "50%",
                             background: orderStatus.color, flexShrink: 0
-                          }}/>
+                          }} />
                           {orderStatus.label.toUpperCase()}
                         </span>
                       </td>

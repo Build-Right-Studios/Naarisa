@@ -207,13 +207,19 @@ const EditVariantPage = () => {
         });
       } catch (error) {
         console.error(error);
+        const status = error.response?.status;
+        if (status === 401 || status === 403) {
+          localStorage.removeItem("token");
+          navigate("/login");
+          return;
+        }
         alert(error.response?.data?.message || "Failed to load variant");
       } finally {
         setFetching(false);
       }
     };
     if (id) fetchVariantData();
-  }, [id]);
+  }, [id, navigate]);
 
   const totalImages = formData.images.length + newImages.length;
   const existingSizeLabels = formData.sizes.map((s) => s.size);

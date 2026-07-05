@@ -58,26 +58,38 @@ const ProductPage = () => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const fetchVariant = async () => {
-      if (!id) return;
-      try {
-        const res = await fetch(
-          `${BASE.ROUTE}${VARIANT.GET_BY_ID(id)}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const result = await res.json();
-        if (result.success) {
-          setVariant(result.data);
-          setProduct(result.data.productId);
+  const fetchVariant = async () => {
+    if (!id) return;
+    try {
+      const res = await fetch(
+        `${BASE.ROUTE}${VARIANT.GET_BY_ID(id)}`,
+        {
+          credentials: "include",
+          headers: { Authorization: `Bearer ${token}` },
         }
-      } catch (error) {
-        console.error("Fetch error:", error);
-      } finally {
-        setLoading(false);
+      );
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("Unauthorized");
       }
-    };
-    fetchVariant();
-  }, [id, token]);
+
+      const result = await res.json();
+      if (result.success) {
+        setVariant(result.data);
+        setProduct(result.data.productId);
+      } else {
+        console.error("Fetch failed:", result.message);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+      localStorage.removeItem("token");
+      navigate("/login");
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchVariant();
+}, [id, token]);
 
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: "#888" }}>Loading...</div>;
   if (!variant || !product) return <div style={{ padding: 40, textAlign: "center", color: "#888" }}>Variant Not Found</div>;

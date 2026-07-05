@@ -1,11 +1,11 @@
 export const BASE = {
   ROUTE: import.meta.env.VITE_BACKEND_URL
-
 };
 
 export const AUTH = {
   LOGIN: "/api/auth/login",
   SIGNUP: "/api/auth/signup",
+  VERIFY: "/api/auth/verify"
 };
 
 export const PRODUCT = {
@@ -14,7 +14,6 @@ export const PRODUCT = {
   ADD_PRODUCT: "/api/product/add-product",
   ADD_NEW_VARIANT: "/api/variant/add-new-variant",
   GET_ALL: "/api/product/products",
-  // GET_SINGLE_PRODUCT: (id) => `/api/product/${id}`,
 };
 
 export const VARIANT = {

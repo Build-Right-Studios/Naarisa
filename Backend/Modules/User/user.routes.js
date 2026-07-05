@@ -38,19 +38,6 @@ router.put("/addresses/:id", isUser, updateAddress);
 router.delete("/addresses/:id", isUser, deleteAddress);
 router.put("/addresses/:id/set-default", isUser, setDefaultAddress);
 
-// router.get("/wishlist", isUser, (req, res) => {
-//   res.json({
-//     success: true,
-//     data: [],
-//   });
-// });
-
-// router.delete("/wishlist/:id", isUser, (req, res) => {
-//   res.json({
-//     success: true,
-//   });
-// });
-
 router.get("/orders", isUser, getOrders);
 router.get("/orders/:id", isUser, getOrderById);
 
@@ -61,6 +48,5 @@ router.delete("/wishlist/:id", isUser, removeFromWishlist);
 router.get("/", isAdmin, adminGetUsers);
 router.get("/export-users", isAdmin, exportUsers);
 router.get("/:id", isAdmin, adminGetUserById);
-
 
 export default router;

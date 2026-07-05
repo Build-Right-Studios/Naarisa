@@ -10,8 +10,6 @@ const router = express.Router();
 router.post("/upload", isAdmin, uploadBannerImages, uploadBanner);
 router.get("/get-banners", isAdmin, getBanners);
 router.delete("/:id", isAdmin, deleteBanner);
-
-// // Public route
 router.get("/get-active-banners", getActiveBanners);
 
 export default router;

@@ -15,10 +15,9 @@ import { isAdmin } from "../../Middleware/isAdmin.js";
 const router = express.Router();
 
 router.post("/add-product", isAdmin, addProduct);
-// router.get("/get-products",isAdmin, getProducts);
-router.get("/parent-products", getParentProducts);
-router.get("/get-products", getProducts);
-router.get("/products", getAllProducts);
+router.get("/parent-products", isAdmin, getParentProducts);
+router.get("/get-products", isAdmin, getProducts); 
+router.get("/products", getAllProducts); 
 router.get("/new-arrivals", getNewArrivals);
 router.get("/best-sellers", getBestSellers);
 router.get("/category/:category", getCategoryProducts);
@@ -26,8 +25,5 @@ router.get("/search", searchProducts);
 router.post("/:variantId/reviews", addReview);
 router.get("/:variantId/reviews", getReviews);
 router.get("/:slug", getProductBySlug);
-
-
-// Best Sellers
 
 export default router;

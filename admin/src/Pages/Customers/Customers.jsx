@@ -45,6 +45,11 @@ const Customers = () => {
             setPagination(data.pagination);
         } catch (error) {
             console.error("Failed to fetch users:", error);
+            const status = error.response?.status;
+            if (status === 401 || status === 403) {
+                localStorage.removeItem("token");
+                navigate("/login");
+            }
         } finally {
             setLoading(false);
         }

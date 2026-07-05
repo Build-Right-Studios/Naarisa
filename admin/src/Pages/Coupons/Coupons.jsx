@@ -73,17 +73,25 @@ export default function Coupons() {
     const fetchCoupons = async () => {
         setLoading(true);
         try {
-
             const res = await fetch(`${BASE_URL}${COUPON.GET}`, {
                 credentials: "include",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` },
             });
+
+            if (res.status === 401 || res.status === 403) {
+                throw new Error("Unauthorized");
+            }
+
             const data = await res.json();
             if (data.success) setCoupons(data.data);
-        } catch (e) { console.error(e); }
-        finally { setLoading(false); }
+            else console.error("Failed to load coupons:", data.message);
+        } catch (e) {
+            console.error(e);
+            localStorage.removeItem("token");
+            navigate("/login");
+        } finally {
+            setLoading(false);
+        }
     };
     useEffect(() => { fetchCoupons(); }, []);
 
