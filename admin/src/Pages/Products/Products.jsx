@@ -36,20 +36,25 @@ export default function Products() {
         credentials: "include",
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("Unauthorized");
+      }
+
       const data = await res.json();
       console.log("API response:", data);
+
       if (data.success) {
-        // Handle both response shapes
-        const list =
-          data.data?.products ||
-          data.data ||
-          data.products ||
-          [];
+        const list = data.data?.products || data.data || data.products || [];
+        console.log("List : ", list);
         setProducts(list);
-        console.log(list)
+      } else {
+        showToast(data.message || "Failed to load products.", "error");
       }
     } catch (e) {
       console.error("Fetch error:", e);
+      localStorage.removeItem("token");
+      navigate("/login");
     } finally {
       setLoading(false);
     }
@@ -81,8 +86,6 @@ export default function Products() {
       showToast("Action failed.", "error");
     }
   };
-  
-  // console.log(products);
 
   const filtered = (products || []).filter((p) => {
     const searchText = search.toLowerCase();

@@ -11,7 +11,6 @@ const router = express.Router();
 
 const upload = multer();
 
-// router.post("/add-new-variant", uploadVariantImages, isAdmin, addNewVariant);
 router.post(
   "/add-new-variant",
   (req, res, next) => {
@@ -32,10 +31,10 @@ router.post(
   isAdmin,
   addNewVariant
 );
-// router.patch("/:id", isAdmin, updateVariant);
-router.patch("/:id", uploadVariantImages, updateVariant);
-// router.patch("/:id/deactivate", isAdmin, deactivateVariant);
-router.patch("/:id/deactivate", deactivateVariant);
+
+router.patch("/:id", uploadVariantImages, isAdmin, updateVariant);
+
+router.patch("/:id/deactivate", isAdmin, deactivateVariant);
 
 router.get("/:id", isAdmin, getVariant);
 

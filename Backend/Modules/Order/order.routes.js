@@ -4,17 +4,16 @@ import { getActiveOrders } from "./Controller/getActiveOrders.js";
 import { getDeliveredOrders } from "./Controller/getDeliveredOrders.js";
 import { getOrderById } from "./Controller/getOrderById.js";
 import { isUser } from "../../Middleware/isUser.js";
+import { isAdmin } from "../../Middleware/isAdmin.js";
 
 const router = express.Router();
 
-// router.post("/place-order", placeOrder);
 router.post("/place-order", isUser, placeOrder);
-// router.get("/active", isAdmin, getActiveOrders);
-// router.get("/delivered", isAdmin, getDeliveredOrders);
-// router.get("/:id", isAdmin, getOrderById);
 
-router.get("/active", getActiveOrders);
-router.get("/delivered", getDeliveredOrders);
-router.get("/:id", getOrderById);
+router.get("/active", isAdmin, getActiveOrders);
+
+router.get("/delivered", isAdmin, getDeliveredOrders);
+
+router.get("/:id", isAdmin, getOrderById);
 
 export default router;

@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { AUTH } from "../../Constants/apiroutes.js";
 
-const AdminLogin = () => {
+const AdminLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -48,7 +48,7 @@ const AdminLogin = () => {
 
       if (response.data.success && response.data.token) {
         localStorage.setItem("token", response.data.token);
-
+        onLoginSuccess?.();
         navigate("/dashboard");
       } else {
         setError(response.data.message || "Login failed");

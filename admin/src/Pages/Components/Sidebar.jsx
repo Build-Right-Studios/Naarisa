@@ -25,7 +25,7 @@ function Sidebar() {
 
   const handleLogout = () => {
     localStorage.removeItem("token"); // remove token
-    navigate("/login"); // redirect to login
+    window.location.href = "/login";
   };
 
   return (

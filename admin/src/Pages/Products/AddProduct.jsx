@@ -10,13 +10,6 @@ const CATEGORIES = [
   "Kurti Sets"
 ];
 
-// const CATEGORIES = [
-//   "short-kurtis",
-//   "long-kurtis",
-//   "dresses",
-//   "kurti-sets",
-// ]
-
 const initialForm = {
   name: "",
   category: "",
@@ -83,6 +76,11 @@ export default function AddProduct() {
           basePrice: Number(form.basePrice),
         }),
       });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error("Unauthorized");
+      }
+
       const data = await res.json();
       if (data.success) {
         showToast("Product published successfully!");
@@ -90,8 +88,10 @@ export default function AddProduct() {
       } else {
         setError(data.message || "Failed to publish product.");
       }
-    } catch {
-      setError("Something went wrong.");
+    } catch (e) {
+      console.error("Submit error:", e);
+      localStorage.removeItem("token");
+      navigate("/login");
     } finally {
       setSubmitting(false);
     }
