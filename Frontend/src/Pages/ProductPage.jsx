@@ -772,8 +772,8 @@ const ProductPage = () => {
   const discount = product.basePrice && discountPrice
     ? Math.round(((product.basePrice - discountPrice) / product.basePrice) * 100)
     : null;
-  const totalStock = sizes.reduce((sum, s) => sum + s.quantity, 0);  // sizes already uses doc now ✓
-  const lowStock = totalStock > 0 && totalStock <= 5;
+  const selectedSizeStock = sizes.find((s) => s.size === selectedSize)?.quantity ?? 0;
+  const lowStock = selectedSizeStock > 0 && selectedSizeStock <= 5;
   const productDisplayName = `${product.name}${doc?.color?.name
     ? ` - ${doc.color.name.charAt(0).toUpperCase() + doc.color.name.slice(1)}`
     : ""
@@ -974,7 +974,7 @@ const ProductPage = () => {
             {lowStock && (
               <div className="mb-4 flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4727A" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-                <span className="text-[13px] font-semibold" style={{ fontFamily: "'Jost', sans-serif", color: "#C4727A" }}>Only {totalStock} left in stock!</span>
+                <span className="text-[13px] font-semibold" style={{ fontFamily: "'Jost', sans-serif", color: "#C4727A" }}>Only {selectedSizeStock} left in stock!</span>
               </div>
             )}
 

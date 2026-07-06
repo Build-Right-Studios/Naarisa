@@ -208,7 +208,7 @@ const OrderSuccessPage = () => {
           }}
         >
           <button
-            onClick={() => navigate("/account")}
+            onClick={() => navigate("/account", { state: { tab: "orders" } })}
             style={{
               backgroundColor: "#AB721E",
               color: "#fff",

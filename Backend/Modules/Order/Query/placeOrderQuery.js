@@ -9,6 +9,7 @@ export const findVariantWithProduct = async (variantId, productId) => {
   }).populate("productId");  // brings product data along
 };
 
-export const createOrder = async (orderData) => {
-  return await Order.create(orderData);
+export const createOrder = async (orderData, session) => {
+  const [order] = await Order.create([orderData], { session }); // ← array form required with session
+  return order;
 };

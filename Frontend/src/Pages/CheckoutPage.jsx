@@ -230,6 +230,21 @@ const CheckoutPage = () => {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const skipCartRedirect = useRef(false);
 
+  // ── Refs for scroll-to-error ──────────────────────────────────────────────
+  const fieldRefs = useRef({});
+  // Order matters — this is the order we check for the *first* error
+  const FIELD_ORDER = ["firstName", "lastName", "street", "city", "state", "pinCode", "phone", "email"];
+
+  const scrollToFirstError = (errorObj) => {
+    const firstKey = FIELD_ORDER.find((key) => errorObj[key]);
+    const el = firstKey && fieldRefs.current[firstKey];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Small delay so focus happens after the scroll settles
+      setTimeout(() => el.focus({ preventScroll: true }), 300);
+    }
+  };
+
   // ── Calculations ──────────────────────────────────────────────────────────
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
@@ -352,7 +367,12 @@ const CheckoutPage = () => {
     }
 
     setErrors(e);
-    return Object.keys(e).length === 0;
+
+    if (Object.keys(e).length > 0) {
+      scrollToFirstError(e);
+      return false;
+    }
+    return true;
   };
 
   const handleChange = (field) => (e) => {
@@ -675,61 +695,98 @@ const CheckoutPage = () => {
                 <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "28px", display: "flex", flexDirection: "column", gap: "18px" }}>
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="FIRST NAME" error={errors.firstName}>
-                      <input value={form.firstName} onChange={handleChange("firstName")} placeholder="Enter first name"
+                      <input
+                        ref={(el) => (fieldRefs.current.firstName = el)}
+                        value={form.firstName}
+                        onChange={handleChange("firstName")}
+                        placeholder="Enter first name"
                         style={inputStyle(errors.firstName)}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.firstName ? "#C4727A" : "#E8DDD0")} />
+                        onBlur={(e) => (e.target.style.borderColor = errors.firstName ? "#C4727A" : "#E8DDD0")}
+                      />
                     </Field>
                     <Field label="LAST NAME" error={errors.lastName}>
-                      <input value={form.lastName} onChange={handleChange("lastName")} placeholder="Enter last name"
+                      <input
+                        ref={(el) => (fieldRefs.current.lastName = el)}
+                        value={form.lastName}
+                        onChange={handleChange("lastName")}
+                        placeholder="Enter last name"
                         style={inputStyle(errors.lastName)}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.lastName ? "#C4727A" : "#E8DDD0")} />
+                        onBlur={(e) => (e.target.style.borderColor = errors.lastName ? "#C4727A" : "#E8DDD0")}
+                      />
                     </Field>
                   </div>
 
                   <Field label="STREET ADDRESS" error={errors.street}>
-                    <input value={form.street} onChange={handleChange("street")} placeholder="House number and street name"
+                    <input
+                      ref={(el) => (fieldRefs.current.street = el)}
+                      value={form.street}
+                      onChange={handleChange("street")}
+                      placeholder="House number and street name"
                       style={inputStyle(errors.street)}
                       onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                      onBlur={(e) => (e.target.style.borderColor = errors.street ? "#C4727A" : "#E8DDD0")} />
+                      onBlur={(e) => (e.target.style.borderColor = errors.street ? "#C4727A" : "#E8DDD0")}
+                    />
                   </Field>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <Field label="CITY" error={errors.city}>
-                      <input value={form.city} onChange={handleChange("city")} placeholder="City"
+                      <input
+                        ref={(el) => (fieldRefs.current.city = el)}
+                        value={form.city}
+                        onChange={handleChange("city")}
+                        placeholder="City"
                         style={inputStyle(errors.city)}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.city ? "#C4727A" : "#E8DDD0")} />
+                        onBlur={(e) => (e.target.style.borderColor = errors.city ? "#C4727A" : "#E8DDD0")}
+                      />
                     </Field>
                     <Field label="STATE" error={errors.state}>
-                      <select value={form.state} onChange={handleChange("state")}
+                      <select
+                        ref={(el) => (fieldRefs.current.state = el)}
+                        value={form.state}
+                        onChange={handleChange("state")}
                         style={{ ...inputStyle(errors.state), appearance: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238C7B6B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center", paddingRight: "32px", cursor: "pointer" }}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")}>
+                        onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")}
+                      >
                         {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </Field>
                     <Field label="PIN CODE" error={errors.pinCode}>
-                      <input value={form.pinCode} onChange={handleChange("pinCode")} placeholder="6-digit code" maxLength={6}
+                      <input
+                        ref={(el) => (fieldRefs.current.pinCode = el)}
+                        value={form.pinCode}
+                        onChange={handleChange("pinCode")}
+                        placeholder="6-digit code"
+                        maxLength={6}
                         style={inputStyle(errors.pinCode)}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.pinCode ? "#C4727A" : "#E8DDD0")} />
+                        onBlur={(e) => (e.target.style.borderColor = errors.pinCode ? "#C4727A" : "#E8DDD0")}
+                      />
                     </Field>
                   </div>
 
                   <Field label="PHONE NUMBER" error={errors.phone}>
                     <div style={{ position: "relative" }}>
                       <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", fontFamily: "'Jost', sans-serif", fontSize: "14px", color: "#8C7B6B", pointerEvents: "none" }}>+91</span>
-                      <input value={form.phone} onChange={handleChange("phone")} placeholder="00000 00000" maxLength={11}
+                      <input
+                        ref={(el) => (fieldRefs.current.phone = el)}
+                        value={form.phone}
+                        onChange={handleChange("phone")}
+                        placeholder="00000 00000"
+                        maxLength={11}
                         style={{ ...inputStyle(errors.phone), paddingLeft: "44px" }}
                         onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.phone ? "#C4727A" : "#E8DDD0")} />
+                        onBlur={(e) => (e.target.style.borderColor = errors.phone ? "#C4727A" : "#E8DDD0")}
+                      />
                     </div>
                   </Field>
 
                   <Field label="EMAIL ADDRESS (FOR NOTIFICATIONS)" error={errors.email}>
                     <input
+                      ref={(el) => (fieldRefs.current.email = el)}
                       value={form.email}
                       onChange={handleChange("email")}
                       placeholder="your@email.com"
