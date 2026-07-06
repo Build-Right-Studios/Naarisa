@@ -62,6 +62,91 @@ function useWindowWidth() {
   return w;
 }
 
+function ManualShipNotify({ order, token, onUpdated }) {
+  const [awbCode, setAwbCode] = useState(order.delivery?.awbCode || "");
+  const [trackingUrl, setTrackingUrl] = useState(order.delivery?.trackingUrl || "");
+  const [courierName, setCourierName] = useState(order.delivery?.courierName || "");
+  const [sending, setSending] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const handleSend = async () => {
+    if (!awbCode.trim()) {
+      setMsg({ type: "error", text: "Please enter the AWB number." });
+      return;
+    }
+    setSending(true);
+    setMsg(null);
+    try {
+      const res = await axios.patch(
+        `${BASE.ROUTE}/api/order/${order._id}/mark-shipped`,
+        { awbCode: awbCode.trim(), trackingUrl: trackingUrl.trim(), courierName: courierName.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMsg({ type: "success", text: "Marked as shipped — SMS sent to customer." });
+      onUpdated?.(res.data.data);
+    } catch (err) {
+      setMsg({ type: "error", text: err.response?.data?.message || "Failed to send. Please try again." });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div style={D.card}>
+      <h2 style={D.cardTitle}>Manual Shipment Notification</h2>
+      <p style={{ fontSize: 12, color: "#888", marginBottom: 14 }}>
+        Enter shipment details from Shiprocket, then notify the customer via SMS.
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+        <input
+          type="text"
+          placeholder="AWB Number *"
+          value={awbCode}
+          onChange={(e) => setAwbCode(e.target.value)}
+          style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 14 }}
+        />
+        <input
+          type="text"
+          placeholder="Courier name (optional)"
+          value={courierName}
+          onChange={(e) => setCourierName(e.target.value)}
+          style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 14 }}
+        />
+        <input
+          type="text"
+          placeholder="Tracking URL (optional, for My Orders page)"
+          value={trackingUrl}
+          onChange={(e) => setTrackingUrl(e.target.value)}
+          style={{ padding: "10px 12px", borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 14 }}
+        />
+      </div>
+
+      {msg && (
+        <div style={{
+          padding: "10px 12px", borderRadius: 8, marginBottom: 12, fontSize: 13,
+          background: msg.type === "success" ? "#f0fdf4" : "#fef2f2",
+          color: msg.type === "success" ? "#15803d" : "#b91c1c",
+        }}>
+          {msg.text}
+        </div>
+      )}
+
+      <button
+        onClick={handleSend}
+        disabled={sending}
+        style={{
+          width: "100%", padding: "10px 16px", borderRadius: 10, border: "none",
+          background: sending ? "#e5e7eb" : "#111", color: sending ? "#aaa" : "#fff",
+          fontSize: 14, fontWeight: 600, cursor: sending ? "not-allowed" : "pointer",
+        }}
+      >
+        {sending ? "Sending..." : "Mark Shipped & Notify Customer"}
+      </button>
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function OrderDetail() {
   const { id } = useParams();
@@ -608,6 +693,12 @@ export default function OrderDetail() {
               onDismissError={() => setShipmentError("")}
             />
           )}
+
+          <ManualShipNotify
+            order={order}
+            token={token}
+            onUpdated={(updatedOrder) => setOrder(updatedOrder)}
+          />
 
           {hasShipment && (
             <TrackingCard

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import useCartStore from "../../Store/useCartStore.js";
 
 import {
   FiSearch,
@@ -62,6 +63,8 @@ const Navbar = () => {
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState([]);
+  const cartItems = useCartStore((state) => state.items);
+  const cartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
 
   useEffect(() => {
     if (!searchQuery.trim()) { setSuggestions([]); return; }
@@ -360,19 +363,45 @@ const Navbar = () => {
             <Link
               to="/cart"
               className="
-              flex
-              items-center
-              justify-center
-              text-[22px]
-              text-[#1f1b15]
-              transition
-              duration-300
-              hover:text-[#7c5400]
-              md:text-[23px]
-              xl:text-[20px]
-            "
+    relative
+    flex
+    items-center
+    justify-center
+    text-[22px]
+    text-[#1f1b15]
+    transition
+    duration-300
+    hover:text-[#7c5400]
+    md:text-[23px]
+    xl:text-[20px]
+  "
             >
               <FiShoppingBag />
+
+              {cartCount > 0 && (
+                <span
+                  className="
+        absolute
+        -top-1.5
+        -right-2
+        flex
+        h-[17px]
+        min-w-[17px]
+        items-center
+        justify-center
+        rounded-full
+        bg-[#AB721E]
+        px-1
+        text-[10px]
+        font-semibold
+        text-white
+        font-['Jost']
+        leading-none
+      "
+                >
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
             </Link>
 
             {/* USER */}

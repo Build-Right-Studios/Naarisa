@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../utils/axiosInstance.js";
 import OrderTrackingWidget from "../Components/Common/OrderTrackingWidget.jsx";
 import AddressModal from "../Components/Common/AddressModal.jsx";
@@ -351,10 +351,12 @@ const WishlistSection = () => {
 
   useEffect(() => {
     api.get(USER.WISHLIST)
-      .then((r) => { if (r.data.success) {
-        console.log(r.data)
-        setItems(r.data.data || []);
-      }})
+      .then((r) => {
+        if (r.data.success) {
+          console.log(r.data)
+          setItems(r.data.data || []);
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -577,7 +579,14 @@ const MobileTabBar = ({ activeTab, setActiveTab, onLogout }) => (
 // ── Main Account Page ─────────────────────────────────────────────────────────
 const AccountPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("profile");
+  const location = useLocation();
+
+  const getInitialTab = () => {
+    const requestedTab = location.state?.tab;
+    return NAV.some((n) => n.id === requestedTab) ? requestedTab : "profile";
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
