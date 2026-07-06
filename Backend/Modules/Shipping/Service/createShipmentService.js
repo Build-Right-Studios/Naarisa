@@ -8,14 +8,14 @@ export const createShipmentService = async (orderId, length, breadth, height, we
 
     if (!order)
         throw {
-            status:404,
-            message:"Order not found"
+            status: 404,
+            message: "Order not found"
         };
 
-    if(order.delivery.shipmentId){
-        throw{
-            status:400,
-            message:"Shipment already created."
+    if (order.delivery.shipmentId) {
+        throw {
+            status: 400,
+            message: "Shipment already created."
         }
     }
 
@@ -51,40 +51,40 @@ export const createShipmentService = async (orderId, length, breadth, height, we
 
         shipping_is_billing: true,
 
-        order_items: order.items.map(item=>({
+        order_items: order.items.map(item => ({
 
-            name:item.productName,
+            name: item.productName,
 
-            sku:item.variant.toString(),
+            sku: item.variant.toString(),
 
-            units:item.quantity,
+            units: item.quantity,
 
-            selling_price:item.priceAtOrder
+            selling_price: item.priceAtOrder
 
         })),
 
         payment_method:
-            order.payment.status==="paid"
-            ? "Prepaid"
-            : "COD",
+            order.payment.status === "paid"
+                ? "Prepaid"
+                : "COD",
 
-        shipping_charges:0,
+        shipping_charges: 0,
 
-        giftwrap_charges:0,
+        giftwrap_charges: 0,
 
-        transaction_charges:0,
+        transaction_charges: 0,
 
-        total_discount:order.pricing.discount,
+        total_discount: order.pricing.discount,
 
-        sub_total:order.pricing.total,
+        sub_total: order.pricing.total,
 
-        length:Number(length),
+        length: Number(length),
 
-        breadth:Number(breadth),
+        breadth: Number(breadth),
 
-        height:Number(height),
+        height: Number(height),
 
-        weight:Number(weight),
+        weight: Number(weight),
     };
 
     const response = await axios.post(
@@ -95,11 +95,11 @@ export const createShipmentService = async (orderId, length, breadth, height, we
 
         {
 
-            headers:{
+            headers: {
 
-                Authorization:`Bearer ${token}`,
+                Authorization: `Bearer ${token}`,
 
-                "Content-Type":"application/json"
+                "Content-Type": "application/json"
 
             }
 
@@ -119,17 +119,24 @@ export const createShipmentService = async (orderId, length, breadth, height, we
 
     order.delivery.statusHistory.push({
 
-        status:"shipment_created",
+        status: "shipment_created",
 
-        message:"Shipment created successfully.",
+        message: "Shipment created successfully.",
 
-        timestamp:new Date()
+        timestamp: new Date()
 
     });
 
+    order.delivery.package = {
+        length: Number(length),
+        breadth: Number(breadth),
+        height: Number(height),
+        weight: Number(weight)
+    };
+
     await order.save();
 
-    // console.log(data)
+    console.log(data)
 
     return data;
 
