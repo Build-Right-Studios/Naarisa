@@ -158,6 +158,7 @@ export default function Orders() {
         "Email",
         "Phone",
         "Product Name",
+        "Size",
         "Quantity",
         "Price Per Item",
         "Subtotal",
@@ -191,6 +192,7 @@ export default function Orders() {
           o.items.forEach((item) => {
             // Format product name as: {productName}-{variantName}
             const productName = `${item.productName}-${item.variantName}`;
+            const size = item.size || "—";
 
             rows.push([
               o.customOrderId || o._id,
@@ -199,6 +201,7 @@ export default function Orders() {
               email,
               phone,
               productName,
+              size,
               item.quantity || 0,
               item.priceAtOrder || 0,
               subtotal,

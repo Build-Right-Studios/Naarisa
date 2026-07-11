@@ -16,35 +16,6 @@ export const placeOrder = async (req, res) => {
 
     const placedOrder = await placeOrderService({ user, items, address, addressId, couponCode })
 
-    // Resolve address
-    // const deliveryAddress = resolveAddress(req.user, address, addressId);
-
-    // Validate items + build order items
-    // const { orderItems, subtotal } = await buildOrderItems(items);
-
-    // Apply coupon
-    // const { discount, appliedCoupon } = await applyCoupon(couponCode, subtotal);
-
-    // const total = subtotal - discount;
-
-    // Create Razorpay order
-    // const razorpayOrder = await createRazorpayOrder(total);
-
-    // Deduct stock
-    // await deductStockForItems(items);
-
-    // Save order to DB
-    // const order = await saveOrder({
-    //   userId: req.user._id,
-    //   orderItems,
-    //   appliedCoupon,
-    //   pricing: { subtotal, discount, total },
-    //   deliveryAddress,
-    //   razorpayOrderId: razorpayOrder.id
-    // });
-
-    // Respond to frontend
-
     return res.status(201).json({
       message: "Order created successfully",
       ...placedOrder

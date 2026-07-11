@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { Variant } from "../../../MongoDB/models.js";
+
 import { findVariantWithProduct, createOrder } from "../Query/placeOrderQuery.js";
 import { resolveAddress } from "../../User/Service/resolveAddressService.js";
 import { createRazorpayOrder } from "../../Payment/Service/createRazorpayOrder.js";
@@ -15,6 +17,8 @@ const buildOrderItems = async (items) => {
     if (!productId || !variantId || !size || !quantity) {
       throw { status: 400, message: "Each item needs productId, variantId, size and quantity" };
     }
+    const variant_trial = await Variant.findById(variantId);
+    console.log(JSON.stringify(variant_trial.sizes, null, 2));
 
     // Fetch product
     const variant = await findVariantWithProduct(variantId, productId);
@@ -95,16 +99,19 @@ export const placeOrderService = async (orderData) => {
 
   const deliveryAddress = await resolveAddress(user, address, addressId);
   const { orderItems, subtotal } = await buildOrderItems(items);
+  console.log("Order Items : ", orderItems);
   const { discount, appliedCoupon } = await applyCoupon(couponCode, subtotal);
   const total = subtotal - discount;
   const razorpayOrder = await createRazorpayOrder(total);
 
   const session = await mongoose.startSession();
 
-   try {
+  try {
     session.startTransaction();
 
-    await deductStockForItems(items, session);
+    const deductItems = await deductStockForItems(items, session);
+
+    // console.log("Deduct Items : ", deductItems)
 
     const order = await saveOrder({
       userId: user._id,
