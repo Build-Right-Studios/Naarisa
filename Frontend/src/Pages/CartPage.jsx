@@ -168,7 +168,7 @@ const CartPage = () => {
               <CartItem key={item.id} item={item} onRemove={handleRemove} onQtyChange={handleQtyChange} />
             ))}
             <button
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/all-products")}
               style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", color: "#8C7B6B", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: "6px", marginTop: "4px", transition: "color 0.2s" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "#1f1b15")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "#8C7B6B")}
