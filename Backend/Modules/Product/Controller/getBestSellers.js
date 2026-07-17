@@ -23,33 +23,72 @@ const PRICE_SORTS = new Set(["price_asc", "price_desc"]);
 
 export const getBestSellers = async (req, res) => {
   try {
-    const { availability, priceRange, discount, colours, sort } = req.query;
+    const { availability, priceRange, discount, colours, sort, sizes } = req.query;
 
     /* ── Base filter ─────────────────────────────────────────────────────── */
     const filter = { isBestSeller: true, isActive: true };
 
-    // Availability
+    /* ── Availability + Size ───────────────────────────────────────────── */
+
+    const sizeElemMatch = {};
+
     if (availability) {
       const av = availability.split(",").map((s) => s.trim());
+
       const wantIn = av.includes("In Stock");
       const wantOut = av.includes("Out of Stock");
-      if (wantIn && !wantOut) filter.sizes = { $elemMatch: { quantity: { $gt: 0 } } };
-      if (wantOut && !wantIn) filter.sizes = { $not: { $elemMatch: { quantity: { $gt: 0 } } } };
+
+      if (wantIn && !wantOut) {
+        sizeElemMatch.quantity = { $gt: 0 };
+      }
+
+      if (wantOut && !wantIn) {
+        if (sizes) {
+          filter.sizes = {
+            $elemMatch: {
+              size: {
+                $in: sizes
+                  .split(",")
+                  .map((s) => s.trim().toUpperCase()),
+              },
+              quantity: 0,
+            },
+          };
+        } else {
+          filter.sizes = {
+            $not: {
+              $elemMatch: {
+                quantity: { $gt: 0 },
+              },
+            },
+          };
+        }
+      }
     }
 
-    // Price range
-    // if (priceRange) {
-    //   const ranges = priceRange.split(",").map((r) => {
-    //     const [min, max] = r.split("-").map(Number);
-    //     return { discountPrice: { $gte: min, $lte: max } };
-    //   });
-    //   filter.$or = ranges;
-    // }
+    // Size
+    if (sizes) {
+      sizeElemMatch.size = {
+        $in: sizes
+          .split(",")
+          .map((s) => s.trim().toUpperCase()),
+      };
+    }
 
-    // Colour
+    // Apply combined filter
+    if (Object.keys(sizeElemMatch).length && !filter.sizes) {
+      filter.sizes = {
+        $elemMatch: sizeElemMatch,
+      };
+    }
+
+    /* ── Colour ────────────────────────────────────────────────────────── */
+
     if (colours) {
       filter["color.name"] = {
-        $in: colours.split(",").map((c) => c.trim().toLowerCase()),
+        $in: colours
+          .split(",")
+          .map((c) => c.trim().toLowerCase()),
       };
     }
 

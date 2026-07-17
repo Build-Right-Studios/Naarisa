@@ -23,18 +23,65 @@ export const getCategoryProductsService = async ({
   priceRange,
   discount,
   colours,
+  sizes,
 }) => {
   const skip = (page - 1) * limit;
 
   /* ── Variant-level filter ── */
   const filter = { isActive: true };
 
+  /* ── Availability + Size ───────────────────────────────────────────── */
+
+  const sizeElemMatch = {};
+
   if (availability) {
     const av = availability.split(",").map((s) => s.trim());
+
     const wantIn = av.includes("In Stock");
     const wantOut = av.includes("Out of Stock");
-    if (wantIn && !wantOut) filter.sizes = { $elemMatch: { quantity: { $gt: 0 } } };
-    if (wantOut && !wantIn) filter.sizes = { $not: { $elemMatch: { quantity: { $gt: 0 } } } };
+
+    if (wantIn && !wantOut) {
+      sizeElemMatch.quantity = { $gt: 0 };
+    }
+
+    if (wantOut && !wantIn) {
+      if (sizes) {
+        filter.sizes = {
+          $elemMatch: {
+            size: {
+              $in: sizes
+                .split(",")
+                .map((s) => s.trim().toUpperCase()),
+            },
+            quantity: 0,
+          },
+        };
+      } else {
+        filter.sizes = {
+          $not: {
+            $elemMatch: {
+              quantity: { $gt: 0 },
+            },
+          },
+        };
+      }
+    }
+  }
+
+  // Size
+  if (sizes) {
+    sizeElemMatch.size = {
+      $in: sizes
+        .split(",")
+        .map((s) => s.trim().toUpperCase()),
+    };
+  }
+
+  // Apply combined filter
+  if (Object.keys(sizeElemMatch).length && !filter.sizes) {
+    filter.sizes = {
+      $elemMatch: sizeElemMatch,
+    };
   }
 
   if (colours) {
@@ -77,7 +124,7 @@ export const getCategoryProductsService = async ({
 
     // Join Product
     { $lookup: { from: "products", localField: "productId", foreignField: "_id", as: "productId" } },
-    
+
     { $unwind: "$productId" },
 
     {
