@@ -30,11 +30,15 @@ const TruckIcon = () => (
   </svg>
 );
 
+const handleProductClick = () => {
+  navigate(`/product/${item.slug}`);
+};
+
 // ── Cart Item ─────────────────────────────────────────────────────────────────
-const CartItem = ({ item, onRemove, onQtyChange }) => (
+const CartItem = ({ item, onRemove, onQtyChange, navigate }) => (
   <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", padding: "16px", marginBottom: "12px" }}>
-    <div className="flex gap-4">
-      <div style={{ width: "90px", aspectRatio: "3/4", flexShrink: 0, overflow: "hidden", backgroundColor: "#F5E6D0" }}>
+    <div onClick={() => navigate(`/product/${item.slug}`)} className="flex gap-4">
+      <div style={{ width: "90px", aspectRatio: "3/4", flexShrink: 0, overflow: "hidden", backgroundColor: "#F5E6D0", cursor: "pointer" }}>
         {item.image ? (
           <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
@@ -45,11 +49,30 @@ const CartItem = ({ item, onRemove, onQtyChange }) => (
       </div>
 
       <div className="flex-1 flex flex-col justify-between min-w-0">
-        <div>
-          <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: "17px", fontWeight: 400, color: "#1f1b15", lineHeight: 1.3, marginBottom: "4px" }}>
+        <div
+          style={{ cursor: "pointer" }}
+        >
+          <h3
+            style={{
+              fontFamily: "'EB Garamond', serif",
+              fontSize: "17px",
+              fontWeight: 400,
+              color: "#1f1b15",
+              lineHeight: 1.3,
+              marginBottom: "4px",
+            }}
+          >
             {item.name}
           </h3>
-          <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B", letterSpacing: "0.04em" }}>
+
+          <p
+            style={{
+              fontFamily: "'Jost', sans-serif",
+              fontSize: "12px",
+              color: "#8C7B6B",
+              letterSpacing: "0.04em",
+            }}
+          >
             Color: {item.color} | Size: {item.size}
           </p>
         </div>
@@ -57,14 +80,14 @@ const CartItem = ({ item, onRemove, onQtyChange }) => (
         <div className="flex items-end justify-between mt-3 flex-wrap gap-2">
           <div className="flex items-center" style={{ border: "1px solid #E8DDD0", backgroundColor: "#F9F3EB" }}>
             <button
-              onClick={() => onQtyChange(item.id, item.qty - 1)}
+              onClick={(e) => { e.stopPropagation(); onQtyChange(item.id, item.qty - 1) }}
               style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Jost', sans-serif", fontSize: "16px", color: "#1f1b15", background: "none", border: "none", cursor: "pointer" }}
             >−</button>
             <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 600, color: "#1f1b15", width: "28px", textAlign: "center" }}>
               {item.qty}
             </span>
             <button
-              onClick={() => onQtyChange(item.id, item.qty + 1)}
+              onClick={(e) => { e.stopPropagation(); onQtyChange(item.id, item.qty + 1) }}
               style={{ width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Jost', sans-serif", fontSize: "16px", color: "#1f1b15", background: "none", border: "none", cursor: "pointer" }}
             >+</button>
           </div>
@@ -74,7 +97,7 @@ const CartItem = ({ item, onRemove, onQtyChange }) => (
               ₹{(item.price * item.qty).toLocaleString("en-IN")}
             </span>
             <button
-              onClick={() => onRemove(item.id)}
+              onClick={(e) => { e.stopPropagation(); onRemove(item.id) }}
               style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em", color: "#8C7B6B", display: "flex", alignItems: "center", gap: "5px", background: "none", border: "none", cursor: "pointer", padding: 0, transition: "color 0.2s" }}
               onMouseEnter={(e) => (e.currentTarget.style.color = "#C4727A")}
               onMouseLeave={(e) => (e.currentTarget.style.color = "#8C7B6B")}
@@ -116,12 +139,12 @@ const EmptyCart = ({ navigate }) => (
 const CartPage = () => {
   const navigate = useNavigate();
 
-  const items           = useCartStore((state) => state.items);
-  const removeItem      = useCartStore((state) => state.removeItem);
-  const updateQty       = useCartStore((state) => state.updateQty);
+  const items = useCartStore((state) => state.items);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const updateQty = useCartStore((state) => state.updateQty);
   const setOrderSummary = useCheckoutStore((state) => state.setOrderSummary);
 
-  const handleRemove    = (id) => removeItem(id);
+  const handleRemove = (id) => removeItem(id);
   const handleQtyChange = (id, newQty) => updateQty(id, newQty);
 
   // ── Calculations (no tax) ──
@@ -165,7 +188,7 @@ const CartPage = () => {
           {/* Left — Cart Items */}
           <div>
             {items.map((item) => (
-              <CartItem key={item.id} item={item} onRemove={handleRemove} onQtyChange={handleQtyChange} />
+              <CartItem key={item.id} item={item} onRemove={handleRemove} onQtyChange={handleQtyChange} navigate={navigate} />
             ))}
             <button
               onClick={() => navigate("/all-products")}

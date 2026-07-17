@@ -66,12 +66,22 @@ const COLOUR_OPTIONS = [
   { name: "Yellow", hex: "#F4C430" },
 ];
 
+const SIZE_OPTIONS = [
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "XXL",
+];
+
 /* ─── Defaults (exported so pages can initialise state) ────────────────────── */
 export const FILTER_DEFAULTS = {
   availability: [],
   priceRange: [],
   discount: null,
   colours: [],
+  sizes: [],
   // fabrics + occasions omitted until schema fields are added
 };
 
@@ -81,7 +91,8 @@ export function countActiveFilters(f) {
     f.availability.length +
     f.priceRange.length +
     (f.discount ? 1 : 0) +
-    f.colours.length
+    f.colours.length +
+    f.sizes.length
   );
 }
 
@@ -308,7 +319,24 @@ export default function FilterPanel({ open, onClose, filters = FILTER_DEFAULTS, 
             </div>
           </Section>
 
-          {/* Fabric & Occasion hidden until schema fields are added */}
+          <Section title="Size">
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px",
+              }}
+            >
+              {SIZE_OPTIONS.map((size) => (
+                <Chip
+                  key={size}
+                  label={size}
+                  active={filters.sizes.includes(size)}
+                  onClick={() => toggle("sizes", size)}
+                />
+              ))}
+            </div>
+          </Section>
 
         </div>
 

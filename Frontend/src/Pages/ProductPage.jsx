@@ -971,12 +971,12 @@ const ProductPage = () => {
               )}
             </div>
 
-            {lowStock && (
+            {/* {lowStock && (
               <div className="mb-4 flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C4727A" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                 <span className="text-[13px] font-semibold" style={{ fontFamily: "'Jost', sans-serif", color: "#C4727A" }}>Only {selectedSizeStock} left in stock!</span>
               </div>
-            )}
+            )} */}
 
             {allVariants.length > 1 && (
               <div className="mb-5">
