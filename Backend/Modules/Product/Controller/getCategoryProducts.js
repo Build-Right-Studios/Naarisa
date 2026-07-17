@@ -48,6 +48,7 @@ export const getCategoryProducts = async (req, res) => {
       priceRange:   req.query.priceRange,
       discount:     req.query.discount,
       colours:      req.query.colours,
+      sizes:        req.query.sizes,
     });
 
     return res.status(200).json({
