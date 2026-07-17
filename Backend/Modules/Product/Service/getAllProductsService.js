@@ -13,6 +13,7 @@ export const getAllProductsService = async (data) => {
       priceRange,    // "0-1000,1000-2000"
       discount,      // "20"  (minimum discount %)
       colours,       // "Red,Blue"
+      sizes,
     } = data;
 
     const skip = (page - 1) * limit;
@@ -25,19 +26,58 @@ export const getAllProductsService = async (data) => {
     // handled in the query layer via the aggregation pipeline
 
     // Availability — derived from sizes array
+    /* ── Availability + Size ── */
+
+    const sizeElemMatch = {};
+
     if (availability) {
       const av = availability.split(",").map((s) => s.trim());
+
       const wantInStock = av.includes("In Stock");
       const wantOutStock = av.includes("Out of Stock");
 
       if (wantInStock && !wantOutStock) {
-        // At least one size has quantity > 0
-        filter["sizes"] = { $elemMatch: { quantity: { $gt: 0 } } };
-      } else if (wantOutStock && !wantInStock) {
-        // All sizes have quantity === 0
-        filter["sizes"] = { $not: { $elemMatch: { quantity: { $gt: 0 } } } };
+        sizeElemMatch.quantity = { $gt: 0 };
       }
-      // Both selected = no restriction
+
+      if (wantOutStock && !wantInStock) {
+        if (sizes) {
+          filter.sizes = {
+            $elemMatch: {
+              size: {
+                $in: sizes
+                  .split(",")
+                  .map((s) => s.trim().toUpperCase()),
+              },
+              quantity: 0,
+            },
+          };
+        } else {
+          filter.sizes = {
+            $not: {
+              $elemMatch: {
+                quantity: { $gt: 0 },
+              },
+            },
+          };
+        }
+      }
+    }
+
+    // Size
+    if (sizes) {
+      sizeElemMatch.size = {
+        $in: sizes
+          .split(",")
+          .map((s) => s.trim().toUpperCase()),
+      };
+    }
+
+    // Apply combined filter
+    if (Object.keys(sizeElemMatch).length && !filter.sizes) {
+      filter.sizes = {
+        $elemMatch: sizeElemMatch,
+      };
     }
 
     // Price range — supports multiple ranges (OR logic)

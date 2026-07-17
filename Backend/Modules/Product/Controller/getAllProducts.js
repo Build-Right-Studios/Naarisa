@@ -12,6 +12,7 @@ export const getAllProducts = async (req, res) => {
       priceRange,
       discount,
       colours,
+      sizes,
     } = req.query;
 
     const data = await getAllProductsService({
@@ -23,6 +24,7 @@ export const getAllProducts = async (req, res) => {
       priceRange,
       discount,
       colours,
+      sizes,
     });
 
     return res.status(200).json({

@@ -8,6 +8,7 @@ const filtersFromParams = (params) => ({
   priceRange: params.get("priceRange") ? params.get("priceRange").split(",") : [],
   discount: params.get("discount") || null,
   colours: params.get("colours") ? params.get("colours").split(",") : [],
+  sizes: params.get("sizes") ? params.get("sizes").split(",") : [],
 });
 
 export function useProductQueryState({ fixedCategory, defaultSort = "newest", limit = 12 } = {}) {
@@ -44,6 +45,7 @@ export function useProductQueryState({ fixedCategory, defaultSort = "newest", li
     f.priceRange?.length ? next.set("priceRange", f.priceRange.join(",")) : next.delete("priceRange");
     f.discount ? next.set("discount", f.discount) : next.delete("discount");
     f.colours?.length ? next.set("colours", f.colours.join(",")) : next.delete("colours");
+    f.sizes?.length ? next.set("sizes", f.sizes.join(",")) : next.delete("sizes");
     if (resetPage) next.set("page", "1");
     setSearchParams(next);
   }, [searchParams, setSearchParams]);
@@ -92,6 +94,7 @@ export function useProductQueryState({ fixedCategory, defaultSort = "newest", li
     if (appliedFilters.priceRange.length) p.set("priceRange", appliedFilters.priceRange.join(","));
     if (appliedFilters.discount) p.set("discount", appliedFilters.discount);
     if (appliedFilters.colours.length) p.set("colours", appliedFilters.colours.join(","));
+    if (appliedFilters.sizes.length) p.set("sizes", appliedFilters.sizes.join(","));
 
     return p;
     // eslint-disable-next-line react-hooks/exhaustive-deps

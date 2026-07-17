@@ -32,6 +32,7 @@ export const getNewArrivals = async (req, res) => {
       discount,
       colours,
       sort,
+      sizes,
     } = req.query;
 
     /* ── Base filter ─────────────────────────────────────────────────────── */
@@ -40,7 +41,9 @@ export const getNewArrivals = async (req, res) => {
       isActive: true,
     };
 
-    // Availability
+    // Availability + Size
+    const sizeElemMatch = {};
+
     if (availability) {
       const av = availability.split(",").map((s) => s.trim());
 
@@ -48,11 +51,7 @@ export const getNewArrivals = async (req, res) => {
       const wantOut = av.includes("Out of Stock");
 
       if (wantIn && !wantOut) {
-        filter.sizes = {
-          $elemMatch: {
-            quantity: { $gt: 0 },
-          },
-        };
+        sizeElemMatch.quantity = { $gt: 0 };
       }
 
       if (wantOut && !wantIn) {
@@ -64,6 +63,25 @@ export const getNewArrivals = async (req, res) => {
           },
         };
       }
+    }
+
+    // Size
+    if (sizes) {
+      sizeElemMatch.size = {
+        $in: sizes
+          .split(",")
+          .map((s) => s.trim().toUpperCase()),
+      };
+    }
+
+    // Apply combined size filter
+    if (
+      Object.keys(sizeElemMatch).length &&
+      !filter.sizes
+    ) {
+      filter.sizes = {
+        $elemMatch: sizeElemMatch,
+      };
     }
 
     // Colour
@@ -107,123 +125,123 @@ export const getNewArrivals = async (req, res) => {
 
       ...(priceRange
         ? [
-            {
-              $match: {
-                $or: priceRange.split(",").map((range) => {
-                  const [min, max] = range
-                    .split("-")
-                    .map(Number);
+          {
+            $match: {
+              $or: priceRange.split(",").map((range) => {
+                const [min, max] = range
+                  .split("-")
+                  .map(Number);
 
-                  return {
-                    $or: [
-                      {
-                        discountPrice: {
-                          $gte: min,
-                          $lte: max,
-                        },
+                return {
+                  $or: [
+                    {
+                      discountPrice: {
+                        $gte: min,
+                        $lte: max,
                       },
-                      {
-                        $and: [
-                          {
-                            $or: [
-                              {
-                                discountPrice: null,
-                              },
-                              {
-                                discountPrice: {
-                                  $exists: false,
-                                },
-                              },
-                            ],
-                          },
-                          {
-                            "productId.basePrice": {
-                              $gte: min,
-                              $lte: max,
+                    },
+                    {
+                      $and: [
+                        {
+                          $or: [
+                            {
+                              discountPrice: null,
                             },
+                            {
+                              discountPrice: {
+                                $exists: false,
+                              },
+                            },
+                          ],
+                        },
+                        {
+                          "productId.basePrice": {
+                            $gte: min,
+                            $lte: max,
                           },
-                        ],
-                      },
-                    ],
-                  };
-                }),
-              },
+                        },
+                      ],
+                    },
+                  ],
+                };
+              }),
             },
-          ]
+          },
+        ]
         : []),
 
       /* ── Numeric price for sorting ─────────────────────────────────── */
 
       ...(needsNumericPrice
         ? [
-            {
-              $addFields: {
-                discountPriceNumeric: {
-                  $toDouble: {
-                    $ifNull: [
-                      "$discountPrice",
-                      "$productId.basePrice",
-                    ],
-                  },
+          {
+            $addFields: {
+              discountPriceNumeric: {
+                $toDouble: {
+                  $ifNull: [
+                    "$discountPrice",
+                    "$productId.basePrice",
+                  ],
                 },
               },
             },
-          ]
+          },
+        ]
         : []),
 
       /* ── Discount Filter ────────────────────────────────────────────── */
 
       ...(discountPercent
         ? [
-            {
-              $addFields: {
-                computedDiscount: {
-                  $cond: {
-                    if: {
-                      $and: [
-                        {
-                          $gt: [
-                            "$productId.basePrice",
-                            0,
-                          ],
-                        },
-                        {
-                          $lt: [
-                            "$discountPrice",
-                            "$productId.basePrice",
-                          ],
-                        },
-                      ],
-                    },
-                    then: {
-                      $multiply: [
-                        {
-                          $divide: [
-                            {
-                              $subtract: [
-                                "$productId.basePrice",
-                                "$discountPrice",
-                              ],
-                            },
-                            "$productId.basePrice",
-                          ],
-                        },
-                        100,
-                      ],
-                    },
-                    else: 0,
+          {
+            $addFields: {
+              computedDiscount: {
+                $cond: {
+                  if: {
+                    $and: [
+                      {
+                        $gt: [
+                          "$productId.basePrice",
+                          0,
+                        ],
+                      },
+                      {
+                        $lt: [
+                          "$discountPrice",
+                          "$productId.basePrice",
+                        ],
+                      },
+                    ],
                   },
+                  then: {
+                    $multiply: [
+                      {
+                        $divide: [
+                          {
+                            $subtract: [
+                              "$productId.basePrice",
+                              "$discountPrice",
+                            ],
+                          },
+                          "$productId.basePrice",
+                        ],
+                      },
+                      100,
+                    ],
+                  },
+                  else: 0,
                 },
               },
             },
-            {
-              $match: {
-                computedDiscount: {
-                  $gte: discountPercent,
-                },
+          },
+          {
+            $match: {
+              computedDiscount: {
+                $gte: discountPercent,
               },
             },
-          ]
+          },
+        ]
         : []),
 
       {
