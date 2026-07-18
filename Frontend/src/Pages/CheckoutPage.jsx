@@ -6,17 +6,6 @@ import api from "../utils/axiosInstance.js";
 import axios from "axios";
 import { ORDER, PAYMENT, USER, BASE, COUPON } from "../Constants/apiRoutes.js";
 
-// ── Indian States ─────────────────────────────────────────────────────────────
-const INDIAN_STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
-  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
-  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
-];
-
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const TagIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -214,6 +203,7 @@ const CheckoutPage = () => {
   const [manualCode, setManualCode] = useState("");
   const [couponError, setCouponError] = useState("");
   const [couponsLoading, setCouponsLoading] = useState(true);
+  const [isFetchingPincode, setIsFetchingPincode] = useState(false);
 
   // ── Address Form State ────────────────────────────────────────────────────
   const [form, setForm] = useState(() => {
@@ -242,6 +232,61 @@ const CheckoutPage = () => {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
       // Small delay so focus happens after the scroll settles
       setTimeout(() => el.focus({ preventScroll: true }), 300);
+    }
+  };
+
+  const fetchLocationFromPincode = async (pincode) => {
+    if (!/^\d{6}$/.test(pincode)) return;
+
+    try {
+      setIsFetchingPincode(true);
+
+      const { data } = await axios.get(
+        `https://api.postalpincode.in/pincode/${pincode}`
+      );
+
+      const result = data?.[0];
+
+      if (
+        result?.Status === "Success" &&
+        result?.PostOffice?.length
+      ) {
+        const office = result.PostOffice[0];
+
+        setForm((prev) => ({
+          ...prev,
+          city: office.Block || office.Name,
+          state: office.State,
+        }));
+
+        setErrors((prev) => ({
+          ...prev,
+          city: "",
+          state: "",
+          pinCode: "",
+        }));
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          city: "",
+          state: "",
+        }));
+
+        setErrors((prev) => ({
+          ...prev,
+          pinCode: "Invalid PIN Code",
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+
+      setForm((prev) => ({
+        ...prev,
+        city: "",
+        state: "",
+      }));
+    } finally {
+      setIsFetchingPincode(false);
     }
   };
 
@@ -375,10 +420,35 @@ const CheckoutPage = () => {
     return true;
   };
 
-  const handleChange = (field) => (e) => {
-    const val = e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setForm((prev) => ({ ...prev, [field]: val }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  const handleChange = (field) => async (e) => {
+    const val =
+      e.target.type === "checkbox"
+        ? e.target.checked
+        : e.target.value;
+
+    setForm((prev) => ({
+      ...prev,
+      [field]: val,
+    }));
+
+    if (errors[field]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
+    }
+
+    if (field === "pinCode") {
+      if (/^\d{6}$/.test(val)) {
+        fetchLocationFromPincode(val);
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          city: "",
+          state: "",
+        }));
+      }
+    }
   };
 
   const handleCompleteOrder = async () => {
@@ -735,24 +805,31 @@ const CheckoutPage = () => {
                       <input
                         ref={(el) => (fieldRefs.current.city = el)}
                         value={form.city}
-                        onChange={handleChange("city")}
-                        placeholder="City"
-                        style={inputStyle(errors.city)}
-                        onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.city ? "#C4727A" : "#E8DDD0")}
+                        readOnly
+                        placeholder={
+                          isFetchingPincode
+                            ? "Fetching city..."
+                            : "City"
+                        }
+                        style={{
+                          ...inputStyle(errors.city),
+                          backgroundColor: "#F5F5F5",
+                          cursor: "not-allowed",
+                        }}
                       />
                     </Field>
                     <Field label="STATE" error={errors.state}>
-                      <select
+                      <input
                         ref={(el) => (fieldRefs.current.state = el)}
                         value={form.state}
-                        onChange={handleChange("state")}
-                        style={{ ...inputStyle(errors.state), appearance: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238C7B6B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center", paddingRight: "32px", cursor: "pointer" }}
-                        onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")}
-                      >
-                        {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                        readOnly
+                        placeholder="State"
+                        style={{
+                          ...inputStyle(errors.state),
+                          backgroundColor: "#F5F5F5",
+                          cursor: "not-allowed",
+                        }}
+                      />
                     </Field>
                     <Field label="PIN CODE" error={errors.pinCode}>
                       <input
@@ -761,9 +838,8 @@ const CheckoutPage = () => {
                         onChange={handleChange("pinCode")}
                         placeholder="6-digit code"
                         maxLength={6}
+                        inputMode="numeric"
                         style={inputStyle(errors.pinCode)}
-                        onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                        onBlur={(e) => (e.target.style.borderColor = errors.pinCode ? "#C4727A" : "#E8DDD0")}
                       />
                     </Field>
                   </div>

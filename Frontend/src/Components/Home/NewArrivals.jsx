@@ -38,7 +38,7 @@ const NewArrivals = () => {
 
   return (
     <section
-      className="w-full overflow-hidden py-14 sm:py-16 md:py-20"
+      className="w-full overflow-hidden py-8 md:py-10"
       style={{ backgroundColor: "#F9F3EB" }}
     >
       {/* Header */}
