@@ -39,7 +39,7 @@ const CuratedCollections = () => {
 
   return (
     <section
-      className="w-full overflow-hidden px-4 py-14 sm:px-6 sm:py-16 md:px-10 md:py-20 xl:px-12"
+      className="w-full overflow-hidden px-4 py-8 sm:px-6 sm:py-8 md:px-10 md:py-10 xl:px-12"
       style={{ backgroundColor: "#F9F3EB" }}
     >
       {/* Section Header */}
