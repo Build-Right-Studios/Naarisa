@@ -1,5 +1,5 @@
 import express from "express";
-import { uploadBannerImages } from "../../config/cloudinary.js";
+import { uploadBannerImages } from "../../config/multer.js";
 import { isAdmin } from "../../Middleware/isAdmin.js";
 import { uploadBanner } from "./Controller/uploadBanner.js";
 import { getBanners, getActiveBanners } from "./Controller/getBanners.js";

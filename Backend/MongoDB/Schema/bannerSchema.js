@@ -13,9 +13,19 @@ const bannerSchema = new mongoose.Schema(
       required: true
     },
 
+    desktopImageFileId: {
+      type: String,
+      default: null
+    },
+
     mobileImage: {
       type: String,
       required: true
+    },
+
+    mobileImageFileId: {
+      type: String,
+      default: null
     },
 
     link: {
@@ -34,7 +44,6 @@ const bannerSchema = new mongoose.Schema(
       default: true
     },
 
-    // ✅ Soft delete fields
     isDeleted: {
       type: Boolean,
       default: false
