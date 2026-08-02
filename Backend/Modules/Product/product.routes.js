@@ -11,6 +11,8 @@ import { searchProducts } from "./Controller/searchProducts.js";
 import { addReview } from "./Controller/addReview.js";
 import { getReviews } from "./Controller/getReviews.js";
 import { isAdmin } from "../../Middleware/isAdmin.js";
+import { isUser } from "../../Middleware/isUser.js";
+import { uploadReviewImages } from "../../config/multer.js";
 
 const router = express.Router();
 
@@ -22,7 +24,7 @@ router.get("/new-arrivals", getNewArrivals);
 router.get("/best-sellers", getBestSellers);
 router.get("/category/:category", getCategoryProducts);
 router.get("/search", searchProducts);
-router.post("/:variantId/reviews", addReview);
+router.post("/:variantId/reviews", isUser, uploadReviewImages, addReview);
 router.get("/:variantId/reviews", getReviews);
 router.get("/:slug", getProductBySlug);
 

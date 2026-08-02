@@ -191,12 +191,34 @@ const CartPage = () => {
               <CartItem key={item.id} item={item} onRemove={handleRemove} onQtyChange={handleQtyChange} navigate={navigate} />
             ))}
             <button
-              onClick={() => navigate("/all-products")}
-              style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", color: "#8C7B6B", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: "6px", marginTop: "4px", transition: "color 0.2s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#1f1b15")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#8C7B6B")}
+              onClick={() => navigate(-1)}
+              style={{
+                fontFamily: "'Jost', sans-serif",
+                fontSize: "12px",
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                color: "#fff",
+                background: "#AB721E",
+                cursor: "pointer",
+                padding: "12px 24px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginTop: "16px",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#8B6914";
+                e.currentTarget.style.color = "#fff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#AB721E";
+                e.currentTarget.style.color = "#fff";
+              }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
               CONTINUE SHOPPING
             </button>
           </div>

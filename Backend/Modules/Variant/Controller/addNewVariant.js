@@ -1,4 +1,5 @@
 import { addNewVariantService } from "../Service/addNewVariantService.js";
+import { uploadImagesToImageKit } from "../../../config/imagekit.js";
 
 export const addNewVariant = async (req, res) => {
     try {
@@ -14,6 +15,7 @@ export const addNewVariant = async (req, res) => {
             isBestSeller,
             isNewArrival
         } = req.body;
+
         // Safe JSON parse
         let sizes = [];
 
@@ -26,13 +28,7 @@ export const addNewVariant = async (req, res) => {
             });
         }
 
-        // Cloudinary uploaded files
-        const images = req.files?.map((file) => ({
-            url: file.path,
-            public_id: file.filename
-        }));
-
-        // Validations
+        // Validations (moved up — validate file count BEFORE uploading, no point uploading then rejecting)
         if (!productId) {
             return res.status(400).json({
                 success: false,
@@ -47,7 +43,7 @@ export const addNewVariant = async (req, res) => {
             });
         }
 
-        if (!images || images.length === 0 || images.length > 8) {
+        if (!req.files || req.files.length === 0 || req.files.length > 8) {
             return res.status(400).json({
                 success: false,
                 message: "Please upload 1 to 8 images."
@@ -60,6 +56,9 @@ export const addNewVariant = async (req, res) => {
                 message: "At least one size required"
             });
         }
+
+        // Upload to ImageKit
+        const images = await uploadImagesToImageKit(req.files, "/naarisa/variants");
 
         const newVariant = await addNewVariantService({
             productId,

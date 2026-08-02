@@ -1,76 +1,63 @@
-import { Product, Variant } from "../../../MongoDB/models.js";
+import { Variant } from "../../../MongoDB/models.js";
 
 export const searchProducts = async (req, res) => {
   try {
     const { q = "", limit = 8 } = req.query;
-
     const query = q.trim();
 
     if (!query) {
-      return res.status(200).json({
-        success: true,
-        data: [],
-      });
+      return res.status(200).json({ success: true, data: [] });
     }
 
-    const regex = new RegExp(query, "i");
+    // split "red kurta" -> ["red", "kurta"], each must match SOMEWHERE
+    const tokens = query.split(/\s+/).filter(Boolean).map((t) => new RegExp(t, "i"));
 
-    // Find matching products
-    const matchedProducts = await Product.find({
+    const andConditions = tokens.map((token) => ({
       $or: [
-        { name: regex },
-        { category: regex },
-        { tags: regex },
+        { "product.name": token },
+        { "product.category": token },
+        { "product.tags": token },
+        { "color.name": token },
       ],
-    })
-      .select("_id")
-      .lean();
-
-    const productIds = matchedProducts.map((product) => product._id);
-
-    // Find matching variants by product OR color
-    const variants = await Variant.find({
-      isActive: true,
-      $or: [
-        {
-          productId: { $in: productIds },
-        },
-        {
-          "color.name": regex,
-        },
-      ],
-    })
-      .populate({
-        path: "productId",
-        select: "name category basePrice",
-      })
-      .sort({ createdAt: -1 })
-      .limit(Number(limit))
-      .lean();
-
-    const formatted = variants.map((variant) => ({
-      id: variant._id.toString(),
-
-      name: `${variant.productId.name} - ${
-        variant.color.name.charAt(0).toUpperCase() +
-        variant.color.name.slice(1)
-      }`,
-
-      category: variant.productId.category,
-
-      slug: variant.slug,
-
-      price:
-        variant.discountPrice ??
-        variant.productId.basePrice,
-
-      image: variant.images?.[0]?.url || null,
     }));
 
-    return res.status(200).json({
-      success: true,
-      data: formatted,
-    });
+    const variants = await Variant.aggregate([
+      { $match: { isActive: true } },
+      {
+        $lookup: {
+          from: "products", // must match actual Mongo collection name (usually lowercase plural)
+          localField: "productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      { $unwind: "$product" },
+      { $match: { $and: andConditions } },
+      { $sort: { createdAt: -1 } },
+      { $limit: Number(limit) },
+      {
+        $project: {
+          slug: 1,
+          discountPrice: 1,
+          "color.name": 1,
+          images: { $slice: ["$images", 1] }, // only need first image
+          "product.name": 1,
+          "product.category": 1,
+          "product.basePrice": 1,
+        },
+      },
+    ]);
+
+    const formatted = variants.map((v) => ({
+      id: v._id.toString(),
+      name: `${v.product.name} - ${v.color.name.charAt(0).toUpperCase() + v.color.name.slice(1)}`,
+      category: v.product.category,
+      slug: v.slug,
+      price: v.discountPrice ?? v.product.basePrice,
+      image: v.images?.[0]?.url || null,
+    }));
+
+    return res.status(200).json({ success: true, data: formatted });
   } catch (error) {
     console.error("Search Error:", error);
 
