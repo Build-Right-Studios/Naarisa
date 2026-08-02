@@ -9,26 +9,26 @@ const collections = [
   {
     title: "Short Kurtis",
     path: "/categories/short-kurtis",
-    image: shortkurtibanner,
+    image: "https://ik.imagekit.io/llcblwlng/naarisa/homepage-banners/Short%20Kurtis%20Banner.png",
     accent: "#C47B1E",
   },
   {
     title: "Long Kurtis",
     path: "/categories/long-kurtis",
-    image: longkurtibanner,
+    image: "https://ik.imagekit.io/llcblwlng/naarisa/homepage-banners/Long%20Kurtis%20Banner.png",
     accent: "#C4727A",
   },
   {
     title: "Dresses",
     path: "/categories/dresses",
-    image: dressesbanner,
+    image: "https://ik.imagekit.io/llcblwlng/naarisa/homepage-banners/Dresses%20Banner.png",
     accent: "#2B2112",
   },
   {
     title: "Kurti Sets",
     path: "/categories/kurti-sets",
     // gradient: "linear-gradient(135deg, #0d1f1a 0%, #1a3d32 50%, #2D6B5A 100%)",
-    image: kurtisetbanner,
+    image: "https://ik.imagekit.io/llcblwlng/naarisa/homepage-banners/Kurti%20Set%20Banner.png",
     accent: "#F5E6D0",
   },
 
