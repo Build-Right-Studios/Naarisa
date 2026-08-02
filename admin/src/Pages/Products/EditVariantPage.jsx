@@ -149,6 +149,7 @@ function RichTextarea({ value, onChange, placeholder }) {
         onMouseUp={updateActiveFormats}
         onSelect={updateActiveFormats}
         data-placeholder={placeholder}
+        className="rich-editor-content"
         style={{
           minHeight: 100,
           padding: "10px 14px",
