@@ -261,13 +261,31 @@ const AddedToast = ({ visible }) => (
   </div>
 );
 
+
 // ── Write Review Modal ────────────────────────────────────────────────────────
 const WriteReviewModal = ({ variantId, onClose, onSubmitted }) => {
   const [name, setName] = useState("");
   const [rating, setRating] = useState(0);
   const [text, setText] = useState("");
+  const [images, setImages] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const fileRef = useRef(null);
+
+  const addImages = (files) => {
+    const valid = Array.from(files).filter((f) =>
+      ["image/jpeg", "image/png", "image/webp"].includes(f.type) && f.size <= 10 * 1024 * 1024
+    );
+    const previews = valid.map((file) => ({ file, preview: URL.createObjectURL(file) }));
+    setImages((prev) => [...prev, ...previews].slice(0, 4));
+  };
+
+  const removeImage = (i) => {
+    setImages((prev) => {
+      URL.revokeObjectURL(prev[i].preview);
+      return prev.filter((_, idx) => idx !== i);
+    });
+  };
 
   const handleSubmit = async () => {
     if (!name.trim() || !rating || !text.trim()) {
@@ -279,10 +297,14 @@ const WriteReviewModal = ({ variantId, onClose, onSubmitted }) => {
       setSubmitting(true);
       setError("");
 
-      await api.post(`${BASE.ROUTE}/api/product/${variantId}/reviews`, {
-        name: name.trim(),
-        rating,
-        text: text.trim(),
+      const formData = new FormData();
+      formData.append("name", name.trim());
+      formData.append("rating", rating);
+      formData.append("text", text.trim());
+      images.forEach((img) => formData.append("images", img.file));
+
+      await api.post(`${BASE.ROUTE}/api/product/${variantId}/reviews`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       onSubmitted();
@@ -382,6 +404,42 @@ const WriteReviewModal = ({ variantId, onClose, onSubmitted }) => {
             <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#C4A882", textAlign: "right", marginTop: "4px" }}>
               {text.length}/600
             </p>
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <label style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", color: "#8C7B6B", textTransform: "uppercase", display: "block", marginBottom: "8px" }}>
+              Add Photos (Optional)
+            </label>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              style={{ display: "none" }}
+              onChange={(e) => addImages(e.target.files)}
+            />
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {images.map((img, i) => (
+                <div key={i} style={{ position: "relative", width: 56, height: 56, border: "1px solid #E8DDD0" }}>
+                  <img src={img.preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <button
+                    onClick={() => removeImage(i)}
+                    style={{ position: "absolute", top: 2, right: 2, background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", width: 16, height: 16, borderRadius: "50%", fontSize: 10, cursor: "pointer" }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {images.length < 4 && (
+                <div
+                  onClick={() => fileRef.current?.click()}
+                  style={{ width: 56, height: 56, border: "1px dashed #C4A882", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#C4A882", fontSize: 20 }}
+                >
+                  +
+                </div>
+              )}
+            </div>
           </div>
 
           {error && (
@@ -845,6 +903,22 @@ const ProductPage = () => {
       .join("");
   };
 
+  const token = localStorage.getItem("naarisa-token");
+
+
+  const handleWriteReview = () => {
+
+    if (!token) {
+      alert("Please login to write a review.");
+      navigate("/auth", {
+        state: { from: location.pathname },
+      });
+      return;
+    }
+
+    setShowReviewModal(true);
+  };
+
   return (
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }} className="pb-24 lg:pb-0">
 
@@ -1089,7 +1163,7 @@ const ProductPage = () => {
             )}
           </div>
           <button
-            onClick={() => setShowReviewModal(true)}
+            onClick={handleWriteReview}
             className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.14em] transition-all duration-300"
             style={{ fontFamily: "'Jost', sans-serif", border: "1px solid #1f1b15", color: "#1f1b15" }}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#1f1b15"; e.currentTarget.style.color = "#fff"; }}

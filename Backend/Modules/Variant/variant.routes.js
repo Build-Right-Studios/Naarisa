@@ -5,7 +5,7 @@ import { updateVariant } from "./Controller/updateVariant.js";
 import { deactivateVariant } from "./Controller/deactivateVariant.js";
 import { getVariant } from "./Controller/getVariant.js";
 import { isAdmin } from "../../Middleware/isAdmin.js";
-import { uploadVariantImages } from "../../config/cloudinary.js";
+import { uploadVariantImages } from "../../config/multer.js";
 
 const router = express.Router();
 

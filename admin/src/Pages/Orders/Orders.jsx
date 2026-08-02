@@ -26,14 +26,14 @@ const STATUS_STYLES = {
   cancelled: { background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca" },
 };
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, isMobile }) {
   const s = STATUS_STYLES[status?.toLowerCase()] || STATUS_STYLES.pending;
   return (
     <span style={{
       ...s,
-      padding: "4px 12px",
+      padding: isMobile ? "3px 8px" : "4px 12px",
       borderRadius: 20,
-      fontSize: 11,
+      fontSize: isMobile ? 9 : 11,
       fontWeight: 700,
       letterSpacing: "0.06em",
       textTransform: "uppercase",
@@ -267,11 +267,13 @@ export default function Orders() {
   };
 
   // responsive
-  const pagePadding = isMobile ? "24px 16px" : isTablet ? "28px 28px" : isMonitor ? "48px 64px" : "40px 48px";
-  const thPad = isMobile ? "12px 10px" : "16px 20px";
-  const tdPad = isMobile ? "14px 10px" : "18px 20px";
+  const pagePadding = isMobile ? "16px 12px" : isTablet ? "28px 28px" : isMonitor ? "48px 64px" : "40px 48px";
+  const thPad = isMobile ? "10px 8px" : "16px 20px";
+  const tdPad = isMobile ? "12px 8px" : "18px 20px";
   const showEmail = !isMobile;
   const showItems = !isMobile;
+  const fontSizeSmall = isMobile ? 12 : 14;
+  const fontSizeTiny = isMobile ? 10 : 12;
   const colCount = 4 + (showEmail ? 0 : 0) + (showItems ? 1 : 0) + 2;
 
   return (
@@ -293,16 +295,23 @@ export default function Orders() {
       </div>
 
       {/* Tabs */}
-      <div style={{ ...S.tabRow, marginBottom: 24 }}>
+      <div style={{
+        ...S.tabRow,
+        marginBottom: 24,
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+      }}>
         {[
-          { key: "active", label: "Active Orders" },
-          { key: "delivered", label: "Delivered Orders" },
+          { key: "active", label: isMobile ? "Active" : "Active Orders" },
+          { key: "delivered", label: isMobile ? "Delivered" : "Delivered Orders" },
         ].map(({ key, label }) => (
           <button
             key={key}
             style={{
               ...S.tab,
               ...(tab === key ? S.tabActive : {}),
+              fontSize: isMobile ? 13 : 15,
+              marginRight: isMobile ? 16 : 28,
             }}
             onClick={() => setTab(key)}
           >
@@ -322,17 +331,20 @@ export default function Orders() {
       <div style={{
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "center",
+        alignItems: isMobile ? "stretch" : "center",
         marginBottom: 20,
         flexWrap: "wrap",
         gap: 12,
+        flexDirection: isMobile ? "column" : "row",
       }}>
-        <button style={S.filterBtn}>
+        <button style={{ ...S.filterBtn, justifyContent: "center", fontSize: isMobile ? 13 : 14 }}>
           <CalendarIcon /> This Month
         </button>
         <button
           style={{
             ...S.exportBtn,
+            justifyContent: "center",
+            fontSize: isMobile ? 13 : 14,
             opacity: exportLoading ? 0.7 : 1,
             cursor: exportLoading ? "not-allowed" : "pointer",
           }}
@@ -340,23 +352,23 @@ export default function Orders() {
           disabled={exportLoading}
         >
           <DownloadIcon />
-          {exportLoading ? "Exporting..." : `Export All CSV (${totalCount})`}
+          {exportLoading ? "Exporting..." : isMobile ? `Export CSV (${totalCount})` : `Export All CSV (${totalCount})`}
         </button>
       </div>
 
       {/* Table */}
       <div style={S.tableCard}>
         <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-          <table style={{ ...S.table, minWidth: isMobile ? 520 : "100%" }}>
+          <table style={{ ...S.table, minWidth: isMobile ? 480 : "100%" }}>
             <thead>
               <tr>
-                <th style={{ ...S.th, padding: thPad }}>Order ID</th>
-                <th style={{ ...S.th, padding: thPad }}>Date & Time</th>
-                <th style={{ ...S.th, padding: thPad }}>Customer</th>
-                {showItems && <th style={{ ...S.th, padding: thPad }}>Items</th>}
-                <th style={{ ...S.th, padding: thPad }}>Total</th>
-                <th style={{ ...S.th, padding: thPad }}>Status</th>
-                <th style={{ ...S.th, padding: thPad }}>Actions</th>
+                <th style={{ ...S.th, padding: thPad, fontSize: isMobile ? 10 : 11 }}>Order ID</th>
+                <th style={{ ...S.th, padding: thPad, fontSize: isMobile ? 10 : 11 }}>Date & Time</th>
+                <th style={{ ...S.th, padding: thPad, fontSize: isMobile ? 10 : 11 }}>Customer</th>
+                {showItems && <th style={{ ...S.th, padding: thPad, fontSize: isMobile ? 10 : 11 }}>Items</th>}
+                <th style={{ ...S.th, padding: thPad, fontSize: isMobile ? 10 : 11 }}>Total</th>
+                <th style={{ ...S.th, padding: thPad, fontSize: isMobile ? 10 : 11 }}>Status</th>
+                <th style={{ ...S.th, padding: thPad, fontSize: isMobile ? 10 : 11 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -374,46 +386,52 @@ export default function Orders() {
 
                 return (
                   <tr key={order._id} style={S.tr}>
-                    <td style={{ ...S.td, padding: tdPad, fontWeight: 700, color: "#111", fontSize: 14 }}>
+                    <td style={{ ...S.td, padding: tdPad, fontWeight: 700, color: "#111", fontSize: fontSizeSmall }}>
                       {order.customOrderId}
                     </td>
                     <td style={{ ...S.td, padding: tdPad }}>
-                      <div style={{ fontSize: 14, color: "#111" }}>{date}</div>
-                      <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{time}</div>
+                      <div style={{ fontSize: fontSizeSmall, color: "#111" }}>{date}</div>
+                      <div style={{ fontSize: fontSizeTiny, color: "#888", marginTop: 2 }}>{time}</div>
                     </td>
                     <td style={{ ...S.td, padding: tdPad }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ ...S.avatar, background: avatarColor(name) }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10 }}>
+                        <div style={{
+                          ...S.avatar,
+                          background: avatarColor(name),
+                          width: isMobile ? 26 : 34,
+                          height: isMobile ? 26 : 34,
+                          fontSize: isMobile ? 10 : 12,
+                        }}>
                           {initials}
                         </div>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>{name}</div>
+                          <div style={{ fontSize: fontSizeSmall, fontWeight: 600, color: "#111" }}>{name}</div>
                           {showEmail && (
-                            <div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>{email}</div>
+                            <div style={{ fontSize: fontSizeTiny, color: "#888", marginTop: 1 }}>{email}</div>
                           )}
                         </div>
                       </div>
                     </td>
                     {showItems && (
                       <td style={{ ...S.td, padding: tdPad }}>
-                        <span style={S.itemsBadge}>
+                        <span style={{ ...S.itemsBadge, fontSize: fontSizeTiny }}>
                           {itemCount} {itemCount === 1 ? "Item" : "Items"}
                         </span>
                       </td>
                     )}
-                    <td style={{ ...S.td, padding: tdPad, fontWeight: 700, fontSize: 15, color: "#111" }}>
+                    <td style={{ ...S.td, padding: tdPad, fontWeight: 700, fontSize: isMobile ? 13 : 15, color: "#111" }}>
                       ₹{Number(total).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </td>
                     <td style={{ ...S.td, padding: tdPad }}>
-                      <StatusBadge status={order.status} />
+                      <StatusBadge status={order.status} isMobile={isMobile} />
                     </td>
                     <td style={{ ...S.td, padding: tdPad }}>
                       <button
-                        style={S.viewBtn}
+                        style={{ ...S.viewBtn, width: isMobile ? 30 : 36, height: isMobile ? 30 : 36 }}
                         onClick={() => navigate(`/orders/${order._id}`)}
                         title="View order"
                       >
-                        <EyeIcon />
+                        <EyeIcon size={isMobile ? 15 : 18} />
                       </button>
                     </td>
                   </tr>
@@ -425,20 +443,20 @@ export default function Orders() {
 
         {/* Pagination */}
         {!loading && orders.length > 0 && (
-          <div style={S.pagination}>
-            <span style={{ fontSize: 13, color: "#888" }}>
+          <div style={{ ...S.pagination, padding: isMobile ? "12px 16px" : "14px 20px" }}>
+            <span style={{ fontSize: isMobile ? 12 : 13, color: "#888" }}>
               Page {page} · {totalCount} total orders
             </span>
             <div style={{ display: "flex", gap: 8 }}>
               <button
-                style={{ ...S.pageBtn, opacity: page === 1 ? 0.4 : 1 }}
+                style={{ ...S.pageBtn, opacity: page === 1 ? 0.4 : 1, fontSize: isMobile ? 12 : 13, padding: isMobile ? "6px 12px" : "7px 14px" }}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
               >
                 ← Prev
               </button>
               <button
-                style={{ ...S.pageBtn, opacity: orders.length < 10 ? 0.4 : 1 }}
+                style={{ ...S.pageBtn, opacity: orders.length < 10 ? 0.4 : 1, fontSize: isMobile ? 12 : 13, padding: isMobile ? "6px 12px" : "7px 14px" }}
                 onClick={() => setPage((p) => p + 1)}
                 disabled={orders.length < 10}
               >
@@ -460,15 +478,16 @@ function avatarColor(name = "") {
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
-function EyeIcon() {
+function EyeIcon({ size = 18 }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
+
 function CalendarIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"

@@ -5,6 +5,17 @@ import { BASE, VARIANT } from '../../Constants/apiroutes.js';
 
 const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 
+const richEditorStyles = `
+  .rich-editor-content ul {
+    list-style: disc;
+    margin: 0 0 0 20px;
+    padding: 0;
+  }
+  .rich-editor-content li {
+    margin: 4px 0;
+  }
+`;
+
 // ─── Rich Text Editor ─────────────────────────────────────────────────────────
 function RichTextarea({ value, onChange, placeholder }) {
   const editorRef = useRef(null);
@@ -91,6 +102,7 @@ function RichTextarea({ value, onChange, placeholder }) {
       overflow: "hidden",
       background: "#f9fafb",
     }}>
+      <style>{richEditorStyles}</style>
       <div style={{
         display: "flex",
         gap: 4,
@@ -387,10 +399,14 @@ const EditVariantPage = () => {
                   <span style={{ fontWeight: 700, fontSize: 15 }}>{size.size}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <input
-                      type="number"
-                      min={0}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={size.quantity}
-                      onChange={(e) => handleStockChange(index, e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d*$/.test(val)) handleStockChange(index, val);
+                      }}
                       style={{ width: 90, border: "1px solid #e5e7eb", borderRadius: 8, padding: "8px 12px", textAlign: "center", fontSize: 14, outline: "none" }}
                     />
                     <button

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BASE, PRODUCT } from "../../Constants/apiroutes.js";
 
@@ -21,6 +21,7 @@ export default function Products() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [toast, setToast] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
   const token = localStorage.getItem("token");
   const width = useWindowWidth();
@@ -212,106 +213,106 @@ export default function Products() {
                   </td>
                 </tr>
               ) : filtered.map((p) => {
-                // Resolve image — variant can have images array or image string
-                const imageUrl =
-                  p.images?.[0]?.url ||
-                  p.image?.url ||
-                  p.image ||
-                  null;
-
-                // Resolve name — from variant response mapping
+                const imageUrl = p.images?.[0]?.url || p.image?.url || p.image || null;
                 const displayName = p.productName || p.name || "—";
-
-                // Resolve price
                 const displayPrice = p.price ?? p.discountPrice ?? 0;
+                const isExpanded = expandedId === p.id;
 
                 return (
-                  <tr key={p.id} style={S.tr}>
+                  <React.Fragment key={p.id}>
+                    <tr style={S.tr}>
+                      {/* Product */}
+                      <td style={S.td}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                          <div style={S.productImg}>
+                            {imageUrl ? (
+                              <img src={imageUrl} alt={displayName} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }} onError={(e) => { e.target.style.display = "none"; }} />
+                            ) : (
+                              <BoxIcon />
+                            )}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>{displayName}</div>
+                            <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>{p.category || "—"}</div>
+                          </div>
+                        </div>
+                      </td>
 
-                    {/* Product */}
-                    <td style={S.td}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                        <div style={S.productImg}>
-                          {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={displayName}
-                              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }}
-                              onError={(e) => { e.target.style.display = "none"; }}
-                            />
-                          ) : (
-                            <BoxIcon />
+                      {/* Color */}
+                      <td style={S.td}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {p.color?.hex && (
+                            <div style={{ width: 14, height: 14, borderRadius: "50%", background: p.color.hex, border: "1px solid #e5e7eb", flexShrink: 0 }} />
                           )}
+                          <span style={{ fontSize: 13, textTransform: "capitalize" }}>{p.color?.name || "—"}</span>
                         </div>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 15, color: "#111" }}>
-                            {displayName}
-                          </div>
-                          <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>
-                            {p.category || "—"}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Color */}
-                    <td style={S.td}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {p.color?.hex && (
-                          <div style={{
-                            width: 14, height: 14,
-                            borderRadius: "50%",
-                            background: p.color.hex,
-                            border: "1px solid #e5e7eb",
-                            flexShrink: 0
-                          }} />
-                        )}
-                        <span style={{ fontSize: 13, textTransform: "capitalize" }}>
-                          {p.color?.name || "—"}
+                      {/* Status */}
+                      <td style={S.td}>
+                        <span style={{ ...S.statusBadge, background: p.isActive !== false ? "#dcfce7" : "#f3f4f6", color: p.isActive !== false ? "#16a34a" : "#888" }}>
+                          {p.isActive !== false ? "✓ Active" : "Inactive"}
                         </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Status */}
-                    <td style={S.td}>
-                      <span style={{
-                        ...S.statusBadge,
-                        background: p.isActive !== false ? "#dcfce7" : "#f3f4f6",
-                        color: p.isActive !== false ? "#16a34a" : "#888",
-                      }}>
-                        {p.isActive !== false ? "✓ Active" : "Inactive"}
-                      </span>
-                    </td>
+                      {/* Price */}
+                      <td style={{ ...S.td, fontWeight: 700, fontSize: 15 }}>
+                        ₹{Number(displayPrice).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </td>
 
-                    {/* Price */}
-                    <td style={{ ...S.td, fontWeight: 700, fontSize: 15 }}>
-                      ₹{Number(displayPrice).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-                    </td>
+                      {/* Actions */}
+                      <td style={S.td}>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <ActionBtn title="Sizes & Stock" onClick={() => setExpandedId(isExpanded ? null : p.id)}>
+                            <ChevronIcon expanded={isExpanded} />
+                          </ActionBtn>
+                          <ActionBtn title="Edit" onClick={() => navigate(`/update-varient/${p.id}`)}>
+                            <PencilIcon />
+                          </ActionBtn>
+                          <ActionBtn title="View" onClick={() => navigate(`/products/${p.id}`)}>
+                            <EyeIcon />
+                          </ActionBtn>
+                          <ActionBtn title="Deactivate" onClick={() => handleDeactivate(p.id, displayName)}>
+                            <TrashIcon />
+                          </ActionBtn>
+                        </div>
+                      </td>
+                    </tr>
 
-                    {/* Actions */}
-                    <td style={S.td}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <ActionBtn
-                          title="Edit"
-                          onClick={() => navigate(`/update-varient/${p.id}`)}
-                        >
-                          <PencilIcon />
-                        </ActionBtn>
-                        <ActionBtn
-                          title="View"
-                          onClick={() => navigate(`/products/${p.id}`)}
-                        >
-                          <EyeIcon />
-                        </ActionBtn>
-                        <ActionBtn
-                          title="Deactivate"
-                          onClick={() => handleDeactivate(p.id, displayName)}
-                        >
-                          <TrashIcon />
-                        </ActionBtn>
-                      </div>
-                    </td>
-                  </tr>
+                    {/* Expandable sizes row */}
+                    {isExpanded && (
+                      <tr>
+                        <td colSpan={5} style={{ padding: 0, background: "#fafafa" }}>
+                          <div style={{ padding: "16px 20px" }}>
+                            {p.sizes && p.sizes.length > 0 ? (
+                              <table style={{ width: "100%", maxWidth: 500, borderCollapse: "collapse" }}>
+                                <thead>
+                                  <tr>
+                                    <th style={S.sizeTh}>Size</th>
+                                    <th style={S.sizeTh}>In Stock</th>
+                                    <th style={S.sizeTh}>Sold</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {p.sizes.map((s) => (
+                                    <tr key={s.size}>
+                                      <td style={S.sizeTd}>{s.size}</td>
+                                      <td style={{ ...S.sizeTd, color: s.quantity === 0 ? "#ef4444" : "#111", fontWeight: s.quantity === 0 ? 700 : 400 }}>
+                                        {s.quantity === 0 ? "Out of stock" : s.quantity}
+                                      </td>
+                                      <td style={S.sizeTd}>{s.sold}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            ) : (
+                              <p style={{ fontSize: 13, color: "#888" }}>No size data available.</p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
@@ -386,6 +387,16 @@ function BoxIcon() {
   );
 }
 
+function ChevronIcon({ expanded }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+      style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const S = {
   page: { background: "#f5f5f7", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", boxSizing: "border-box" },
@@ -407,4 +418,6 @@ const S = {
   actionBtn: { background: "none", border: "none", cursor: "pointer", color: "#555", padding: 6, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center" },
   emptyCell: { textAlign: "center", padding: 48, color: "#aaa", fontSize: 14 },
   toast: { position: "fixed", color: "#fff", padding: "12px 20px", borderRadius: 10, fontSize: 14, fontWeight: 600, zIndex: 2000, boxShadow: "0 4px 16px rgba(0,0,0,0.15)" },
+  sizeTh: { textAlign: "left", fontSize: 11, fontWeight: 700, color: "#888", padding: "6px 12px", textTransform: "uppercase", letterSpacing: "0.06em" },
+  sizeTd: { padding: "8px 12px", fontSize: 13, color: "#111", borderTop: "1px solid #eee" },
 };

@@ -16,6 +16,13 @@ const reviewSchema = new mongoose.Schema(
       index: true,
     },
 
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
     name: {
       type: String,
       required: true,
@@ -34,8 +41,15 @@ const reviewSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
+    images: [{
+      url: String,
+      fileId: String,
+    }],
   },
   { timestamps: true }
 );
+
+reviewSchema.index({ variantId: 1, userId: 1 }, { unique: true });
 
 export default reviewSchema;

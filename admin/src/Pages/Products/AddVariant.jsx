@@ -9,7 +9,7 @@ const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 
 const initialSizes = SIZES.reduce((acc, s) => ({
   ...acc,
-  [s]: { enabled: false, stock: 0 },
+  [s]: { enabled: false, stock: "" },
 }), {});
 
 function useWindowWidth() {
@@ -21,6 +21,17 @@ function useWindowWidth() {
   }, []);
   return w;
 }
+
+const richEditorStyles = `
+  .rich-editor-content ul {
+    list-style: disc;
+    margin: 0 0 0 20px;
+    padding: 0;
+  }
+  .rich-editor-content li {
+    margin: 4px 0;
+  }
+`;
 
 // ─── Rich Text Editor ─────────────────────────────────────────────────────────
 function RichTextarea({ value, onChange, placeholder }) {
@@ -106,6 +117,7 @@ function RichTextarea({ value, onChange, placeholder }) {
 
   return (
     <div style={S.richWrapper}>
+      <style>{richEditorStyles}</style>
       <div style={S.toolbar}>
         {toolbarBtns.map(({ key, cmd, label, icon, extraStyle }) => {
           const isActive = activeFormats[key];
@@ -137,6 +149,7 @@ function RichTextarea({ value, onChange, placeholder }) {
         onMouseUp={updateActiveFormats}
         onSelect={updateActiveFormats}
         data-placeholder={placeholder}
+        className="rich-editor-content"
         style={S.richEditor}
       />
     </div>
@@ -167,6 +180,8 @@ export default function AddVariant() {
   const [toast, setToast] = useState(null);
   const [productSearch, setProductSearch] = useState("");
   const [productDropdownOpen, setProductDropdownOpen] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
   const productSearchRef = useRef(null);
 
   const token = localStorage.getItem("token");
@@ -231,7 +246,7 @@ export default function AddVariant() {
   const setStock = (size, val) => {
     setSizes((prev) => ({
       ...prev,
-      [size]: { ...prev[size], stock: Number(val) },
+      [size]: { ...prev[size], stock: val }, // keep as string, no Number() here
     }));
   };
 
@@ -258,7 +273,10 @@ export default function AddVariant() {
       formData.append("isBestSeller", isBestSeller);
       formData.append("isNewArrival", isNewArrival);
 
-      const sizeStock = enabledSizes.map((s) => ({ size: s, stock: sizes[s].stock }));
+      const sizeStock = enabledSizes.map((s) => ({
+        size: s,
+        stock: Number(sizes[s].stock) || 0,
+      }));
       formData.append("sizes", JSON.stringify(sizeStock));
 
       images.forEach((img) => formData.append("images", img.file));
@@ -286,6 +304,26 @@ export default function AddVariant() {
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
+
+  const handleDragStart = (i) => setDraggedIndex(i);
+
+  const handleDragEnter = (i) => {
+    if (draggedIndex === null || draggedIndex === i) return;
+    setDragOverIndex(i);
+  };
+
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      setImages((prev) => {
+        const updated = [...prev];
+        const [moved] = updated.splice(draggedIndex, 1);
+        updated.splice(dragOverIndex, 0, moved);
+        return updated;
+      });
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   return (
     <div style={{ ...S.page, padding: pagePadding }}>
@@ -360,8 +398,23 @@ export default function AddVariant() {
 
             <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
               {images.map((img, i) => (
-                <div key={i} style={S.previewWrapper}>
-                  <img src={img.preview} alt="" style={S.previewImg} />
+                <div
+                  key={i}
+                  draggable
+                  onDragStart={() => handleDragStart(i)}
+                  onDragEnter={() => handleDragEnter(i)}
+                  onDragOver={(e) => e.preventDefault()} // required to allow dropping
+                  onDragEnd={handleDragEnd}
+                  style={{
+                    ...S.previewWrapper,
+                    cursor: "grab",
+                    opacity: draggedIndex === i ? 0.4 : 1,
+                    outline: dragOverIndex === i ? "2px solid #7c3aed" : "none",
+                    outlineOffset: 2,
+                  }}
+                >
+                  <img src={img.preview} alt="" style={S.previewImg} draggable={false} />
+                  <span style={S.imageNumber}>{i + 1}</span>
                   <button style={S.removeImg} onClick={() => removeImage(i)}>✕</button>
                 </div>
               ))}
@@ -486,162 +539,162 @@ export default function AddVariant() {
 
           {/* Product Association */}
           <div style={S.card}>
-  <SectionHeader icon={<AssocIcon />} label="PARENT PRODUCT" />
+            <SectionHeader icon={<AssocIcon />} label="PARENT PRODUCT" />
 
-  <div style={{ position: "relative" }}>
-    <div style={{ position: "relative" }}>
-      <span
-        style={{
-          position: "absolute",
-          left: 12,
-          top: "50%",
-          transform: "translateY(-50%)",
-          color: "#9ca3af",
-          fontSize: 16,
-          pointerEvents: "none",
-          zIndex: 1,
-        }}
-      >
-        🔍
-      </span>
+            <div style={{ position: "relative" }}>
+              <div style={{ position: "relative" }}>
+                <span
+                  style={{
+                    position: "absolute",
+                    left: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "#9ca3af",
+                    fontSize: 16,
+                    pointerEvents: "none",
+                    zIndex: 1,
+                  }}
+                >
+                  🔍
+                </span>
 
-      <input
-        ref={productSearchRef}
-        style={{ ...S.input, paddingLeft: 36 }}
-        placeholder="Search products..."
-        value={productSearch}
-        onChange={(e) => {
-          setProductSearch(e.target.value);
-          setProductDropdownOpen(true);
+                <input
+                  ref={productSearchRef}
+                  style={{ ...S.input, paddingLeft: 36 }}
+                  placeholder="Search products..."
+                  value={productSearch}
+                  onChange={(e) => {
+                    setProductSearch(e.target.value);
+                    setProductDropdownOpen(true);
 
-          if (!e.target.value) setParentProduct("");
-        }}
-        onFocus={() => setProductDropdownOpen(true)}
-        onBlur={() => setTimeout(() => setProductDropdownOpen(false), 150)}
-      />
+                    if (!e.target.value) setParentProduct("");
+                  }}
+                  onFocus={() => setProductDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setProductDropdownOpen(false), 150)}
+                />
 
-      {parentProduct && (
-        <button
-          style={{
-            position: "absolute",
-            right: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "#9ca3af",
-            fontSize: 14,
-          }}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            setParentProduct("");
-            setProductSearch("");
-            productSearchRef.current?.focus();
-          }}
-        >
-          ✕
-        </button>
-      )}
-    </div>
+                {parentProduct && (
+                  <button
+                    style={{
+                      position: "absolute",
+                      right: 10,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#9ca3af",
+                      fontSize: 14,
+                    }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setParentProduct("");
+                      setProductSearch("");
+                      productSearchRef.current?.focus();
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
 
-    {productDropdownOpen && filteredProducts.length > 0 && (
-      <div
-        style={{
-          position: "absolute",
-          top: "calc(100% + 6px)",
-          left: 0,
-          right: 0,
-          zIndex: 100,
-          background: "#fff",
-          border: "1px solid #e5e7eb",
-          borderRadius: 10,
-          maxHeight: 220,
-          overflowY: "auto",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
-        }}
-      >
-        {filteredProducts.map((p) => (
-          <div
-            key={p.id}
-            onMouseDown={() => {
-              setParentProduct(p.id);
-              setProductSearch(p.name);
-              setProductDropdownOpen(false);
-            }}
-            style={{
-              padding: "12px 14px",
-              fontSize: 14,
-              cursor: "pointer",
-              borderBottom: "1px solid #f3f4f6",
-              background:
-                parentProduct === p.id ? "#f5f3ff" : "#fff",
-              color: "#111827",
-              fontWeight: parentProduct === p.id ? 600 : 500,
-              transition: "0.2s",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "#f9fafb")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background =
-                parentProduct === p.id
-                  ? "#f5f3ff"
-                  : "#fff")
-            }
-          >
-            {p.name}
+              {productDropdownOpen && filteredProducts.length > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    left: 0,
+                    right: 0,
+                    zIndex: 100,
+                    background: "#fff",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 10,
+                    maxHeight: 220,
+                    overflowY: "auto",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+                  }}
+                >
+                  {filteredProducts.map((p) => (
+                    <div
+                      key={p.id}
+                      onMouseDown={() => {
+                        setParentProduct(p.id);
+                        setProductSearch(p.name);
+                        setProductDropdownOpen(false);
+                      }}
+                      style={{
+                        padding: "12px 14px",
+                        fontSize: 14,
+                        cursor: "pointer",
+                        borderBottom: "1px solid #f3f4f6",
+                        background:
+                          parentProduct === p.id ? "#f5f3ff" : "#fff",
+                        color: "#111827",
+                        fontWeight: parentProduct === p.id ? 600 : 500,
+                        transition: "0.2s",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "#f9fafb")
+                      }
+                      onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        parentProduct === p.id
+                          ? "#f5f3ff"
+                          : "#fff")
+                      }
+                    >
+                      {p.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {productDropdownOpen &&
+                productSearch &&
+                filteredProducts.length === 0 && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "calc(100% + 6px)",
+                      left: 0,
+                      right: 0,
+                      zIndex: 100,
+                      background: "#fff",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 10,
+                      padding: "12px 14px",
+                      fontSize: 13,
+                      color: "#888",
+                    }}
+                  >
+                    No products found for "{productSearch}"
+                  </div>
+                )}
+            </div>
+
+            {parentProduct ? (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "#7c3aed",
+                  marginTop: 12,
+                  fontWeight: 600,
+                }}
+              >
+                ✓ Parent product selected
+              </p>
+            ) : (
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "#888",
+                  marginTop: 12,
+                }}
+              >
+                Search and select the parent product to associate this variant.
+              </p>
+            )}
           </div>
-        ))}
-      </div>
-    )}
-
-    {productDropdownOpen &&
-      productSearch &&
-      filteredProducts.length === 0 && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            background: "#fff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 10,
-            padding: "12px 14px",
-            fontSize: 13,
-            color: "#888",
-          }}
-        >
-          No products found for "{productSearch}"
-        </div>
-      )}
-  </div>
-
-  {parentProduct ? (
-    <p
-      style={{
-        fontSize: 12,
-        color: "#7c3aed",
-        marginTop: 12,
-        fontWeight: 600,
-      }}
-    >
-      ✓ Parent product selected
-    </p>
-  ) : (
-    <p
-      style={{
-        fontSize: 12,
-        color: "#888",
-        marginTop: 12,
-      }}
-    >
-      Search and select the parent product to associate this variant.
-    </p>
-  )}
-</div>
 
 
           {/* Size Selection */}
@@ -682,11 +735,15 @@ export default function AddVariant() {
                     </div>
                     {isEnabled && (
                       <input
-                        type="number"
-                        min="0"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         placeholder="Stock qty"
-                        value={sizeData.stock || ""}
-                        onChange={(e) => setStock(size, e.target.value)}
+                        value={sizeData.stock}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (/^\d*$/.test(val)) setStock(size, val); // allow only digits or empty string
+                        }}
                         onClick={(e) => e.stopPropagation()}
                         style={{
                           ...S.input,
@@ -705,7 +762,7 @@ export default function AddVariant() {
             </p>
           </div>
 
-          
+
           {/* Editorial Details */}
           <div style={S.card}>
             <SectionHeader icon={<BookIcon />} label="EDITORIAL DETAILS" />
@@ -998,6 +1055,22 @@ const S = {
   previewImg: {
     width: "100%", height: "100%",
     objectFit: "cover",
+  },
+  imageNumber: {
+    position: "absolute",
+    bottom: 2,
+    left: 2,
+    background: "rgba(0,0,0,0.65)",
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: 700,
+    borderRadius: "50%",
+    width: 16,
+    height: 16,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    lineHeight: 1,
   },
   removeImg: {
     position: "absolute",

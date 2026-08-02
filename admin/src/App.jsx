@@ -38,7 +38,7 @@ function AdminLayout() {
   return (
     <div className="flex">
       <Sidebar />
-      <div className="ml-64 w-full min-h-screen bg-gray-100">
+      <div className="lg:ml-64 w-full min-h-screen bg-gray-100">
         <Navbar />
         <Routes>
           <Route path="/products" element={<ProductTable />} />

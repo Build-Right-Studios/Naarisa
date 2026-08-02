@@ -20,6 +20,7 @@ import ContactPage from "./Pages/ContactPage";
 import ReturnRefundPage from "./Pages/ReturnRefundPage";
 import TermsPage from "./Pages/TermsPage";
 import PrivacyPolicyPage from "./Pages/PrivacyPolicyPage";
+import NamePromptGate from "./Components/Common/NamePromptGate";
 
 
 function App() {
@@ -31,25 +32,26 @@ function App() {
       <Navbar />
 
       {/* Routes */}
-      <Routes>
-
-        <Route path="/" element={<Home />} />
-        <Route path="/product/:slug" element={<ProductPage />} />
-        <Route path="/all-products" element={<AllProductsPage />} />
-        <Route path="/new-in" element={<NewArrivalsPage />} />
-        <Route path="/categories/:slug" element={<CategoryPage />} />
-        <Route path="/best-sellers" element={<BestSellersPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/return-refund-policy" element={<ReturnRefundPage />} />
-        <Route path="/terms-and-condition" element={<TermsPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route path="/account" element={<AccountPage />} />
-        <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
-      </Routes>
+      <NamePromptGate>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/product/:slug" element={<ProductPage />} />
+          <Route path="/all-products" element={<AllProductsPage />} />
+          <Route path="/new-in" element={<NewArrivalsPage />} />
+          <Route path="/categories/:slug" element={<CategoryPage />} />
+          <Route path="/best-sellers" element={<BestSellersPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/return-refund-policy" element={<ReturnRefundPage />} />
+          <Route path="/terms-and-condition" element={<TermsPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
+        </Routes>
+      </NamePromptGate>
       <Footer />
 
     </BrowserRouter>
