@@ -11,3 +11,11 @@ export const uploadReviewImages = multer({
   storage, // same memoryStorage instance already defined in this file
   limits: { fileSize: 10 * 1024 * 1024 },
 }).array("images", 4); // cap at 4 images per review, adjust as needed
+
+export const uploadBannerImages = multer({
+  storage, // same memoryStorage instance already in this file
+  limits: { fileSize: 10 * 1024 * 1024 },
+}).fields([
+  { name: "desktopImage", maxCount: 1 },
+  { name: "mobileImage", maxCount: 1 },
+]);
