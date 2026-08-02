@@ -269,10 +269,10 @@ const EditVariantPage = () => {
   };
 
   const handleRemoveExistingImage = (image) => {
-    setRemovedImages((prev) => [...prev, image.public_id]);
+    setRemovedImages((prev) => [...prev, image.fileId]);
     setFormData((prev) => ({
       ...prev,
-      images: prev.images.filter((img) => img.public_id !== image.public_id),
+      images: prev.images.filter((img) => img.fileId !== image.fileId),
     }));
   };
 
