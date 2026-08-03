@@ -38,7 +38,19 @@ export const updateVariant = async (req, res) => {
     // Upload newly added images to ImageKit
     let newImages = [];
     if (req.files && req.files.length > 0) {
-      newImages = await uploadImagesToImageKit(req.files, "/naarisa/variants");
+      try {
+        newImages = await uploadImagesToImageKit(req.files, "/naarisa/variants");
+      } catch (err) {
+        if (err.failedUploads) {
+          console.error("Upload batch had failures:", JSON.stringify(err.failedUploads, null, 2));
+          return res.status(422).json({
+            success: false,
+            message: `${err.failedUploads.length} image(s) failed to upload. Please check file format/size and retry.`,
+            failedFiles: err.failedUploads.map(f => ({ name: f.originalname, reason: f.error })),
+          });
+        }
+        throw err; // unexpected error, let it bubble to your generic catch block
+      }
     }
 
     // Build updates object

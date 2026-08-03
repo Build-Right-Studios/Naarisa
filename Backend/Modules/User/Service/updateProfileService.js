@@ -8,14 +8,22 @@ export const updateProfileService = async (userId, { name, email }) => {
 
   const updates = {};
   if (name) updates.name = name.trim();
-  if (email) updates.email = email.trim().toLowerCase();
 
-  // Check email not already taken by another user
   if (email) {
-    const existing = await User.findOne({ email: updates.email });
-    if (existing && existing._id.toString() !== userId) {
-      throw { status: 400, message: "Email already in use" };
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Only check uniqueness if the new email is different from the current one
+    const currentUser = await User.findById(userId);
+    if (!currentUser) throw { status: 404, message: "User not found" };
+
+    if (normalizedEmail !== currentUser.email) {
+      const existing = await User.findOne({ email: normalizedEmail });
+      if (existing && existing._id.toString() !== userId) {
+        throw { status: 400, message: "Email already in use" };
+      }
     }
+
+    updates.email = normalizedEmail;
   }
 
   const user = await updateUserProfile(userId, updates);

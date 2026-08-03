@@ -21,8 +21,6 @@ export default function NamePromptGate({ children }) {
   }, []);
 
   const handleNameSave = async (newName) => {
-    const token = localStorage.getItem("token");
-
     const res = await api.put(USER.PROFILE, { name: newName, email: user.email });
 
     if (!res.data.success) {
