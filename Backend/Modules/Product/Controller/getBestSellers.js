@@ -1,5 +1,6 @@
 import { Variant } from "../../../MongoDB/models.js";
-import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
+// import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
+import { imagekitTransform } from "../../../Utils/cloudinaryTransform.js";
 
 /**
  * GET /api/product/best-sellers
@@ -199,7 +200,7 @@ export const getBestSellers = async (req, res) => {
       ...variant,
       images: variant.images.map((image) => ({
         ...image,
-        url: cloudinaryTransform(image.url, "f_auto,q_auto,w_500,h_750,c_fill"),
+        url: imagekitTransform(image.url, "f_auto,q_auto,w_500,h_750,c_fill"),
       })),
     }));
 

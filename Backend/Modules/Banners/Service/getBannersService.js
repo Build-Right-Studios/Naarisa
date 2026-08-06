@@ -1,5 +1,5 @@
 import { findAllBannersQuery, findActiveBannersQuery } from "../Query/bannerQuery.js";
-import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
+import { imagekitTransform } from "../../../Utils/cloudinaryTransform.js";
 
 export const getBannersService = async () => {
   const banners = await findAllBannersQuery();
@@ -7,8 +7,8 @@ export const getBannersService = async () => {
 
   const optimized = banners.map((banner) => ({
     ...banner,
-    desktopImage: cloudinaryTransform(banner.desktopImage),
-    mobileImage: cloudinaryTransform(banner.mobileImage),
+    desktopImage: imagekitTransform(banner.desktopImage),
+    mobileImage: imagekitTransform(banner.mobileImage),
   }));
 
   return optimized;
@@ -21,8 +21,8 @@ export const getActiveBannersService = async () => {
 
   const optimized = banners.map((banner) => ({
     ...banner,
-    desktopImage: cloudinaryTransform(banner.desktopImage),
-    mobileImage: cloudinaryTransform(banner.mobileImage),
+    desktopImage: imagekitTransform(banner.desktopImage),
+    mobileImage: imagekitTransform(banner.mobileImage),
   }));
 
   return optimized;

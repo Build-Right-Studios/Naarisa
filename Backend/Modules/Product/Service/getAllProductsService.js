@@ -1,5 +1,6 @@
 import { getAllProductsInternal } from "../Internal/getAllProductsInternal.js";
-import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
+// import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
+import { imagekitTransform } from "../../../Utils/cloudinaryTransform.js";
 
 export const getAllProductsService = async (data) => {
   try {
@@ -125,9 +126,13 @@ export const getAllProductsService = async (data) => {
 
       images: variant.images?.map((image) => ({
         ...image,
-        url: cloudinaryTransform(
+        // url: cloudinaryTransform(
+        //   image.url,
+        //   "f_auto,q_auto,w_500,h_750,c_fill"
+        // ),
+        url: imagekitTransform(
           image.url,
-          "f_auto,q_auto,w_500,h_750,c_fill"
+          "f-auto,q-auto,w-500,h-750,c-maintain_ratio"
         ),
       })),
 

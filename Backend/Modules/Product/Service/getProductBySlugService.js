@@ -1,5 +1,6 @@
 import { getVariantBySlugInternal, getProductByIdInternal, getVariantsByProductInternal } from "../Internal/getProductBySlugInternal.js";
-import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
+// import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
+import { imagekitTransform } from "../../../Utils/cloudinaryTransform.js";
 
 export const getProductBySlugService = async ({ slug }) => {
   try {
@@ -23,7 +24,7 @@ export const getProductBySlugService = async ({ slug }) => {
         images: currentVariant.images.map((img) => ({
           ...img,
           // Send single optimized URL - frontend handles responsive
-          url: cloudinaryTransform(img.url, "f_auto,q_auto,w_1000,c_limit"),
+          url: imagekitTransform(img.url, "f_auto,q_auto,w_1000,c_limit"),
           // Frontend will construct srcSet from this URL pattern
           priority: false,
         })),
