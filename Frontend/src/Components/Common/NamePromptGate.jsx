@@ -11,12 +11,16 @@ export default function NamePromptGate({ children }) {
 
   useEffect(() => {
     const stored = localStorage.getItem("naarisa-user");
-    if (stored) {
+    const token = localStorage.getItem("naarisa-token");
+
+    if (stored && token) {
       const parsedUser = JSON.parse(stored);
       setUser(parsedUser);
       if (parsedUser.name === "User") {
         setShowNamePopup(true);
       }
+    } else {
+      localStorage.removeItem("naarisa-user");
     }
   }, []);
 
