@@ -177,6 +177,9 @@ const EditVariantPage = () => {
   const [newImages, setNewImages] = useState([]);
   const [removedImages, setRemovedImages] = useState([]);
 
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -281,6 +284,48 @@ const EditVariantPage = () => {
     setNewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const combinedImages = [
+    ...formData.images.map((img) => ({ kind: "existing", key: img.fileId, data: img })),
+    ...newImages.map((file, i) => ({ kind: "new", key: `new-${i}-${file.name}`, data: file })),
+  ];
+
+  const reorderImages = (fromIndex, toIndex) => {
+    if (fromIndex === null || toIndex === null || fromIndex === toIndex) return;
+    const updated = [...combinedImages];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+
+    setFormData((prev) => ({
+      ...prev,
+      images: updated.filter((i) => i.kind === "existing").map((i) => i.data),
+    }));
+    setNewImages(updated.filter((i) => i.kind === "new").map((i) => i.data));
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnter = (e, index) => {
+    e.preventDefault();
+    if (index !== draggedIndex) setDragOverIndex(index);
+  };
+
+  const handleDragOver = (e) => e.preventDefault();
+
+  const handleDrop = (e, index) => {
+    e.preventDefault();
+    reorderImages(draggedIndex, index);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -369,16 +414,65 @@ const EditVariantPage = () => {
               <span style={{ fontSize: 12, fontWeight: 600, color: "#888" }}>{totalImages} / 8</span>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-              {formData.images.map((img, index) => (
-                <div key={index} style={ES.imgWrapper}>
-                  <img src={img.url} alt="" style={ES.imgThumb} />
-                  <button type="button" onClick={() => handleRemoveExistingImage(img)} style={ES.imgRemoveBtn}>✕</button>
-                </div>
-              ))}
-              {newImages.map((file, index) => (
-                <div key={index} style={{ ...ES.imgWrapper, borderColor: "#6ee7b7" }}>
-                  <img src={URL.createObjectURL(file)} alt="" style={ES.imgThumb} />
-                  <button type="button" onClick={() => handleRemoveNewImage(index)} style={ES.imgRemoveBtn}>✕</button>
+              {combinedImages.map((item, index) => (
+                <div
+                  key={item.key}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragEnter={(e) => handleDragEnter(e, index)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  style={{
+                    ...ES.imgWrapper,
+                    cursor: "grab",
+                    opacity: draggedIndex === index ? 0.4 : 1,
+                    borderColor:
+                      dragOverIndex === index
+                        ? "#7c3aed"
+                        : item.kind === "new"
+                          ? "#6ee7b7"
+                          : "#e5e7eb",
+                    borderWidth: dragOverIndex === index ? 2 : 1,
+                    transition: "opacity 0.15s, border-color 0.15s",
+                  }}
+                >
+                  <img
+                    src={item.kind === "existing" ? item.data.url : URL.createObjectURL(item.data)}
+                    alt=""
+                    style={ES.imgThumb}
+                    draggable={false}
+                  />
+                  {index === 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: 8,
+                        left: 8,
+                        background: "rgba(0,0,0,0.65)",
+                        color: "#fff",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                      }}
+                    >
+                      Cover
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      item.kind === "existing"
+                        ? handleRemoveExistingImage(item.data)
+                        : handleRemoveNewImage(newImages.indexOf(item.data))
+                    }
+                    style={ES.imgRemoveBtn}
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
               {totalImages < 8 && (

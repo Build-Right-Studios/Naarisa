@@ -28,6 +28,23 @@ const NewArrivals = () => {
     fetch();
   }, []);
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const handleWheel = (e) => {
+      // If the gesture is mostly vertical, scroll the page instead of the carousel
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        window.scrollBy({ top: e.deltaY, left: 0 });
+      }
+      // if it's mostly horizontal (trackpad swipe / shift+wheel), let default happen
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, []);
+
   const scrollLeft = () => {
     scrollRef.current?.scrollBy({ left: -320, behavior: "smooth" });
   };
