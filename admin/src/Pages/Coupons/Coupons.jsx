@@ -11,6 +11,7 @@ const initialForm = {
     minOrderValue: "",
     maxUses: "",
     perUserLimit: 1,
+    firstTimeUserOnly: false,
     couponType: "website",
     expiryDate: "",
 };
@@ -148,7 +149,7 @@ export default function Coupons() {
                         : null,
 
                     perUserLimit: Number(form.perUserLimit) || 1,
-
+                    firstTimeUserOnly: form.firstTimeUserOnly,
                     couponType: form.couponType,
                     expiryDate: form.expiryDate,
                 }),
@@ -414,7 +415,31 @@ export default function Coupons() {
                                     }
                                 />
                             </Field>
+                            <Field label="First-Time Users Only">
+                                <label
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 10,
+                                        cursor: "pointer",
+                                        fontSize: 14,
+                                        color: "#333",
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={form.firstTimeUserOnly}
+                                        onChange={(e) =>
+                                            setForm({
+                                                ...form,
+                                                firstTimeUserOnly: e.target.checked,
+                                            })
+                                        }
+                                    />
 
+                                    Only allow this coupon for first-time users
+                                </label>
+                            </Field>
                             <Field label="Minimum Order Value">
                                 <div style={S.inputWithPrefix}>
                                     <span style={S.prefix}>₹</span>

@@ -51,6 +51,11 @@ const couponSchema = new mongoose.Schema(
       default: 1
     },
 
+    firstTimeUserOnly: {
+      type: Boolean,
+      default: false
+    },
+
     couponType: {
       type: String,
       required: true,

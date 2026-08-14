@@ -198,6 +198,7 @@ const CheckoutPage = () => {
   });
 
   // ── Coupon State ──────────────────────────────────────────────────────────
+  const [allCoupons, setAllCoupons] = useState([]);
   const [websiteCoupons, setWebsiteCoupons] = useState([]);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [manualCode, setManualCode] = useState("");
@@ -306,7 +307,15 @@ const CheckoutPage = () => {
     const fetchCoupons = async () => {
       try {
         const res = await axios.get(`${BASE.ROUTE}${COUPON.GET_WEBSITE}`);
-        if (res.data.success) setWebsiteCoupons(res.data.coupons);
+        if (res.data.success) {
+          const coupons = res.data.coupons;
+          setAllCoupons(coupons);
+          setWebsiteCoupons(
+            coupons.filter(
+              (coupon) => coupon.couponType === "website"
+            )
+          );
+        }
       } catch (err) {
         console.error("Failed to fetch coupons:", err);
       } finally {
@@ -383,7 +392,7 @@ const CheckoutPage = () => {
   const handleManualApply = () => {
     const code = manualCode.trim().toUpperCase();
     if (!code) return;
-    const match = websiteCoupons.find((c) => c.code === code);
+    const match = allCoupons.find((c) => c.code === code);
     if (!match) { setCouponError("Invalid or expired coupon code."); return; }
     if (subtotal < (match.minOrderValue || 0)) {
       setCouponError(`Min. order value ₹${match.minOrderValue.toLocaleString("en-IN")} required.`);

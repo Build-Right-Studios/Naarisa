@@ -2,6 +2,7 @@ import { deleteCouponService } from "../Service/deleteCouponService.js";
 
 export const deleteCoupon = async (req, res) => {
   try {
+    console.log("Backend Called.")
     const { id } = req.params;
 
     if (!id) {

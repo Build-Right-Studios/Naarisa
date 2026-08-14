@@ -5,9 +5,5 @@ export const getCouponByIdQuery = async (id) => {
 };
 
 export const deleteCouponQuery = async (id) => {
-  return await Coupon.findByIdAndUpdate(
-    id,
-    { isDeleted: true, deletedAt: new Date() },
-    { new: true }
-  ); // ✅ soft delete
+  return await Coupon.findByIdAndDelete(id);
 };

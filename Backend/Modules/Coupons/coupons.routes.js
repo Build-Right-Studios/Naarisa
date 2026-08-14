@@ -15,6 +15,4 @@ router.get("/website-coupons", getWebsiteCoupons);
 
 router.delete("/:id", isAdmin, deleteCoupon);
 
-
-
 export default router;

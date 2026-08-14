@@ -29,6 +29,10 @@ const orderItemSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  returnedQuantity: {
+    type: Number,
+    default: 0,
+  },
   productName: {
     type: String,
     required: true,
