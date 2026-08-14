@@ -2,7 +2,7 @@ import { addCouponService } from "../Service/addCouponService.js";
 
 export const addCoupon = async (req, res) => {
     try {
-        const { code, discountType, discountValue, minOrderValue, maxDiscountAmount, maxUses, perUserLimit, expiryDate, couponType } = req.body;
+        const { code, discountType, discountValue, minOrderValue, maxDiscountAmount, maxUses, perUserLimit, firstTimeUserOnly, expiryDate, couponType } = req.body;
 
         if (!code) {
             return res.status(400).json({
@@ -73,7 +73,7 @@ export const addCoupon = async (req, res) => {
 
         const normalizedCode = code.trim().toUpperCase();
 
-        const newCoupon = await addCouponService({ code: normalizedCode, discountType, discountValue, minOrderValue, maxDiscountAmount, maxUses, perUserLimit, expiryDate, couponType });
+        const newCoupon = await addCouponService({ code: normalizedCode, discountType, discountValue, minOrderValue, maxDiscountAmount, maxUses, perUserLimit, firstTimeUserOnly, expiryDate, couponType });
 
         return res.status(201).json({
             success: true,
