@@ -4,6 +4,7 @@ import { getCoupon } from "./Controller/getCoupon.js";
 import { deleteCoupon } from "./Controller/deleteCoupon.js";
 import { isAdmin } from "../../Middleware/isAdmin.js";
 import { getWebsiteCoupons } from "./Controller/getWebsiteCoupons.js";
+import { optionalUser } from "../../Middleware/optionalUser.js";
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ router.post("/add-coupon", isAdmin, addCoupon);
 
 router.get("/get-coupon", isAdmin, getCoupon);
 
-router.get("/website-coupons", getWebsiteCoupons);
+router.get("/website-coupons", optionalUser, getWebsiteCoupons);
 
 router.delete("/:id", isAdmin, deleteCoupon);
 
