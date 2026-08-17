@@ -89,7 +89,7 @@ const AnimatedCard = ({ col, index }) => {
   return (
     <div
       ref={ref}
-      className="w-full transition-all duration-700"
+      className="w-full transition-all duration-400"
       style={{
         opacity: inView ? 1 : 0,
         transform: inView
@@ -108,11 +108,11 @@ const AnimatedCard = ({ col, index }) => {
           <img
             src={col.image}
             alt={col.title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
           />
         ) : (
           <div
-            className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"
+            className="absolute inset-0 transition-transform duration-400 group-hover:scale-105"
             style={{ background: col.gradient }}
           />
         )}
