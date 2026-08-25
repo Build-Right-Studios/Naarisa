@@ -4,9 +4,9 @@ export const findOrderByRazorpayOrderId = async (razorpayOrderId) => {
   return await Order.findOne({ "payment.razorpayOrderId": razorpayOrderId });
 };
 
-export const confirmOrder = async (orderId, razorpayPaymentId) => {
-  return await Order.findByIdAndUpdate(
-    orderId,
+export const confirmOrder = async (orderId, razorpayPaymentId, session) => {
+  return await Order.findOneAndUpdate(
+    { _id: orderId, status: "payment_pending" },
     {
       "payment.razorpayPaymentId": razorpayPaymentId,
       "payment.status": "paid",
@@ -19,6 +19,6 @@ export const confirmOrder = async (orderId, razorpayPaymentId) => {
         }
       }
     },
-    { new: true }
+    { new: true, session }
   );
 };

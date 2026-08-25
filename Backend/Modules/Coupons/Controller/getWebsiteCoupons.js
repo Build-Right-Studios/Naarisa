@@ -15,13 +15,25 @@ export const getWebsiteCoupons = async (req, res) => {
             isDeleted: false,
             expiryDate: { $gt: new Date() },
 
-            $or: [
-                { firstTimeUserOnly: false }
+            $and: [
+                // Exclude coupons that have hit their global usage cap
+                {
+                    $or: [
+                        { maxUses: null },
+                        { $expr: { $lt: ["$usedCount", "$maxUses"] } }
+                    ]
+                },
+                // Existing first-time-user eligibility logic
+                {
+                    $or: [
+                        { firstTimeUserOnly: false }
+                    ]
+                }
             ]
         };
 
         if (req.user && !hasOrders) {
-            couponFilter.$or.push({
+            couponFilter.$and[1].$or.push({
                 firstTimeUserOnly: true
             });
         }
