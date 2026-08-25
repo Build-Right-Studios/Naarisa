@@ -100,10 +100,10 @@ export const placeOrderService = async (orderData) => {
   const deliveryAddress = await resolveAddress(user, address, addressId);
   const { orderItems, subtotal } = await buildOrderItems(items);
   console.log("Order Items : ", orderItems);
-  const { discount, appliedCoupon } = await applyCoupon(couponCode, subtotal);
+  const { discount, appliedCoupon } = await applyCoupon(couponCode, subtotal, user._id);
   const total = subtotal - discount;
   const razorpayOrder = await createRazorpayOrder(total);
-
+  console.log("Applied Coupon : ", appliedCoupon)
   const session = await mongoose.startSession();
 
   try {
@@ -141,26 +141,4 @@ export const placeOrderService = async (orderData) => {
   } finally {
     session.endSession();
   }
-
-  // await deductStockForItems(items);
-
-  // const order = await saveOrder({
-  //   userId: user._id,
-  //   orderItems,
-  //   appliedCoupon,
-  //   pricing: { subtotal, discount, total },
-  //   deliveryAddress,
-  //   razorpayOrderId: razorpayOrder.id,
-  //   userEmail: deliveryAddress.email || user.email,
-  // });
-
-  // return {
-  //   orderId: order._id,
-  //   customOrderId: order.customOrderId,
-  //   razorpayOrderId: razorpayOrder.id,
-  //   amount: razorpayOrder.amount,
-  //   currency: razorpayOrder.currency,
-  //   keyId: process.env.RAZORPAY_KEY_ID,
-  //   pricing: { subtotal, discount, total }
-  // }
 } 

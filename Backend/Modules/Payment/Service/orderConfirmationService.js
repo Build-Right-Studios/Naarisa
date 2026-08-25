@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import { confirmOrder } from "../Query/verifyPaymentQuery.js";
+import { commitCouponUsage } from "../../Coupons/Query/commitCouponUsageQuery.js";
 import { sendSMS } from "../../../config/twilio.js";
 import { sendSMSTemplate } from "../../../config/msg91.js";
 import { sendOrderConfirmationEmail } from "../../../config/emailService.js";
@@ -45,10 +47,36 @@ const dispatchNotifications = (confirmedOrder) => {
 };
 
 export const confirmOrderAndNotify = async (orderId, razorpayPaymentId) => {
-  const confirmedOrder = await confirmOrder(orderId, razorpayPaymentId);
-  console.log("Confirmed Order:", confirmedOrder.customOrderId);
+  const session = await mongoose.startSession();
+  let confirmedOrder;
 
-  dispatchNotifications(confirmedOrder); // not awaited — runs in background
+  try {
+    session.startTransaction();
+
+    confirmedOrder = await confirmOrder(orderId, razorpayPaymentId, session);
+    console.log(confirmedOrder)
+
+    if (!confirmedOrder) {
+      // Order was already confirmed by a concurrent webhook/verify call — nothing to do.
+      await session.abortTransaction();
+      console.log(`Order ${orderId} already confirmed, skipping duplicate confirmation`);
+      return null;
+    }
+
+    if (confirmedOrder.coupon?.couponId) {
+      await commitCouponUsage(confirmedOrder.coupon.couponId, confirmedOrder.user, session);
+    }
+
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+
+  console.log("Confirmed Order:", confirmedOrder.customOrderId);
+  dispatchNotifications(confirmedOrder);
 
   return confirmedOrder;
 };

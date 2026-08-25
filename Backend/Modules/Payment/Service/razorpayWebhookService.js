@@ -13,7 +13,6 @@ export const verifyWebhookSignature = (rawBody, signatureHeader) => {
 export const handleRazorpayWebhook = async (event) => {
   const eventType = event.event;
 
-  // We only care about successful payment capture
   if (eventType !== "payment.captured" && eventType !== "order.paid") {
     console.log(`Webhook: ignoring event type ${eventType}`);
     return;
@@ -34,12 +33,6 @@ export const handleRazorpayWebhook = async (event) => {
     return;
   }
 
-  // Idempotency guard — if client-side verify already confirmed it, skip
-  if (order.status !== "payment_pending") {
-    console.log(`Webhook: order ${order.customOrderId} already in status ${order.status}, skipping`);
-    return;
-  }
-
   await confirmOrderAndNotify(order._id, razorpayPaymentId);
-  console.log(`Webhook: confirmed order ${order.customOrderId}`);
+  console.log(`Webhook: processed for order ${order.customOrderId}`);
 };
