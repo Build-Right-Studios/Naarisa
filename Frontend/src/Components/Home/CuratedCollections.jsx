@@ -1,8 +1,5 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import shortkurtibanner from "../../assets/Short Kurtis Banner.png";
-import longkurtibanner from "../../assets/Long Kurtis Banner.png";
-import dressesbanner from "../../assets/Dresses Banner.png";
-import kurtisetbanner from "../../assets/Kurti Set Banner.png"
 import useInView from "../../utils/useInView.js";
 
 const collections = [
@@ -36,6 +33,11 @@ const collections = [
 
 const CuratedCollections = () => {
   const header = useInView();
+  const [headerAnimated, setHeaderAnimated] = useState(false);
+
+  useEffect(() => {
+    if (header.inView) setHeaderAnimated(true);
+  }, [header.inView]);
 
   return (
     <section
@@ -45,10 +47,10 @@ const CuratedCollections = () => {
       {/* Section Header */}
       <div
         ref={header.ref}
-        className="mb-8 text-center transition-all duration-700 sm:mb-10"
+        className="mb-8 text-center transition-all duration-500 sm:mb-10"
         style={{
-          opacity: header.inView ? 1 : 0,
-          transform: header.inView ? "translateY(0)" : "translateY(24px)",
+          opacity: headerAnimated ? 1 : 0,
+          transform: headerAnimated ? "translateY(0)" : "translateY(10px)",
         }}
       >
         <p
@@ -83,18 +85,18 @@ const CuratedCollections = () => {
 const AnimatedCard = ({ col, index }) => {
   const { ref, inView } = useInView();
 
-  const delays = [0, 150, 300, 450];
+  const delays = [0, 80, 80, 160];
   const delay = delays[index] || 0;
 
   return (
     <div
       ref={ref}
-      className="w-full transition-all duration-400"
+      className="w-full transition-all duration-300"
       style={{
         opacity: inView ? 1 : 0,
         transform: inView
           ? "translateY(0) scale(1)"
-          : "translateY(32px) scale(0.97)",
+          : "translateY(12px) scale(0.99)",
         transitionDelay: `${delay}ms`,
       }}
     >
@@ -103,7 +105,6 @@ const AnimatedCard = ({ col, index }) => {
         className="group relative block w-full overflow-hidden"
         style={{ aspectRatio: "4/3" }}
       >
-        {/* Background Image / Gradient */}
         {col.image ? (
           <img
             src={col.image}
@@ -117,43 +118,6 @@ const AnimatedCard = ({ col, index }) => {
           />
         )}
 
-        {/* Dark Overlay */}
-        {/* <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" /> */}
-
-        {/* Accent Line */}
-        {/* <div
-          className="absolute left-4 top-4 h-[1px] w-6 transition-all duration-500 group-hover:w-12 sm:left-5 sm:top-5 sm:w-8"
-          style={{ backgroundColor: col.accent }}
-        /> */}
-
-        {/* Content */}
-        {/* <div className="absolute bottom-0 left-0 p-4 sm:p-6">
-          <h3
-            className="mb-2 text-[22px] font-normal italic leading-tight text-white sm:mb-3 sm:text-[26px] md:text-[28px]"
-            style={{ fontFamily: "'EB Garamond', serif" }}
-          >
-            {col.title}
-          </h3>
-
-          <div className="flex items-center gap-2">
-            <span
-              className="h-[1px] w-4 transition-all duration-500 group-hover:w-6 sm:w-5"
-              style={{ backgroundColor: col.accent }}
-            />
-
-            <span
-              className="text-[10px] font-bold uppercase tracking-[0.18em] sm:text-[11px]"
-              style={{
-                fontFamily: "'Jost', sans-serif",
-                color: col.accent,
-              }}
-            >
-              Shop Now
-            </span>
-          </div>
-        </div> */}
-
-        {/* Hover Border */}
         <div className="absolute inset-0 border border-transparent transition-all duration-500 group-hover:border-white/20" />
       </Link>
     </div>

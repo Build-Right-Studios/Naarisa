@@ -1,26 +1,39 @@
+// ─── ImageKit URL helpers ───────────────────────────────────────────────
+// NOTE: these build the `tr=` transform block explicitly instead of
+// regex-substituting into whatever transform is already on the URL.
+// Do not go back to /w_\d+/-style regex patching — it silently breaks
+// the moment the backend emits hyphen syntax (w-500 instead of w_500),
+// because the pattern simply stops matching and every srcSet entry
+// collapses to the same URL. See P0.5 / §5 of the audit.
+
+const withTransform = (url, transformation) => {
+  if (!url) return url;
+  const base = url.split("?")[0]; // ImageKit URLs here only ever carry the tr= param
+  return `${base}?tr=${transformation}`;
+};
+
 export const buildImageUrls = (url) => {
   if (!url) return {};
 
   return {
     url,
 
-    thumbnail: url
-      .replace(/w_\d+/, "w_150")
-      .replace(/q_\d+/, "q_70"),
+    thumbnail: withTransform(url, "w-150,f-auto,q-70"),
 
+    // Widened to 500/800/1400 to match the new PDP base width (w-1400)
+    // set on the backend in getProductBySlugService.js.
     srcSet: `
-      ${url.replace(/w_\d+/, "w_500")} 500w,
-      ${url.replace(/w_\d+/, "w_800")} 800w,
-      ${url.replace(/w_\d+/, "w_1000")} 1000w
+      ${withTransform(url, "w-500,f-auto,q-75")} 500w,
+      ${withTransform(url, "w-800,f-auto,q-75")} 800w,
+      ${withTransform(url, "w-1400,f-auto,q-80")} 1400w
     `.trim(),
 
     sizes: "(max-width:640px) 100vw, (max-width:1024px) 50vw, 45vw",
   };
 };
 
-// Generate a real LQIP image (not SVG)
+// Generate a real LQIP image (not SVG) — matches the preset in §7 of the audit.
 export const generateLQIPUrl = (url) => {
-  if (!url) return '';
-  // Real image: 20px wide, blurred, low quality
-  return url.replace(/w_\d+/, 'w_20').replace(/q_\d+/, 'q_20');
+  if (!url) return "";
+  return withTransform(url, "w-20,bl-30,f-auto,q-20");
 };

@@ -200,7 +200,7 @@ export const getBestSellers = async (req, res) => {
       ...variant,
       images: variant.images.map((image) => ({
         ...image,
-        url: imagekitTransform(image.url, "f_auto,q_auto,w_500,h_750,c_fill"),
+        url: imagekitTransform(image.url, "w-520,f-auto,q-75"),
       })),
     }));
 

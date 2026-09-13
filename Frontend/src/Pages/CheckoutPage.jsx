@@ -256,7 +256,7 @@ const CheckoutPage = () => {
 
         setForm((prev) => ({
           ...prev,
-          city: office.Block || office.Name,
+          // city: office.Block || office.Name,
           state: office.State,
         }));
 
@@ -453,7 +453,7 @@ const CheckoutPage = () => {
       } else {
         setForm((prev) => ({
           ...prev,
-          city: "",
+          // city: "",
           state: "",
         }));
       }
@@ -581,7 +581,10 @@ const CheckoutPage = () => {
   if (!user || items.length === 0) return null;
 
   return (
-    <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
+    <div
+      style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}
+      className="pb-28 lg:pb-0"
+    >
 
       {/* Body */}
       <div className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6 md:px-10">
@@ -814,17 +817,13 @@ const CheckoutPage = () => {
                       <input
                         ref={(el) => (fieldRefs.current.city = el)}
                         value={form.city}
-                        readOnly
-                        placeholder={
-                          isFetchingPincode
-                            ? "Fetching city..."
-                            : "City"
+                        onChange={handleChange("city")}
+                        placeholder="Enter city"
+                        style={inputStyle(errors.city)}
+                        onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
+                        onBlur={(e) =>
+                          (e.target.style.borderColor = errors.city ? "#C4727A" : "#E8DDD0")
                         }
-                        style={{
-                          ...inputStyle(errors.city),
-                          backgroundColor: "#F5F5F5",
-                          cursor: "not-allowed",
-                        }}
                       />
                     </Field>
                     <Field label="STATE" error={errors.state}>
@@ -918,7 +917,13 @@ const CheckoutPage = () => {
       {/* Sticky Complete Order — Mobile */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
-        style={{ backgroundColor: "#F9F3EB", borderTop: "1px solid #E8DDD0", padding: "12px 16px", boxShadow: "0 -4px 20px rgba(43,33,18,0.08)" }}
+        style={{
+          backgroundColor: "#F9F3EB",
+          borderTop: "1px solid #E8DDD0",
+          padding: "12px 16px",
+          paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+          boxShadow: "0 -4px 20px rgba(43,33,18,0.08)",
+        }}
       >
         <div className="flex items-center justify-between mb-2">
           <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B" }}>Total</span>

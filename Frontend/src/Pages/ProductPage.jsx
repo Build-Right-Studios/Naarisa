@@ -31,36 +31,37 @@ const Accordion = ({ title, content }) => {
       <div className="overflow-hidden transition-all duration-300" style={{ maxHeight: open ? "500px" : "0px" }}>
         <>
           <style>{`
-            .rich-accordion-content ul {
+           .rich-accordion-content { background: transparent!important; }
+           .rich-accordion-content * {
+              background-color: transparent!important;
+              background: transparent!important;
+            }
+           .rich-accordion-content ul {
               list-style: disc;
               padding-left: 20px;
               margin: 4px 0;
             }
-            .rich-accordion-content ol {
+           .rich-accordion-content ol {
               list-style: decimal;
               padding-left: 20px;
               margin: 4px 0;
             }
-            .rich-accordion-content li {
+           .rich-accordion-content li {
               margin-bottom: 4px;
               line-height: 1.6;
             }
-            .rich-accordion-content b,
-            .rich-accordion-content strong {
-              font-weight: 700;
-            }
-            .rich-accordion-content i,
-            .rich-accordion-content em {
-              font-style: italic;
-            }
-            .rich-accordion-content u {
-              text-decoration: underline;
-            }
+           .rich-accordion-content b,
+           .rich-accordion-content strong { font-weight: 700; }
+           .rich-accordion-content i,
+           .rich-accordion-content em { font-style: italic; }
+           .rich-accordion-content u { text-decoration: underline; }
           `}</style>
           <div
             className="rich-accordion-content pb-5 text-[14px] font-light leading-relaxed"
-            style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728" }}
-            dangerouslySetInnerHTML={{ __html: content || "" }}
+            style={{ fontFamily: "'Jost', sans-serif", color: "#4A3728", background: "transparent" }}
+            dangerouslySetInnerHTML={{
+              __html: (content || "").replace(/background(-color)?:[^;"]*;?/gi, "")
+            }}
           />
         </>
       </div>
@@ -261,6 +262,51 @@ const AddedToast = ({ visible }) => (
   </div>
 );
 
+// ── Share Button ──────────────────────────────────────────────────────────────
+const ShareButton = ({ title, text, url, iconOnly = false, className = "" }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const shareData = { title, text, url };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== "AbortError") console.error("Share failed:", err);
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      className={`flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.1em] transition-colors ${className}`}
+      style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+      </svg>
+      {!iconOnly && (copied ? "Link Copied" : "Share")}
+      {iconOnly && copied && (
+        <span style={{ position: "absolute", marginLeft: "20px", whiteSpace: "nowrap" }}>Link Copied</span>
+      )}
+    </button>
+  );
+};
 
 // ── Write Review Modal ────────────────────────────────────────────────────────
 const WriteReviewModal = ({ variantId, onClose, onSubmitted }) => {
@@ -920,7 +966,7 @@ const ProductPage = () => {
   };
 
   return (
-    <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }} className="pb-24 lg:pb-0">
+    <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }} className="pb-28 lg:pb-0">
 
       <AddedToast visible={toastVisible} />
 
@@ -953,7 +999,14 @@ const ProductPage = () => {
             {/* Mobile */}
             <div className="lg:hidden">
               {images.length > 0 ? (
-                <MobileImageSlider images={images} badge={doc?.isActive} onImageClick={() => setShowZoomModal(true)} />
+                <MobileImageSlider
+                  images={images}
+                  badge={doc?.isActive}
+                  onImageClick={(i) => {
+                    setSelectedImage(i);
+                    setShowZoomModal(true);
+                  }}
+                />
               ) : (
                 <div className="w-full" style={{ aspectRatio: "4/5", background: "linear-gradient(135deg, #F5E6D0, #C4A882)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span className="text-[13px] font-bold uppercase tracking-widest" style={{ color: "#8C7B6B" }}>Naarisa</span>
@@ -972,7 +1025,7 @@ const ProductPage = () => {
                       className="overflow-hidden transition-all duration-200 flex-shrink-0"
                       style={{
                         width: "68px",
-                        aspectRatio: "3/4",
+                        aspectRatio: "1/1",
                         border: selectedImage === i ? "2px solid #C47B1E" : "2px solid transparent",
                         background: "#F5E6D0"
                       }}
@@ -1043,6 +1096,12 @@ const ProductPage = () => {
                   </span>
                 </>
               )}
+              <ShareButton
+                title={productDisplayName}
+                text={`Check out ${productDisplayName} on Naarisa`}
+                url={window.location.href}
+                className="ml-auto"
+              />
             </div>
 
             {/* {lowStock && (
@@ -1215,15 +1274,41 @@ const ProductPage = () => {
       </div>
 
       {/* ── Sticky Add to Cart — Mobile ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
-        style={{ backgroundColor: "#F9F3EB", borderTop: "1px solid #E8DDD0", padding: "12px 16px", boxShadow: "0 -4px 20px rgba(43,33,18,0.08)" }}>
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
+        style={{
+          backgroundColor: "#F9F3EB",
+          borderTop: "1px solid #E8DDD0",
+          padding: "12px 16px",
+          paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+          boxShadow: "0 -4px 20px rgba(43,33,18,0.08)",
+        }}
+      >
         <div className="flex gap-3">
-          <button onClick={handleAddToCart} className="flex-1 py-3.5 text-[12px] font-bold uppercase tracking-[0.14em] transition-all duration-200"
-            style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "#AB721E", color: "#fff" }}>
+          <button
+            onClick={handleAddToCart}
+            className="flex-1 py-3.5 text-[12px] font-bold uppercase tracking-[0.14em] transition-all duration-200"
+            style={{
+              fontFamily: "'Jost', sans-serif",
+              backgroundColor: "#AB721E",
+              color: "#fff",
+            }}
+          >
             Add to Cart
           </button>
-          <button onClick={handleAddToWishlist} disabled={wishlistLoading} className="flex-1 py-3.5 text-[12px] font-bold uppercase tracking-[0.14em] transition-all duration-200"
-            style={{ fontFamily: "'Jost', sans-serif", backgroundColor: "#2B2112", color: "#F5E6D0", border: "none", opacity: wishlistLoading ? 0.7 : 1 }}>
+
+          <button
+            onClick={handleAddToWishlist}
+            disabled={wishlistLoading}
+            className="flex-1 py-3.5 text-[12px] font-bold uppercase tracking-[0.14em] transition-all duration-200"
+            style={{
+              fontFamily: "'Jost', sans-serif",
+              backgroundColor: "#2B2112",
+              color: "#F5E6D0",
+              border: "none",
+              opacity: wishlistLoading ? 0.7 : 1,
+            }}
+          >
             {wishlistLoading ? "Adding..." : "Wishlist"}
           </button>
         </div>

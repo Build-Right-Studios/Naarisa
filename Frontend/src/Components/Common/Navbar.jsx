@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import useCartStore from "../../Store/useCartStore.js";
 
 import {
@@ -62,6 +62,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const [suggestions, setSuggestions] = useState([]);
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
@@ -95,6 +96,10 @@ const Navbar = () => {
   useEffect(() => {
     if (searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50);
   }, [searchOpen]);
+
+  useEffect(() => {
+    setSearchOpen(false);
+  }, [location.pathname]);
 
   return (
     <>
@@ -732,17 +737,18 @@ const Navbar = () => {
               {/* Empty state hints */}
               {!searchQuery && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {["Anarkali", "Short Kurti", "Kurti Sets", "New In"].map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => setSearchQuery(tag)}
-                      className="px-3 py-1.5 rounded-full border border-[#e8ddd0] font-['Jost']
-                           text-[12px] text-[#504537] hover:border-[#7c5400]
-                           hover:text-[#7c5400] transition-colors"
-                    >
-                      {tag}
-                    </button>
-                  ))}
+                  {(navLinks.find((item) => item.title === "CATEGORIES")?.dropdown || [])
+                    .map((tag) => (
+                      <Link
+                        key={tag.title}
+                        to={tag.path}
+                        className="rounded-full border border-[#e8ddd0] px-3 py-1.5 font-['Jost']
+                   text-[12px] text-[#504537] transition-colors
+                   hover:border-[#7c5400] hover:text-[#7c5400]"
+                      >
+                        {tag.title}
+                      </Link>
+                    ))}
                 </div>
               )}
             </div>
