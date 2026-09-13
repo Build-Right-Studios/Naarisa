@@ -32,51 +32,54 @@ export const trackShipmentService = async (orderId, userId) => {
             timeout: 20000
         });
     } catch (err) {
-        console.error("Track Error:", err.response?.data || err.message);
-        throw { status: 500, message: "iThink track failed" };
-    }
-
-    console.log("RAW:", JSON.stringify(response.data, null, 2));
-
-    let container = response.data?.data ?? response.data;
-
-    if (!container) {
+        console.error("Track Error - Status:", err.response?.status, "Body:", err.response?.data);
         throw {
-            status: 502,
-            message: response.data?.msg || response.data?.message || "Unexpected response from iThink."
+            status: err.response?.status || 500,
+            message: err.response?.data?.msg || err.message || "iThink track failed"
         };
     }
 
-    if (Array.isArray(container) && container.length === 0) {
-        throw { status: 404, message: `No tracking for AWB ${awb} on ${BASE_URL}` };
-    }
+console.log("RAW:", JSON.stringify(response.data, null, 2));
 
-    // Try exact AWB match first (this is what production will use)
-    let trackInfo = container[awb];
+let container = response.data?.data ?? response.data;
 
-    // Staging/pre-alpha fallback: sandbox always returns dummy data under its own fixed key
-    if (!trackInfo && !Array.isArray(container) && typeof container === "object") {
-        const firstKey = Object.keys(container)[0];
-        trackInfo = firstKey ? container[firstKey] : null;
-    }
-
-    if (!trackInfo && Array.isArray(container)) {
-        trackInfo = container[0];
-    }
-
-    if (!trackInfo) {
-        throw { status: 404, message: `No tracking data found for AWB ${awb}` };
-    }
-
-    return {
-        awbCode: awb,
-        courierName: order.delivery.courierName || trackInfo.logistic || "",
-        currentStatus: trackInfo.current_status,
-        scans: (trackInfo.scan_details || trackInfo.scans || trackInfo.shipment_track || []).map((s) => ({
-            date: s.scan_date_time || s.date || "",
-            status: s.status || "",
-            location: s.scan_location || s.location || "",
-            remark: s.remark || ""
-        }))
+if (!container) {
+    throw {
+        status: 502,
+        message: response.data?.msg || response.data?.message || "Unexpected response from iThink."
     };
+}
+
+if (Array.isArray(container) && container.length === 0) {
+    throw { status: 404, message: `No tracking for AWB ${awb} on ${BASE_URL}` };
+}
+
+// Try exact AWB match first (this is what production will use)
+let trackInfo = container[awb];
+
+// Staging/pre-alpha fallback: sandbox always returns dummy data under its own fixed key
+if (!trackInfo && !Array.isArray(container) && typeof container === "object") {
+    const firstKey = Object.keys(container)[0];
+    trackInfo = firstKey ? container[firstKey] : null;
+}
+
+if (!trackInfo && Array.isArray(container)) {
+    trackInfo = container[0];
+}
+
+if (!trackInfo) {
+    throw { status: 404, message: `No tracking data found for AWB ${awb}` };
+}
+
+return {
+    awbCode: awb,
+    courierName: order.delivery.courierName || trackInfo.logistic || "",
+    currentStatus: trackInfo.current_status,
+    scans: (trackInfo.scan_details || trackInfo.scans || trackInfo.shipment_track || []).map((s) => ({
+        date: s.scan_date_time || s.date || "",
+        status: s.status || "",
+        location: s.scan_location || s.location || "",
+        remark: s.remark || ""
+    }))
+};
 };
