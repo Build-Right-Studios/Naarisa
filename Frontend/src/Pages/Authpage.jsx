@@ -358,19 +358,6 @@ const AuthPage = () => {
         </div>
       </div>
 
-      {/* Footer */}
-      <div style={{ backgroundColor: "#2B2112", padding: "24px" }}>
-        <div className="mx-auto max-w-[1100px]" style={{ display: "flex", flexWrap: "wrap", gap: "16px", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontFamily: "'EB Garamond', serif", fontSize: "20px", fontStyle: "italic", color: "#F5E6D0" }}>Naarisa</span>
-          <div style={{ display: "flex", gap: "24px", flexWrap: "wrap" }}>
-            {["Sustainability", "Shipping & Returns", "Contact Us"].map((l) => (
-              <span key={l} style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#C4A882", cursor: "pointer", letterSpacing: "0.06em" }}>{l}</span>
-            ))}
-          </div>
-          <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#8C7B6B" }}>© 2024 Naarisa. Artisanal Craftsmanship, Contemporary Luxury.</span>
-        </div>
-      </div>
-
     </div>
   );
 };

@@ -291,7 +291,13 @@ const CartPage = () => {
       {/* Sticky Checkout Bar — Mobile */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
-        style={{ backgroundColor: "#F9F3EB", borderTop: "1px solid #E8DDD0", padding: "12px 16px", boxShadow: "0 -4px 20px rgba(43,33,18,0.08)" }}
+        style={{
+          backgroundColor: "#F9F3EB",
+          borderTop: "1px solid #E8DDD0",
+          padding: "12px 16px",
+          paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+          boxShadow: "0 -4px 20px rgba(43,33,18,0.08)",
+        }}
       >
         <div className="flex items-center justify-between mb-2">
           <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B" }}>Total</span>

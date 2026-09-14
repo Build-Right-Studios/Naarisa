@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "../utils/axiosInstance.js";
 import OrderTrackingWidget from "../Components/Common/OrderTrackingWidget.jsx";
 import AddressModal from "../Components/Common/AddressModal.jsx";
-import { USER } from "../Constants/apiRoutes.js";
+// import ReturnModal from "../Components/Common/ReturnModal.jsx";
+import { ORDER, USER } from "../Constants/apiRoutes.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const initials = (name = "") =>
@@ -188,6 +189,9 @@ const OrdersSection = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const [returnOrder, setReturnOrder] = useState(null);
+  const [tracking, setTracking] = useState(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -209,6 +213,18 @@ const OrdersSection = () => {
       {[1, 2, 3].map((i) => <div key={i} style={{ border: "1px solid #E8DDD0", padding: "20px" }}><Skel w="50%" h="14px" mb="10px" /><Skel w="30%" h="12px" /></div>)}
     </div>
   );
+
+  const handleTrack = async (orderId) => {
+    setTrackingLoading(true);
+    try {
+      const res = await api.get(ORDER.ORDER_TRACK(orderId));
+      if (res.data.success) setTracking({ orderId, ...res.data.tracking });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -269,12 +285,6 @@ const OrdersSection = () => {
                     </div>
                     <OrderTrackingWidget
                       orderId={order._id}
-                      status={order.status}
-                      createdAt={order.createdAt}
-                      dispatchedAt={order.dispatchedAt}
-                      deliveredAt={order.deliveredAt}
-                      cancelledAt={order.cancelledAt}
-                      estimatedDelivery={order.estimatedDelivery}
                     />
                   </div>
 
@@ -310,6 +320,67 @@ const OrdersSection = () => {
                       </div>
                     ))}
                   </div>
+
+                  <div style={{ marginTop: "14px", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                    {/* <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTrack(order._id);
+                      }}
+                      disabled={trackingLoading}
+                      style={{
+                        padding: "11px 20px",
+                        fontFamily: "'Jost', sans-serif",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        border: "1px solid #4A3728",
+                        backgroundColor: "#fff",
+                        color: "#4A3728",
+                        cursor: trackingLoading ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {trackingLoading ? "CHECKING..." : "SHOW TRACKING STATUS"}
+                    </button> */}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setReturnOrder(order);
+                      }}
+                      style={{
+                        padding: "11px 20px",
+                        fontFamily: "'Jost', sans-serif",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        border: "1px solid #AB721E",
+                        backgroundColor: "#fff",
+                        color: "#AB721E",
+                        cursor: "pointer",
+                      }}
+                    >
+                      REQUEST RETURN
+                    </button>
+                  </div>
+
+                  {tracking?.orderId === order._id && (
+                    <div style={{ marginTop: "12px", backgroundColor: "#F9F3EB", padding: "12px 14px" }}>
+                      <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "#8C7B6B", marginBottom: "6px" }}>
+                        CURRENT STATUS
+                      </p>
+                      <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#1f1b15", marginBottom: "8px" }}>
+                        {tracking.currentStatus}
+                      </p>
+                      {tracking.scans?.map((s, i) => (
+                        <p key={i} style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", color: "#8C7B6B", marginBottom: "3px" }}>
+                          {s.date} — {s.status} ({s.location})
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  <br />
+
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                     <div style={{ flex: 1, backgroundColor: "#F9F3EB", padding: "12px 14px", minWidth: "160px" }}>
                       <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "#8C7B6B", marginBottom: "8px" }}>DELIVERY ADDRESS</p>
@@ -339,6 +410,8 @@ const OrdersSection = () => {
           ))}
         </div>
       )}
+
+      {returnOrder && (<div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(43,33,18,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px", }} onClick={() => setReturnOrder(null)} > <ReturnModal order={returnOrder} onClose={() => setReturnOrder(null)} onSubmitted={(returnDoc) => { console.log("Return submitted:", returnDoc); setReturnOrder(null); }} /> </div>)}
     </div>
   );
 };

@@ -219,6 +219,10 @@ const CheckoutPage = () => {
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  // True once the user has filled the "new address" form and pressed
+  // "Save & Continue" — it becomes the active shipping address even though
+  // it isn't (necessarily) one of the saved ones.
+  const [usingNewAddress, setUsingNewAddress] = useState(false);
   const skipCartRedirect = useRef(false);
 
   // ── Refs for scroll-to-error ──────────────────────────────────────────────
@@ -256,7 +260,7 @@ const CheckoutPage = () => {
 
         setForm((prev) => ({
           ...prev,
-          city: office.Block || office.Name,
+          // city: office.Block || office.Name,
           state: office.State,
         }));
 
@@ -404,8 +408,9 @@ const CheckoutPage = () => {
   };
 
   // ── Address Validation ────────────────────────────────────────────────────
-  const validate = () => {
-    if (selectedAddressId && !showAddressForm) return true;
+  // Pure field-level validation, reused by both the final "Complete Order"
+  // check and the "Save & Continue" button inside the new-address form.
+  const computeAddressErrors = () => {
     const e = {};
     if (!form.firstName.trim()) e.firstName = "Required";
     if (!form.lastName.trim()) e.lastName = "Required";
@@ -419,6 +424,12 @@ const CheckoutPage = () => {
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       e.email = "Enter a valid email";
     }
+    return e;
+  };
+
+  const validate = () => {
+    if ((selectedAddressId || usingNewAddress) && !showAddressForm) return true;
+    const e = computeAddressErrors();
 
     setErrors(e);
 
@@ -427,6 +438,54 @@ const CheckoutPage = () => {
       return false;
     }
     return true;
+  };
+
+  // ── New-address form: Save & Continue / Cancel ───────────────────────────
+  const handleSubmitNewAddress = () => {
+    const e = computeAddressErrors();
+    setErrors(e);
+
+    if (Object.keys(e).length > 0) {
+      scrollToFirstError(e);
+      return;
+    }
+
+    // Confirmed — collapse the form and treat this as the active address.
+    setUsingNewAddress(true);
+    setSelectedAddressId(null);
+    setShowAddressForm(false);
+  };
+
+  const populateFormFromAddress = (address) => {
+    const nameParts = address.name?.split(" ") || [];
+    setForm((prev) => ({
+      ...prev,
+      firstName: nameParts[0] || "",
+      lastName: nameParts.slice(1).join(" ") || "",
+      street: address.line1 || "",
+      city: address.city || "",
+      state: address.state || "Maharashtra",
+      pinCode: address.pincode || "",
+      phone: address.phone || prev.phone,
+      email: address.email || "",
+    }));
+  };
+
+  const handleCancelNewAddress = () => {
+    if (addresses.length === 0) return; // nothing saved to fall back to — stay on the form
+
+    setErrors({});
+    setShowAddressForm(false);
+
+    // Fall back to whatever was selected before, else the default/first one.
+    const fallback =
+      addresses.find((a) => a._id === selectedAddressId) ||
+      addresses.find((a) => a.isDefault) ||
+      addresses[0];
+
+    setSelectedAddressId(fallback._id);
+    populateFormFromAddress(fallback);
+    setUsingNewAddress(false);
   };
 
   const handleChange = (field) => async (e) => {
@@ -453,7 +512,7 @@ const CheckoutPage = () => {
       } else {
         setForm((prev) => ({
           ...prev,
-          city: "",
+          // city: "",
           state: "",
         }));
       }
@@ -466,7 +525,7 @@ const CheckoutPage = () => {
 
     try {
       // Save address if user chose "Save this information for next time"
-      if (showAddressForm && form.saveInfo) {
+      if ((showAddressForm || usingNewAddress) && form.saveInfo) {
         try {
           const saveRes = await api.post(USER.ADDRESSES, {
             label: "Home",
@@ -581,7 +640,10 @@ const CheckoutPage = () => {
   if (!user || items.length === 0) return null;
 
   return (
-    <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
+    <div
+      style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}
+      className="pb-28 lg:pb-0"
+    >
 
       {/* Body */}
       <div className="mx-auto max-w-[1100px] px-4 py-10 sm:px-6 md:px-10">
@@ -662,8 +724,57 @@ const CheckoutPage = () => {
               )}
             </div>
 
-            {/* Saved Addresses */}
-            {addresses.length > 0 && (
+            {/* Confirmed-but-unsaved new address — its own compact card, saved list stays hidden */}
+            {usingNewAddress && !showAddressForm && (
+              <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "24px", marginBottom: "24px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                  <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: "22px", fontWeight: 400, color: "#1f1b15" }}>
+                    Shipping Address
+                  </h2>
+                  {addresses.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleCancelNewAddress}
+                      style={{ border: "none", background: "transparent", cursor: "pointer", color: "#8C7B6B", fontFamily: "'Jost', sans-serif", fontSize: "12px", letterSpacing: "0.08em" }}
+                    >
+                      ← Use saved address
+                    </button>
+                  )}
+                </div>
+                <div
+                  style={{
+                    border: "2px solid #AB721E",
+                    padding: "14px",
+                    backgroundColor: "#FFF8ED",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "14px", fontWeight: 600, color: "#1f1b15", marginBottom: "4px" }}>
+                      {form.firstName} {form.lastName}
+                      <span style={{ marginLeft: "8px", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", color: "#2D6B5A", backgroundColor: "#F0FAF4", padding: "2px 6px" }}>
+                        NEW
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddressForm(true)}
+                      style={{ border: "none", background: "transparent", cursor: "pointer", color: "#AB721E", fontFamily: "'Jost', sans-serif", fontSize: "12px", fontWeight: 600, letterSpacing: "0.05em" }}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#4A3728" }}>
+                    {form.street}, {form.city}, {form.state} – {form.pinCode}
+                  </div>
+                  <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#8C7B6B", marginTop: "4px" }}>
+                    +91 {form.phone}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Saved Addresses — hidden while the new-address form is open, or a new address is confirmed */}
+            {addresses.length > 0 && !showAddressForm && !usingNewAddress && (
               <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "24px", marginBottom: "24px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                   <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: "22px", fontWeight: 400, color: "#1f1b15" }}>
@@ -696,24 +807,14 @@ const CheckoutPage = () => {
                       onClick={() => {
                         setSelectedAddressId(address._id);
                         setShowAddressForm(false);
+                        setUsingNewAddress(false);
                         setErrors({});
-                        const nameParts = address.name?.split(" ") || [];
-                        setForm((prev) => ({
-                          ...prev,
-                          firstName: nameParts[0] || "",
-                          lastName: nameParts.slice(1).join(" ") || "",
-                          street: address.line1 || "",
-                          city: address.city || "",
-                          state: address.state || "Maharashtra",
-                          pinCode: address.pincode || "",
-                          phone: address.phone || "",
-                          email: address.email || ""
-                        }));
+                        populateFormFromAddress(address);
                       }}
                       style={{
-                        border: selectedAddressId === address._id ? "2px solid #AB721E" : "1px solid #E8DDD0",
+                        border: !usingNewAddress && selectedAddressId === address._id ? "2px solid #AB721E" : "1px solid #E8DDD0",
                         padding: "14px", cursor: "pointer",
-                        backgroundColor: selectedAddressId === address._id ? "#FFF8ED" : "#fff",
+                        backgroundColor: !usingNewAddress && selectedAddressId === address._id ? "#FFF8ED" : "#fff",
                         transition: "border-color 0.2s, background-color 0.2s",
                       }}
                     >
@@ -726,7 +827,7 @@ const CheckoutPage = () => {
                             </span>
                           )}
                         </div>
-                        {selectedAddressId === address._id && (
+                        {!usingNewAddress && selectedAddressId === address._id && (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="#AB721E" stroke="none">
                             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5l-4-4 1.41-1.41L10 13.67l6.59-6.59L18 8.5l-8 8z" />
                           </svg>
@@ -754,21 +855,6 @@ const CheckoutPage = () => {
                   <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: "24px", fontWeight: 400, color: "#1f1b15" }}>
                     {addresses.length > 0 ? "New Address" : "Shipping Address"}
                   </h1>
-                  {addresses.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowAddressForm(false);
-                        if (!selectedAddressId && addresses.length > 0) {
-                          const first = addresses.find((a) => a.isDefault) || addresses[0];
-                          setSelectedAddressId(first._id);
-                        }
-                      }}
-                      style={{ marginLeft: "auto", border: "none", background: "transparent", cursor: "pointer", color: "#8C7B6B", fontFamily: "'Jost', sans-serif", fontSize: "12px", letterSpacing: "0.08em" }}
-                    >
-                      ← Use saved address
-                    </button>
-                  )}
                 </div>
 
                 <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "28px", display: "flex", flexDirection: "column", gap: "18px" }}>
@@ -814,17 +900,13 @@ const CheckoutPage = () => {
                       <input
                         ref={(el) => (fieldRefs.current.city = el)}
                         value={form.city}
-                        readOnly
-                        placeholder={
-                          isFetchingPincode
-                            ? "Fetching city..."
-                            : "City"
+                        onChange={handleChange("city")}
+                        placeholder="Enter city"
+                        style={inputStyle(errors.city)}
+                        onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
+                        onBlur={(e) =>
+                          (e.target.style.borderColor = errors.city ? "#C4727A" : "#E8DDD0")
                         }
-                        style={{
-                          ...inputStyle(errors.city),
-                          backgroundColor: "#F5F5F5",
-                          cursor: "not-allowed",
-                        }}
                       />
                     </Field>
                     <Field label="STATE" error={errors.state}>
@@ -897,6 +979,31 @@ const CheckoutPage = () => {
                       Save this information for next time
                     </span>
                   </label>
+
+                  {/* Cancel / Save & Continue — only meaningful when there's
+                      a saved-address list to go back to */}
+                  {addresses.length > 0 && (
+                    <div style={{ display: "flex", gap: "12px", marginTop: "4px" }}>
+                      <button
+                        type="button"
+                        onClick={handleCancelNewAddress}
+                        style={{ flex: 1, padding: "13px", fontFamily: "'Jost', sans-serif", fontSize: "12px", fontWeight: 700, letterSpacing: "0.12em", backgroundColor: "transparent", color: "#8C7B6B", border: "1px solid #E8DDD0", cursor: "pointer", transition: "border-color 0.2s, color 0.2s" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#C4A882"; e.currentTarget.style.color = "#4A3728"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#E8DDD0"; e.currentTarget.style.color = "#8C7B6B"; }}
+                      >
+                        CANCEL
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSubmitNewAddress}
+                        style={{ flex: 1, padding: "13px", fontFamily: "'Jost', sans-serif", fontSize: "12px", fontWeight: 700, letterSpacing: "0.12em", backgroundColor: "#AB721E", color: "#fff", border: "none", cursor: "pointer", transition: "background 0.2s" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#8B6914")}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#AB721E")}
+                      >
+                        SAVE & CONTINUE
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -918,7 +1025,13 @@ const CheckoutPage = () => {
       {/* Sticky Complete Order — Mobile */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
-        style={{ backgroundColor: "#F9F3EB", borderTop: "1px solid #E8DDD0", padding: "12px 16px", boxShadow: "0 -4px 20px rgba(43,33,18,0.08)" }}
+        style={{
+          backgroundColor: "#F9F3EB",
+          borderTop: "1px solid #E8DDD0",
+          padding: "12px 16px",
+          paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+          boxShadow: "0 -4px 20px rgba(43,33,18,0.08)",
+        }}
       >
         <div className="flex items-center justify-between mb-2">
           <span style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B" }}>Total</span>

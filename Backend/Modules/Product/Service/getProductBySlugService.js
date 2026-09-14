@@ -24,7 +24,7 @@ export const getProductBySlugService = async ({ slug }) => {
         images: currentVariant.images.map((img) => ({
           ...img,
           // Send single optimized URL - frontend handles responsive
-          url: imagekitTransform(img.url, "f_auto,q_auto,w_1000,c_limit"),
+          url: imagekitTransform(img.url, "w-520,f-auto,q-75"),
           // Frontend will construct srcSet from this URL pattern
           priority: false,
         })),

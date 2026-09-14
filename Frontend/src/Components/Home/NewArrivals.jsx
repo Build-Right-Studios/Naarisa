@@ -33,12 +33,10 @@ const NewArrivals = () => {
     if (!el) return;
 
     const handleWheel = (e) => {
-      // If the gesture is mostly vertical, scroll the page instead of the carousel
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
         e.preventDefault();
-        window.scrollBy({ top: e.deltaY, left: 0 });
+        el.scrollLeft += e.deltaX;
       }
-      // if it's mostly horizontal (trackpad swipe / shift+wheel), let default happen
     };
 
     el.addEventListener("wheel", handleWheel, { passive: false });
@@ -132,7 +130,7 @@ const NewArrivals = () => {
       {/* Scrollable Row */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto px-4 pb-2 sm:px-6 md:px-10 xl:px-12"
+        className="flex gap-4 overflow-x-auto overflow-y-hidden px-4 pb-2 sm:px-6 md:px-10 xl:px-12"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
