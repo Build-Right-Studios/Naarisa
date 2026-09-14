@@ -84,20 +84,25 @@ const CuratedCollections = () => {
 
 const AnimatedCard = ({ col, index }) => {
   const { ref, inView } = useInView();
+  const [animated, setAnimated] = useState(false);
+
+  useEffect(() => {
+    if (inView && !animated) {
+      const raf = requestAnimationFrame(() => setAnimated(true));
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [inView, animated]);
 
   const delays = [0, 80, 80, 160];
-  const delay = delays[index] || 0;
 
   return (
     <div
       ref={ref}
       className="w-full transition-all duration-300"
       style={{
-        opacity: inView ? 1 : 0,
-        transform: inView
-          ? "translateY(0) scale(1)"
-          : "translateY(12px) scale(0.99)",
-        transitionDelay: `${delay}ms`,
+        opacity: animated ? 1 : 0,
+        transform: animated ? "translateY(0) scale(1)" : "translateY(12px) scale(0.99)",
+        transitionDelay: `${delays[index] || 0}ms`,
       }}
     >
       <Link
@@ -105,19 +110,11 @@ const AnimatedCard = ({ col, index }) => {
         className="group relative block w-full overflow-hidden"
         style={{ aspectRatio: "4/3" }}
       >
-        {col.image ? (
-          <img
-            src={col.image}
-            alt={col.title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 transition-transform duration-400 group-hover:scale-105"
-            style={{ background: col.gradient }}
-          />
-        )}
-
+        <img
+          src={col.image}
+          alt={col.title}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-400 group-hover:scale-105"
+        />
         <div className="absolute inset-0 border border-transparent transition-all duration-500 group-hover:border-white/20" />
       </Link>
     </div>
