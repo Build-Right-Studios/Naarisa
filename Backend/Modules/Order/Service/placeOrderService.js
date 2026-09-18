@@ -7,6 +7,10 @@ import { createRazorpayOrder } from "../../Payment/Service/createRazorpayOrder.j
 import { applyCoupon } from "../../Coupons/Service/applyCouponService.js";
 import { deductStockForItems } from "../../Variant/Service/deductStockForItemsService.js";
 import { generateOrderId } from "../../../Utils/generateOrderId.js";
+import { checkCodServiceabilityService } from "./checkCodServiceabilityService.js";
+
+const PARTIAL_COD_ADVANCE_PERCENT = Number(process.env.PARTIAL_COD_ADVANCE_PERCENT);
+const PAYMENT_MODES = ["Prepaid", "COD", "PartialCOD"];
 
 const buildOrderItems = async (items) => {
   let subtotal = 0;
@@ -17,10 +21,7 @@ const buildOrderItems = async (items) => {
     if (!productId || !variantId || !size || !quantity) {
       throw { status: 400, message: "Each item needs productId, variantId, size and quantity" };
     }
-    const variant_trial = await Variant.findById(variantId);
-    console.log(JSON.stringify(variant_trial.sizes, null, 2));
 
-    // Fetch product
     const variant = await findVariantWithProduct(variantId, productId);
     if (!variant) {
       throw {
@@ -29,16 +30,11 @@ const buildOrderItems = async (items) => {
       };
     }
 
-    // Product data comes from populate
     const product = variant.productId;
-
-    // Find size entry
     const sizeEntry = variant.sizes.find(s => s.size === size);
     if (!sizeEntry) {
       throw { status: 400, message: `Size ${size} not available for this variant` };
     }
-
-    // Check stock
     if (sizeEntry.quantity < quantity) {
       throw {
         status: 400,
@@ -46,7 +42,6 @@ const buildOrderItems = async (items) => {
       };
     }
 
-    // Snapshot price
     const priceAtOrder = variant.discountPrice ?? product.basePrice;
     subtotal += priceAtOrder * quantity;
 
@@ -65,6 +60,37 @@ const buildOrderItems = async (items) => {
   return { orderItems, subtotal };
 };
 
+// Decides Prepaid vs COD vs PartialCOD and the resulting money split.
+// Re-checked server-side, never trust the client's payment mode blindly.
+const resolvePaymentPlan = async ({ paymentMode, total, pincode }) => {
+  const mode = PAYMENT_MODES.includes(paymentMode) ? paymentMode : "Prepaid";
+
+  if (mode === "Prepaid") {
+    return { mode, advanceAmount: total, codAmount: 0 };
+  }
+
+  const serviceability = await checkCodServiceabilityService(pincode);
+  if (!serviceability.codAvailable) {
+    throw {
+      status: 400,
+      message: "Cash on Delivery is not available for this pincode. Please choose Prepaid.",
+    };
+  }
+
+  if (mode === "COD") {
+    return { mode, advanceAmount: 0, codAmount: total };
+  }
+
+  // PartialCOD — flat ₹200 advance, capped at the order total
+  const advanceAmount = Math.round((PARTIAL_COD_ADVANCE_PERCENT / 100) * total);
+  if (advanceAmount >= total || advanceAmount <= 0) {
+    // Advance would cover the whole order — a ₹0 COD leg makes no sense,
+    // fall back to full COD instead.
+    return { mode: "COD", advanceAmount: 0, codAmount: total };
+  }
+  return { mode: "PartialCOD", advanceAmount, codAmount: total - advanceAmount };
+};
+
 const saveOrder = async ({
   userId,
   orderItems,
@@ -72,9 +98,14 @@ const saveOrder = async ({
   appliedCoupon,
   pricing,
   deliveryAddress,
-  razorpayOrderId
+  razorpayOrderId,
+  paymentPlan,
 }, session) => {
   const customOrderId = generateOrderId();
+
+  // Full COD never touches Razorpay — nothing to wait on, so it's
+  // confirmed immediately. Prepaid/PartialCOD wait for the handler+webhook.
+  const initialStatus = paymentPlan.mode === "COD" ? "confirmed" : "payment_pending";
 
   return await createOrder({
     customOrderId,
@@ -85,33 +116,41 @@ const saveOrder = async ({
     pricing,
     address: { ...deliveryAddress, email: deliveryAddress.email || null },
     payment: {
-      razorpayOrderId,
-      status: "pending"
+      mode: paymentPlan.mode,
+      razorpayOrderId: razorpayOrderId || null,
+      status: paymentPlan.mode === "COD" ? "not_applicable" : "pending",
+      advanceAmount: paymentPlan.advanceAmount,
+      codAmount: paymentPlan.codAmount,
     },
-    status: "payment_pending",
-    timeline: [{ status: "payment_pending", timestamp: new Date() }]
+    status: initialStatus,
+    timeline: [{ status: initialStatus, timestamp: new Date() }]
   }, session);
 };
 
 export const placeOrderService = async (orderData) => {
-
-  const { user, items, address, addressId, couponCode } = orderData;
+  const { user, items, address, addressId, couponCode, paymentMode } = orderData;
 
   const deliveryAddress = await resolveAddress(user, address, addressId);
   const { orderItems, subtotal } = await buildOrderItems(items);
-  console.log("Order Items : ", orderItems);
   const { discount, appliedCoupon } = await applyCoupon(couponCode, subtotal, user._id);
   const total = subtotal - discount;
-  const razorpayOrder = await createRazorpayOrder(total);
-  console.log("Applied Coupon : ", appliedCoupon)
+
+  const paymentPlan = await resolvePaymentPlan({
+    paymentMode,
+    total,
+    pincode: deliveryAddress.pincode,
+  });
+
+  // Only hit Razorpay when money actually needs to move online.
+  const razorpayOrder =
+    paymentPlan.advanceAmount > 0 ? await createRazorpayOrder(paymentPlan.advanceAmount) : null;
+
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
 
-    const deductItems = await deductStockForItems(items, session);
-
-    // console.log("Deduct Items : ", deductItems)
+    await deductStockForItems(items, session);
 
     const order = await saveOrder({
       userId: user._id,
@@ -119,7 +158,8 @@ export const placeOrderService = async (orderData) => {
       appliedCoupon,
       pricing: { subtotal, discount, total },
       deliveryAddress,
-      razorpayOrderId: razorpayOrder.id,
+      razorpayOrderId: razorpayOrder?.id,
+      paymentPlan,
       userEmail: deliveryAddress.email || user.email,
     }, session);
 
@@ -128,11 +168,15 @@ export const placeOrderService = async (orderData) => {
     return {
       orderId: order._id,
       customOrderId: order.customOrderId,
-      razorpayOrderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: razorpayOrder.currency,
-      keyId: process.env.RAZORPAY_KEY_ID,
-      pricing: { subtotal, discount, total }
+      paymentMode: paymentPlan.mode,
+      razorpayOrderId: razorpayOrder?.id || null,
+      amount: razorpayOrder?.amount || 0,
+      currency: razorpayOrder?.currency || "INR",
+      keyId: razorpayOrder ? process.env.RAZORPAY_KEY_ID : null,
+      pricing: { subtotal, discount, total },
+      advanceAmount: paymentPlan.advanceAmount,
+      codAmount: paymentPlan.codAmount,
+      requiresPayment: Boolean(razorpayOrder),
     };
   } catch (error) {
     await session.abortTransaction();
@@ -141,4 +185,4 @@ export const placeOrderService = async (orderData) => {
   } finally {
     session.endSession();
   }
-} 
+};

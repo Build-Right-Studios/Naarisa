@@ -88,6 +88,48 @@ const CouponCard = ({ coupon, onApply, appliedCode, subtotal }) => {
   );
 };
 
+// ── Payment Mode Selector ───────────────────────────────────────────────────────────────
+const PaymentModeSelector = ({ mode, onChange, codAvailable, total, advance }) => {
+  const options = [
+    { id: "Prepaid", label: "Pay Now", desc: "Pay full amount online" },
+    { id: "COD", label: "Cash on Delivery", desc: "Pay full amount at your doorstep", disabled: !codAvailable },
+    { id: "PartialCOD", label: "Partial COD", desc: `Pay ₹${advance} now, rest (₹${(total - advance).toLocaleString("en-IN")}) on delivery`, disabled: !codAvailable },
+  ];
+
+  return (
+    <div style={{ backgroundColor: "#fff", border: "1px solid #E8DDD0", padding: "20px", marginBottom: "24px" }}>
+      <h2 style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.16em", color: "#1f1b15", marginBottom: "14px" }}>
+        PAYMENT METHOD
+      </h2>
+      {options.map((opt) => (
+        <label
+          key={opt.id}
+          style={{
+            display: "flex", alignItems: "flex-start", gap: "10px", padding: "12px",
+            border: mode === opt.id ? "1.5px solid #AB721E" : "1px solid #E8DDD0",
+            backgroundColor: mode === opt.id ? "#FDF8F1" : "#fff",
+            marginBottom: "10px", cursor: opt.disabled ? "not-allowed" : "pointer",
+            opacity: opt.disabled ? 0.5 : 1,
+          }}
+        >
+          <input
+            type="radio" name="paymentMode" value={opt.id}
+            checked={mode === opt.id} disabled={opt.disabled}
+            onChange={() => onChange(opt.id)}
+            style={{ marginTop: "3px" }}
+          />
+          <div>
+            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", fontWeight: 700, color: "#1f1b15" }}>{opt.label}</p>
+            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B" }}>
+              {opt.disabled ? "Not available for this pincode" : opt.desc}
+            </p>
+          </div>
+        </label>
+      ))}
+    </div>
+  );
+};
+
 // ── Field wrapper ─────────────────────────────────────────────────────────────
 const Field = ({ label, error, children }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -214,6 +256,12 @@ const CheckoutPage = () => {
     const email = user?.email || "";
     return { firstName, lastName, email, street: "", city: "", state: "Maharashtra", pinCode: "", phone, saveInfo: false };
   });
+
+  // ── Payment Mode State ────────────────────────────────────────────────────
+  const [paymentMode, setPaymentMode] = useState("Prepaid"); // "Prepaid" | "COD" | "PartialCOD"
+  const [codServiceability, setCodServiceability] = useState({ checked: false, codAvailable: false });
+  const [partialCodAdvancePercent, setPartialCodAdvancePercent] = useState(40);
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [addresses, setAddresses] = useState([]);
@@ -295,6 +343,30 @@ const CheckoutPage = () => {
     }
   };
 
+  const checkCod = async (pincode) => {
+    try {
+      const { data } = await api.get(ORDER.COD_CHECK(pincode));
+      const available = !!data.codAvailable;
+      setCodServiceability({ checked: true, codAvailable: available });
+      if (!available) {
+        setPaymentMode((prev) => (prev !== "Prepaid" ? "Prepaid" : prev));
+      }
+    } catch {
+      setCodServiceability({ checked: true, codAvailable: false });
+      setPaymentMode((prev) => (prev !== "Prepaid" ? "Prepaid" : prev));
+    }
+  };
+
+  // Runs on every pincode change, regardless of source (typed, saved
+  // address selected, default address loaded, cancel-new-address fallback)
+  useEffect(() => {
+    if (/^\d{6}$/.test(form.pinCode)) {
+      checkCod(form.pinCode);
+    } else {
+      setCodServiceability({ checked: false, codAvailable: false });
+    }
+  }, [form.pinCode]);
+
   // ── Calculations ──────────────────────────────────────────────────────────
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
@@ -305,6 +377,16 @@ const CheckoutPage = () => {
     : 0;
 
   const total = subtotal - discountAmount;
+
+  useEffect(() => {
+    api.get(ORDER.CONFIG)
+      .then(({ data }) => setPartialCodAdvancePercent(data.partialCodAdvancePercent))
+      .catch(() => { });
+  }, []);
+
+  // Recalculated every render since it depends on `total`, which changes
+  // whenever the cart or coupon changes.
+  const partialCodAdvanceAmount = Math.round((partialCodAdvancePercent / 100) * total);
 
   // ── Fetch Coupons ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -579,17 +661,27 @@ const CheckoutPage = () => {
           country: "India",
         },
         couponCode: appliedCoupon?.code || null,
+        paymentMode,
       };
 
       const orderRes = await api.post(ORDER.PLACE, payload);
-      const { razorpayOrderId, amount, currency, keyId } = orderRes.data;
+      const { razorpayOrderId, amount, currency, keyId, requiresPayment, orderId } = orderRes.data;
+
+      // Full COD — no Razorpay step at all, order is already confirmed server-side.
+      if (!requiresPayment) {
+        skipCartRedirect.current = true;
+        clearCart();
+        clearOrderSummary();
+        navigate(`/order-success/${orderId}`);
+        return;
+      }
 
       const options = {
         key: keyId,
         amount,
         currency: currency || "INR",
         name: "Naarisa",
-        description: "Artisanal Craftsmanship",
+        description: paymentMode === "PartialCOD" ? "Advance payment" : "Artisanal Craftsmanship",
         order_id: razorpayOrderId,
         prefill: {
           name: `${form.firstName} ${form.lastName}`.trim(),
@@ -1007,6 +1099,14 @@ const CheckoutPage = () => {
                 </div>
               </>
             )}
+
+            <PaymentModeSelector
+              mode={paymentMode}
+              onChange={setPaymentMode}
+              codAvailable={codServiceability.codAvailable}
+              total={total}
+              advance={partialCodAdvanceAmount}
+            />
           </div>
 
           {/* Right — Order Summary */}

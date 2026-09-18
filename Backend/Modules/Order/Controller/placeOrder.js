@@ -1,20 +1,22 @@
-import mongoose from "mongoose";
 import { placeOrderService } from "../Service/placeOrderService.js";
 
 export const placeOrder = async (req, res) => {
   try {
-    const { items, address, addressId, couponCode } = req.body;
+    const { items, address, addressId, couponCode, paymentMode } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ message: "No items in order" });
     }
 
-    if (!address) {
-      return res.status(400).json({ message: "Address is mising" });
+    if (!address && !addressId) {
+      return res.status(400).json({ message: "Address is missing" });
     }
+
     const user = req.user;
 
-    const placedOrder = await placeOrderService({ user, items, address, addressId, couponCode })
+    const placedOrder = await placeOrderService({
+      user, items, address, addressId, couponCode, paymentMode
+    });
 
     return res.status(201).json({
       message: "Order created successfully",
