@@ -260,7 +260,7 @@ const CheckoutPage = () => {
   // ── Payment Mode State ────────────────────────────────────────────────────
   const [paymentMode, setPaymentMode] = useState("Prepaid"); // "Prepaid" | "COD" | "PartialCOD"
   const [codServiceability, setCodServiceability] = useState({ checked: false, codAvailable: false });
-  const [partialCodAdvancePercent, setPartialCodAdvancePercent] = useState(40);
+  const [partialCodAdvanceAmount, setPartialCodAdvanceAmount] = useState(200);
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -380,13 +380,9 @@ const CheckoutPage = () => {
 
   useEffect(() => {
     api.get(ORDER.CONFIG)
-      .then(({ data }) => setPartialCodAdvancePercent(data.partialCodAdvancePercent))
+      .then(({ data }) => setPartialCodAdvanceAmount(data.partialCodAdvanceAmount))
       .catch(() => { });
   }, []);
-
-  // Recalculated every render since it depends on `total`, which changes
-  // whenever the cart or coupon changes.
-  const partialCodAdvanceAmount = Math.round((partialCodAdvancePercent / 100) * total);
 
   // ── Fetch Coupons ─────────────────────────────────────────────────────────
   useEffect(() => {
