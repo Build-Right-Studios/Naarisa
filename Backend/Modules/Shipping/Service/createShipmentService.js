@@ -43,12 +43,13 @@ export const createShipmentService = async (
         };
     }
 
-    // 4. Payment Details
-    const isPaid = order.payment.status === "paid";
-    const paymentMode = isPaid ? "Prepaid" : "COD";
+    // 4. Payment Details — order.payment already has the authoritative split
+    const { mode: paymentModeRaw, advanceAmount, codAmount } = order.payment;
+    // iThink only understands two payment_mode values. PartialCOD is, from
+    // iThink's point of view, a COD shipment where the advance was already
+    // collected by you — it just needs the correct cod_amount.
+    const paymentMode = paymentModeRaw === "Prepaid" ? "Prepaid" : "COD";
     const totalAmount = Number(order.pricing.total);
-    const advanceAmount = isPaid ? totalAmount : 0;
-    const codAmount = isPaid ? 0 : totalAmount;
 
     // 5. Create iThink Products
     const products = order.items.map((item) => ({
@@ -119,8 +120,8 @@ export const createShipmentService = async (
         cod_charges: 0,
 
         // Payment
-        advance_amount: advanceAmount,
-        cod_amount: codAmount,
+        advance_amount: Number(advanceAmount || 0),
+        cod_amount: Number(codAmount || 0),
         payment_mode: paymentMode,
 
         // Optional Fields

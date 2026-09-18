@@ -556,22 +556,54 @@ export default function OrderDetail() {
           </div>
 
           {/* Payment Info */}
-          {payment.razorpayOrderId && (
-            <div style={D.card}>
-              <h2 style={D.cardTitle}>Payment</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <InfoRow label="Method" value="Razorpay" />
-                <InfoRow label="Status" value={payment.status || "—"} />
-                {payment.razorpayOrderId && (
+          <div style={D.card}>
+            <h2 style={D.cardTitle}>Payment</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <InfoRow label="Mode" value={payment.mode || "Prepaid"} />
+              <InfoRow
+                label="Status"
+                value={payment.mode === "COD" ? "Collect on delivery" : (payment.status || "—")}
+              />
+
+              {payment.mode === "COD" && (
+                <InfoRow
+                  label="To Collect"
+                  value={`${formatRupees(payment.codAmount)} on delivery`}
+                />
+              )}
+
+              {payment.mode === "PartialCOD" && (
+                <>
                   <InfoRow
-                    label="Order ID"
-                    value={payment.razorpayOrderId}
-                    mono
+                    label="Advance Paid"
+                    value={formatRupees(payment.advanceAmount)}
                   />
-                )}
-              </div>
+                  <InfoRow
+                    label="To Collect"
+                    value={`${formatRupees(payment.codAmount)} on delivery`}
+                  />
+                </>
+              )}
+
+              {payment.razorpayOrderId && (
+                <InfoRow
+                  label="Razorpay Order"
+                  value={payment.razorpayOrderId}
+                  mono
+                />
+              )}
+              {payment.razorpayPaymentId && (
+                <InfoRow
+                  label="Razorpay Payment"
+                  value={payment.razorpayPaymentId}
+                  mono
+                />
+              )}
+              {payment.paidAt && (
+                <InfoRow label="Paid At" value={formatDateTime(payment.paidAt)} />
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* RIGHT COLUMN */}

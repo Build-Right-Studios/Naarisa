@@ -128,16 +128,34 @@ const orderSchema = new mongoose.Schema({
   },
 
   payment: {
+    mode: {
+      type: String,
+      enum: ["Prepaid", "COD", "PartialCOD"],
+      required: true,
+      default: "Prepaid",
+    },
     razorpayOrderId: {
       type: String,
-      required: true,
+      default: null,
       index: true,
+      // no longer required — full COD orders never create one
     },
     razorpayPaymentId: String,
     status: {
       type: String,
-      enum: ["pending", "paid", "failed"],
+      enum: ["pending", "paid", "failed", "not_applicable"],
       default: "pending",
+    },
+    // amount actually charged online right now (full total for Prepaid,
+    // ₹200 for PartialCOD, 0 for full COD)
+    advanceAmount: {
+      type: Number,
+      default: 0,
+    },
+    // amount the delivery agent collects at the doorstep
+    codAmount: {
+      type: Number,
+      default: 0,
     },
     paidAt: Date,
   },
@@ -145,15 +163,16 @@ const orderSchema = new mongoose.Schema({
   delivery: {
     provider: {
       type: String,
-      default: "shiprocket",
+      enum: ["ithink"],
+      default: "ithink",
     },
 
     // Shipment
     shipmentId: String,
-    shiprocketOrderId: String,
+    providerOrderId: String,
 
     // Courier
-    courierId: Number,
+    courierId: String,
     courierCode: String,
     courierName: String,
     courierType: String,
@@ -184,7 +203,7 @@ const orderSchema = new mongoose.Schema({
       manifestUrl: String,
     },
 
-    // Package Details
+    // Package
     package: {
       length: Number,
       breadth: Number,
@@ -200,7 +219,7 @@ const orderSchema = new mongoose.Schema({
     pickupScheduledAt: Date,
     pickedUpAt: Date,
 
-    // Delivery Timeline
+    // Delivery
     estimatedDeliveryDays: Number,
     estimatedDelivery: Date,
 
@@ -221,13 +240,11 @@ const orderSchema = new mongoose.Schema({
       default: null,
     },
 
-    // Attempts
     deliveryAttempts: {
       type: Number,
       default: 0,
     },
 
-    // Status
     status: {
       type: String,
       enum: [
@@ -249,7 +266,6 @@ const orderSchema = new mongoose.Schema({
       default: "not_dispatched",
     },
 
-    // Status History
     statusHistory: [
       {
         status: String,

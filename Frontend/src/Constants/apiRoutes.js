@@ -29,7 +29,9 @@ export const ORDER = {
   PLACE: "/api/order/place-order",   // POST — isUser protected
   MY_ORDERS: "/api/user/orders",         // GET  — isUser protected
   BY_ID: (id) => `/api/user/orders/${id}`,
-  ORDER_TRACK: (orderId) => `/api/shipment/${orderId}/track`
+  ORDER_TRACK: (orderId) => `/api/shipment/${orderId}/track`,
+  COD_CHECK: (pincode) => `/api/order/delivery/cod-check/${pincode}`,
+  CONFIG: "/order/config",
 };
 
 export const PAYMENT = {

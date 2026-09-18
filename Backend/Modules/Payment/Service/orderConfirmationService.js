@@ -37,7 +37,12 @@ const dispatchNotifications = (confirmedOrder) => {
           customOrderId: confirmedOrder.customOrderId,
           items: confirmedOrder.items,
           pricing: confirmedOrder.pricing,
-          address: confirmedOrder.address
+          address: confirmedOrder.address,
+          payment: {
+            mode: confirmedOrder.payment.mode,
+            advanceAmount: confirmedOrder.payment.advanceAmount,
+            codAmount: confirmedOrder.payment.codAmount,
+          }
         });
       } catch (emailError) {
         console.error("Email sending failed:", emailError);
