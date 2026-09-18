@@ -1,5 +1,5 @@
 export const getOrderConfig = (req, res) => {
   res.json({
-    partialCodAdvancePercent: Number(process.env.PARTIAL_COD_ADVANCE_PERCENT)
+    partialCodAdvanceAmount: Number(process.env.PARTIAL_COD_ADVANCE_AMOUNT || 200)
   });
 };

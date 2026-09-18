@@ -9,7 +9,7 @@ import { deductStockForItems } from "../../Variant/Service/deductStockForItemsSe
 import { generateOrderId } from "../../../Utils/generateOrderId.js";
 import { checkCodServiceabilityService } from "./checkCodServiceabilityService.js";
 
-const PARTIAL_COD_ADVANCE_PERCENT = Number(process.env.PARTIAL_COD_ADVANCE_PERCENT);
+const PARTIAL_COD_ADVANCE_AMOUNT = Number(process.env.PARTIAL_COD_ADVANCE_AMOUNT || 200);
 const PAYMENT_MODES = ["Prepaid", "COD", "PartialCOD"];
 
 const buildOrderItems = async (items) => {
@@ -82,8 +82,8 @@ const resolvePaymentPlan = async ({ paymentMode, total, pincode }) => {
   }
 
   // PartialCOD — flat ₹200 advance, capped at the order total
-  const advanceAmount = Math.round((PARTIAL_COD_ADVANCE_PERCENT / 100) * total);
-  if (advanceAmount >= total || advanceAmount <= 0) {
+  const advanceAmount = Math.min(PARTIAL_COD_ADVANCE_AMOUNT, total);
+  if (advanceAmount >= total) {
     // Advance would cover the whole order — a ₹0 COD leg makes no sense,
     // fall back to full COD instead.
     return { mode: "COD", advanceAmount: 0, codAmount: total };
