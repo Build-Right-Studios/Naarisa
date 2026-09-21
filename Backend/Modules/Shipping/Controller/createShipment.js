@@ -6,10 +6,6 @@ export const createShipment = async (req, res) => {
     const { orderId } = req.params;
     const { length, breadth, height, weight } = req.body;
 
-    console.log(process.env.ITHINK_BASE_URL);
-    console.log(process.env.ITHINK_PICKUP_ADDRESS_ID);
-    console.log(process.env.ITHINK_ACCESS_TOKEN);
-
     console.log("Length : ", length);
     console.log("breadth : ", breadth);
     console.log("height : ", height);
@@ -22,10 +18,13 @@ export const createShipment = async (req, res) => {
     });
 
   } catch (error) {
+
     console.error(error);
-    return res.status(error.status || 500).json({
+
+    return res.status(500).json({
       success: false,
-      message: error.message || "Failed to create shipment."
+      message: error.message
     });
+
   }
 };
