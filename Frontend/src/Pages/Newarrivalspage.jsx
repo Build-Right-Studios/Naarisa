@@ -72,6 +72,7 @@ const NewArrivalsPage = () => {
 
     const {
         sort,
+        page,
         filters,
         appliedFilters,
         setFilterKey,
@@ -82,7 +83,10 @@ const NewArrivalsPage = () => {
         buildApiParams,
     } = useProductQueryState({
         defaultSort: "newest",
+        limit: 12,
     });
+
+    const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12 });
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -95,6 +99,7 @@ const NewArrivalsPage = () => {
                     `${PRODUCT.NEW_ARRIVALS}?${params.toString()}`
                 );
                 setProducts(res.data.data || []);
+                setPagination(res.data.pagination || { total: 0, page: 1, limit: 12 });
             }
             catch (err) {
                 console.error(err);
@@ -108,7 +113,11 @@ const NewArrivalsPage = () => {
         fetchProducts();
     }, [buildApiParams]);
 
+    const totalPages = Math.ceil(pagination.total / pagination.limit);
+
     const hasBanner = Boolean(desktopBanner || mobileBanner);
+
+    console.log({ pagination, totalPages, page });
 
     return (
         <div
@@ -365,7 +374,57 @@ const NewArrivalsPage = () => {
                         </div>
                     )}
                 </div>
+
+                {!loading && totalPages > 1 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", paddingBottom: "60px" }}>
+            <button
+              onClick={() => updateParam("page", page - 1)}
+              disabled={page === 1}
+              style={{
+                width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center",
+                border: "1px solid #E8DDD0", backgroundColor: "transparent",
+                cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.4 : 1, transition: "all 0.2s",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f1b15" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => updateParam("page", pageNum)}
+                style={{
+                  width: "36px", height: "36px", fontFamily: "'Jost', sans-serif", fontSize: "13px",
+                  fontWeight: page === pageNum ? 700 : 400,
+                  border: "1px solid", borderColor: page === pageNum ? "#1f1b15" : "#E8DDD0",
+                  backgroundColor: page === pageNum ? "#1f1b15" : "transparent",
+                  color: page === pageNum ? "#F9F3EB" : "#1f1b15",
+                  cursor: "pointer", transition: "all 0.2s",
+                }}
+              >
+                {pageNum}
+              </button>
+            ))}
+
+            <button
+              onClick={() => updateParam("page", page + 1)}
+              disabled={page === totalPages}
+              style={{
+                width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center",
+                border: "1px solid #E8DDD0", backgroundColor: "transparent",
+                cursor: page === totalPages ? "not-allowed" : "pointer", opacity: page === totalPages ? 0.4 : 1, transition: "all 0.2s",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f1b15" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        )}
             </div>
+
         </div>
     );
 };
