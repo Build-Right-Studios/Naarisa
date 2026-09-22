@@ -254,7 +254,7 @@ const CheckoutPage = () => {
     const lastName = user?.name?.split(" ").slice(1).join(" ") || "";
     const phone = user?.phone || "";
     const email = user?.email || "";
-    return { firstName, lastName, email, street: "", city: "", state: "Maharashtra", pinCode: "", phone, saveInfo: false };
+    return { firstName, lastName, email, houseNo: "", street: "", city: "", state: "Maharashtra", pinCode: "", phone, saveInfo: false };
   });
 
   // ── Payment Mode State ────────────────────────────────────────────────────
@@ -276,7 +276,7 @@ const CheckoutPage = () => {
   // ── Refs for scroll-to-error ──────────────────────────────────────────────
   const fieldRefs = useRef({});
   // Order matters — this is the order we check for the *first* error
-  const FIELD_ORDER = ["firstName", "lastName", "street", "city", "state", "pinCode", "phone", "email"];
+  const FIELD_ORDER = ["firstName", "lastName", "houseNo", "street", "city", "state", "pinCode", "phone", "email"];
 
   const scrollToFirstError = (errorObj) => {
     const firstKey = FIELD_ORDER.find((key) => errorObj[key]);
@@ -442,7 +442,8 @@ const CheckoutPage = () => {
             ...prev,
             firstName: nameParts[0] || "",
             lastName: nameParts.slice(1).join(" ") || "",
-            street: defaultAddress.line1 || "",
+            houseNo: defaultAddress.line1 || "",
+            street: defaultAddress.line2 || "",
             city: defaultAddress.city || "",
             state: defaultAddress.state || "Maharashtra",
             pinCode: defaultAddress.pincode || "",
@@ -492,6 +493,11 @@ const CheckoutPage = () => {
     const e = {};
     if (!form.firstName.trim()) e.firstName = "Required";
     if (!form.lastName.trim()) e.lastName = "Required";
+    if (!form.houseNo.trim()) {
+      e.houseNo = "Required";
+    } else if (!/\d/.test(form.houseNo)) {
+      e.houseNo = "Please include a house/shop/flat number";
+    }
     if (!form.street.trim()) e.street = "Required";
     if (!form.city.trim()) e.city = "Required";
     if (!form.state) e.state = "Required";
@@ -540,7 +546,8 @@ const CheckoutPage = () => {
       ...prev,
       firstName: nameParts[0] || "",
       lastName: nameParts.slice(1).join(" ") || "",
-      street: address.line1 || "",
+      houseNo: address.line1 || "",
+      street: address.line2 || "",
       city: address.city || "",
       state: address.state || "Maharashtra",
       pinCode: address.pincode || "",
@@ -610,8 +617,8 @@ const CheckoutPage = () => {
             name: `${form.firstName} ${form.lastName}`.trim(),
             email: form.email.toLowerCase().trim(),
             phone: form.phone.replace(/\s/g, ""),
-            line1: form.street,
-            line2: "",
+            line1: form.houseNo,
+            line2: form.street,
             city: form.city,
             state: form.state,
             pincode: form.pinCode,
@@ -625,7 +632,8 @@ const CheckoutPage = () => {
               saveRes.data.data.find(
                 (a) =>
                   a.phone === form.phone.replace(/\s/g, "") &&
-                  a.line1 === form.street &&
+                  a.line1 === form.houseNo &&
+                  a.line2 === form.street &&
                   a.pincode === form.pinCode
               ) || saveRes.data.data.at(-1);
 
@@ -649,8 +657,8 @@ const CheckoutPage = () => {
           name: `${form.firstName} ${form.lastName}`.trim(),
           phone: form.phone.replace(/\s/g, ""),
           email: form.email.toLowerCase().trim(),
-          line1: form.street,
-          line2: "",
+          line1: form.houseNo,
+          line2: form.street,
           city: form.city,
           state: form.state,
           pincode: form.pinCode,
@@ -852,7 +860,7 @@ const CheckoutPage = () => {
                     </button>
                   </div>
                   <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#4A3728" }}>
-                    {form.street}, {form.city}, {form.state} – {form.pinCode}
+                    {form.houseNo}, {form.street}, {form.city}, {form.state} – {form.pinCode}
                   </div>
                   <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#8C7B6B", marginTop: "4px" }}>
                     +91 {form.phone}
@@ -877,6 +885,7 @@ const CheckoutPage = () => {
                       setForm({
                         firstName: user?.name?.split(" ")[0] || "",
                         lastName: user?.name?.split(" ").slice(1).join(" ") || "",
+                        houseNo: "",
                         street: "", city: "", state: "Maharashtra", pinCode: "",
                         phone: user?.phone || "", saveInfo: false,
                         email: user?.email || ""
@@ -922,7 +931,7 @@ const CheckoutPage = () => {
                         )}
                       </div>
                       <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#4A3728" }}>
-                        {address.line1}, {address.city}, {address.state} – {address.pincode}
+                        {address.line1}, {address.line2}, {address.city}, {address.state} – {address.pincode}
                       </div>
                       <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#8C7B6B", marginTop: "4px" }}>
                         +91 {address.phone}
@@ -971,12 +980,24 @@ const CheckoutPage = () => {
                     </Field>
                   </div>
 
+                  <Field label="HOUSE / FLAT / SHOP NO." error={errors.houseNo}>
+                    <input
+                      ref={(el) => (fieldRefs.current.houseNo = el)}
+                      value={form.houseNo}
+                      onChange={handleChange("houseNo")}
+                      placeholder="e.g. Shop No. 12, Building Name"
+                      style={inputStyle(errors.houseNo)}
+                      onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
+                      onBlur={(e) => (e.target.style.borderColor = errors.houseNo ? "#C4727A" : "#E8DDD0")}
+                    />
+                  </Field>
+
                   <Field label="STREET ADDRESS" error={errors.street}>
                     <input
                       ref={(el) => (fieldRefs.current.street = el)}
                       value={form.street}
                       onChange={handleChange("street")}
-                      placeholder="House number and street name"
+                      placeholder="Area, street name, landmark"
                       style={inputStyle(errors.street)}
                       onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
                       onBlur={(e) => (e.target.style.borderColor = errors.street ? "#C4727A" : "#E8DDD0")}
