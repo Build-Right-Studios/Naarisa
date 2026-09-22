@@ -34,7 +34,13 @@ export const getNewArrivals = async (req, res) => {
       colours,
       sort,
       sizes,
+      page = 1,
+      limit = 12,
     } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
+    const skip = (pageNum - 1) * limitNum;
 
     /* ── Base filter ─────────────────────────────────────────────────────── */
     const filter = {
@@ -249,25 +255,55 @@ export const getNewArrivals = async (req, res) => {
         $sort: resolvedSort,
       },
 
+      // Pagination facet
       {
-        $limit: 50,
-      },
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [
+            { $skip: skip },
+            { $limit: limitNum }
+          ]
+        }
+      }
     ];
 
-    const variants = await Variant.aggregate(pipeline);
+    const [result] = await Variant.aggregate(pipeline);
+    const variants = result.data || [];
+    const total = result.metadata[0]?.total || 0;
 
     const optimized = variants.map((variant) => ({
       ...variant,
       images: variant.images.map((image) => ({
         ...image,
-        url: imagekitTransform(image.url,"w-520,f-auto,q-75"),
+        url: imagekitTransform(image.url, "w-520,f-auto,q-75"),
       })),
     }));
 
     return res.status(200).json({
       success: true,
       data: optimized,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
+      }
     });
+
+    // const variants = await Variant.aggregate(pipeline);
+
+    // const optimized = variants.map((variant) => ({
+    //   ...variant,
+    //   images: variant.images.map((image) => ({
+    //     ...image,
+    //     url: imagekitTransform(image.url, "w-520,f-auto,q-75"),
+    //   })),
+    // }));
+
+    // return res.status(200).json({
+    //   success: true,
+    //   data: optimized,
+    // });
 
   } catch (error) {
     console.error("getNewArrivals error:", error);

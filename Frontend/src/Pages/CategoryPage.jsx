@@ -93,18 +93,21 @@ const CategoryPage = () => {
 
   const config = CATEGORY_CONFIG[slug];
 
+  const LIMIT = 12;
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterOpen, setFilterOpen] = useState(false);
   const [toastVisible, setToast] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [pagination, setPagination] = useState({ total: 0, page: 1, limit: LIMIT });
   // const [page, setPage] = useState(1);
   // const activeFilterCount = countActiveFilters(filters)
   // filters.availability.length +
   // filters.priceRange.length +
   // (filters.discount ? 1 : 0) +
   // filters.colours.length
-  const LIMIT = 12;
+  
 
   const {
     page,
@@ -136,12 +139,22 @@ const CategoryPage = () => {
       try {
         const params = buildApiParams();
 
-        const res = await api.get(
-          `${PRODUCT.BY_CATEGORY(encodeURIComponent(config.category))}&${params.toString()}`
-        );
+        const url = `${PRODUCT.BY_CATEGORY(encodeURIComponent(config.category))}?${params.toString()}`;
+
+        const res = await api.get(url);
 
         setProducts(res.data.data || []);
-        setHasMore(res.data.hasMore || false);
+        // setHasMore(res.data.hasMore || false);
+        if (res.data.pagination) {
+          setPagination(res.data.pagination);
+        } else {
+          setPagination({
+            total: res.data.total || 0,
+            page: res.data.page || 1,
+            limit: res.data.limit || LIMIT,
+            totalPages: Math.ceil((res.data.total || 0) / (res.data.limit || LIMIT))
+          });
+        }
       } catch (err) {
         console.error(err);
         setProducts([]);
@@ -153,28 +166,30 @@ const CategoryPage = () => {
     fetchProducts();
   }, [config, buildApiParams]);
 
+  const totalPages = pagination.totalPages || Math.ceil(pagination.total / pagination.limit) || 0;
+
   // ── Load more ──
-  const handleLoadMore = async () => {
-    try {
-      const nextPage = page + 1;
+  // const handleLoadMore = async () => {
+  //   try {
+  //     const nextPage = page + 1;
 
-      const params = buildApiParams();
-      params.set("page", String(nextPage));
+  //     const params = buildApiParams();
+  //     params.set("page", String(nextPage));
 
-      const res = await api.get(
-        `${PRODUCT.BY_CATEGORY(
-          encodeURIComponent(config.category)
-        )}&${params.toString()}`
-      );
+  //     const res = await api.get(
+  //       `${PRODUCT.BY_CATEGORY(
+  //         encodeURIComponent(config.category)
+  //       )}&${params.toString()}`
+  //     );
 
-      setProducts((prev) => [...prev, ...(res.data.data || [])]);
-      setHasMore(res.data.hasMore || false);
+  //     setProducts((prev) => [...prev, ...(res.data.data || [])]);
+  //     setHasMore(res.data.hasMore || false);
 
-      updateParam("page", String(nextPage));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  //     updateParam("page", String(nextPage));
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  // };
 
   // ── Quick add to cart (picks first available size) ──
   const handleQuickAdd = (product, variant) => {
@@ -452,7 +467,7 @@ const CategoryPage = () => {
         </div>
 
         {/* ── Load More ── */}
-        {hasMore && !loading && (
+        {/* {hasMore && !loading && (
           <div style={{ textAlign: "center", paddingBottom: "60px" }}>
             <button
               onClick={handleLoadMore}
@@ -466,6 +481,54 @@ const CategoryPage = () => {
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#1f1b15"; }}
             >
               LOAD MORE
+            </button>
+          </div>
+        )} */}
+        {!loading && totalPages > 1 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", paddingBottom: "60px" }}>
+            <button
+              onClick={() => updateParam("page", page - 1)}
+              disabled={page === 1}
+              style={{
+                width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center",
+                border: "1px solid #E8DDD0", backgroundColor: "transparent",
+                cursor: page === 1 ? "not-allowed" : "pointer", opacity: page === 1 ? 0.4 : 1, transition: "all 0.2s",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f1b15" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => updateParam("page", pageNum)}
+                style={{
+                  width: "36px", height: "36px", fontFamily: "'Jost', sans-serif", fontSize: "13px",
+                  fontWeight: page === pageNum ? 700 : 400,
+                  border: "1px solid", borderColor: page === pageNum ? "#1f1b15" : "#E8DDD0",
+                  backgroundColor: page === pageNum ? "#1f1b15" : "transparent",
+                  color: page === pageNum ? "#F9F3EB" : "#1f1b15",
+                  cursor: "pointer", transition: "all 0.2s",
+                }}
+              >
+                {pageNum}
+              </button>
+            ))}
+
+            <button
+              onClick={() => updateParam("page", page + 1)}
+              disabled={page === totalPages}
+              style={{
+                width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center",
+                border: "1px solid #E8DDD0", backgroundColor: "transparent",
+                cursor: page === totalPages ? "not-allowed" : "pointer", opacity: page === totalPages ? 0.4 : 1, transition: "all 0.2s",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1f1b15" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </button>
           </div>
         )}
