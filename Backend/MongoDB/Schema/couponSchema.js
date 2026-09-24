@@ -59,8 +59,15 @@ const couponSchema = new mongoose.Schema(
     couponType: {
       type: String,
       required: true,
-      enum: ["website", "social"],
+      enum: ["website", "social", "personal"],
       default: "website"
+    },
+
+    assignedToUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true,
     },
 
     expiryDate: {
