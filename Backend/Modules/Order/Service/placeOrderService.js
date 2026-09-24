@@ -8,6 +8,7 @@ import { applyCoupon } from "../../Coupons/Service/applyCouponService.js";
 import { deductStockForItems } from "../../Variant/Service/deductStockForItemsService.js";
 import { generateOrderId } from "../../../Utils/generateOrderId.js";
 import { checkCodServiceabilityService } from "./checkCodServiceabilityService.js";
+import { notifyOrderConfirmed } from "../../Payment/Service/orderConfirmationService.js";
 
 const PARTIAL_COD_ADVANCE_AMOUNT = Number(process.env.PARTIAL_COD_ADVANCE_AMOUNT || 200);
 const PAYMENT_MODES = ["Prepaid", "COD", "PartialCOD"];
@@ -114,7 +115,7 @@ const saveOrder = async ({
     email: userEmail,
     coupon: appliedCoupon,
     pricing,
-    address: { ...deliveryAddress, email: deliveryAddress.email || null },
+    address: { ...deliveryAddress, email: userEmail || null },
     payment: {
       mode: paymentPlan.mode,
       razorpayOrderId: razorpayOrderId || null,
@@ -164,6 +165,14 @@ export const placeOrderService = async (orderData) => {
     }, session);
 
     await session.commitTransaction();
+
+    // Full COD confirms immediately with no Razorpay step — fire the same
+    // notification path Prepaid/PartialCOD get after payment verification.
+    if (paymentPlan.mode === "COD") {
+      notifyOrderConfirmed(order).catch((err) =>
+        console.error("Failed to notify COD order confirmation:", err)
+      );
+    }
 
     return {
       orderId: order._id,

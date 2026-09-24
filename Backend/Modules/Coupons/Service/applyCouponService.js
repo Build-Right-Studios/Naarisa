@@ -17,6 +17,14 @@ export const applyCoupon = async (couponCode, subtotal, userId) => {
     throw { status: 400, message: "Coupon is no longer active" };
   }
 
+  // Personal coupons are locked to the user they were issued to —
+  // block everyone else outright, even with a valid code string.
+  if (coupon.assignedToUser) {
+    if (!userId || String(coupon.assignedToUser) !== String(userId)) {
+      throw { status: 403, message: "This coupon isn't valid for your account." };
+    }
+  }
+
   if (coupon.expiryDate < new Date()) {
     throw { status: 400, message: "Coupon has expired" };
   }

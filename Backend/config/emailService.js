@@ -3,7 +3,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendOrderConfirmationEmail = async (email, orderData) => {
-  const { customOrderId, items, pricing, address } = orderData;
+  const { customOrderId, items, pricing, address, personalCoupon } = orderData;
 
   const itemsHtml = items
     .map(
@@ -176,6 +176,25 @@ Total
 
 </div>
 
+${personalCoupon ? `
+<div class="section" style="background:#fff7ed;">
+
+<h3 style="color:#c2410c;">A ₹${personalCoupon.discountValue} thank-you, just for you</h3>
+
+<p>
+You paid online, so here's a little something back — use this on your next order:
+</p>
+
+<div class="order-id" style="background:#ffedd5;color:#9a3412;">
+${personalCoupon.code}
+</div>
+
+<p>
+Valid until ${new Date(personalCoupon.expiryDate).toLocaleDateString("en-IN", { dateStyle: "medium" })}.
+</p>
+
+</div>
+` : ""}
 
 <div class="section">
 
@@ -236,7 +255,7 @@ If you need assistance, contact us at
 
   try {
     const response = await resend.emails.send({
-      from: "Naarisa <orders@naarisa.com>",
+      from: process.env.RESEND_FROM_EMAIL || "Naarisa <onboarding@resend.dev>",
       replyTo: "naarisa23@gmail.com",
       to: email,
       subject: `Order Confirmation | ${customOrderId}`,

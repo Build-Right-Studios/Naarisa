@@ -4,12 +4,12 @@ import { commitCouponUsage } from "../../Coupons/Query/commitCouponUsageQuery.js
 import { sendSMS } from "../../../config/twilio.js";
 import { sendSMSTemplate } from "../../../config/msg91.js";
 import { sendOrderConfirmationEmail } from "../../../config/emailService.js";
+import { generatePersonalCoupon } from "../../Coupons/Service/generatePersonalCouponService.js";
 
 // Fire-and-forget — never awaited by callers, never blocks the HTTP response
-const dispatchNotifications = (confirmedOrder) => {
+const dispatchNotifications = (confirmedOrder, personalCoupon = null) => {
   const userEmail = confirmedOrder.address.email;
 
-  // SMS
   (async () => {
     try {
       if (process.env.MSG91_ORDER_CONFIRMATION_FLOW) {
@@ -29,7 +29,6 @@ const dispatchNotifications = (confirmedOrder) => {
     }
   })();
 
-  // Email
   if (userEmail) {
     (async () => {
       try {
@@ -38,11 +37,13 @@ const dispatchNotifications = (confirmedOrder) => {
           items: confirmedOrder.items,
           pricing: confirmedOrder.pricing,
           address: confirmedOrder.address,
-          payment: {
-            mode: confirmedOrder.payment.mode,
-            advanceAmount: confirmedOrder.payment.advanceAmount,
-            codAmount: confirmedOrder.payment.codAmount,
-          }
+          personalCoupon: personalCoupon
+            ? {
+                code: personalCoupon.code,
+                discountValue: personalCoupon.discountValue,
+                expiryDate: personalCoupon.expiryDate,
+              }
+            : null,
         });
       } catch (emailError) {
         console.error("Email sending failed:", emailError);
@@ -51,18 +52,29 @@ const dispatchNotifications = (confirmedOrder) => {
   }
 };
 
+// Shared by both confirmation paths: Razorpay-verified orders (Prepaid/PartialCOD)
+// AND instantly-confirmed full-COD orders. Only Prepaid ever earns a coupon.
+export const notifyOrderConfirmed = async (confirmedOrder) => {
+  let personalCoupon = null;
+  if (confirmedOrder.payment.mode === "Prepaid") {
+    try {
+      personalCoupon = await generatePersonalCoupon(confirmedOrder.user);
+    } catch (err) {
+      console.error("Failed to generate personal coupon:", err);
+    }
+  }
+  dispatchNotifications(confirmedOrder, personalCoupon);
+};
+
 export const confirmOrderAndNotify = async (orderId, razorpayPaymentId) => {
   const session = await mongoose.startSession();
   let confirmedOrder;
 
   try {
     session.startTransaction();
-
     confirmedOrder = await confirmOrder(orderId, razorpayPaymentId, session);
-    console.log(confirmedOrder)
 
     if (!confirmedOrder) {
-      // Order was already confirmed by a concurrent webhook/verify call — nothing to do.
       await session.abortTransaction();
       console.log(`Order ${orderId} already confirmed, skipping duplicate confirmation`);
       return null;
@@ -81,7 +93,7 @@ export const confirmOrderAndNotify = async (orderId, razorpayPaymentId) => {
   }
 
   console.log("Confirmed Order:", confirmedOrder.customOrderId);
-  dispatchNotifications(confirmedOrder);
+  await notifyOrderConfirmed(confirmedOrder);
 
   return confirmedOrder;
 };
