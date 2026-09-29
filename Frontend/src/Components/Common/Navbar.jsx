@@ -43,6 +43,10 @@ const navLinks = [
         title: "Dresses",
         path: "/categories/dresses",
       },
+      {
+        title: "Co-ord Sets",
+        path: "/categories/co-ord-sets",
+      },
     ],
   },
   {
