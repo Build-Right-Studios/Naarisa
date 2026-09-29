@@ -7,7 +7,8 @@ const CATEGORIES = [
   "Dresses",
   "Short Kurti",
   "Long Kurti",
-  "Kurti Sets"
+  "Kurti Sets",
+  "Co-ord Sets"
 ];
 
 const initialForm = {

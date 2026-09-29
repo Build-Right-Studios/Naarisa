@@ -48,6 +48,13 @@ const CATEGORY_CONFIG = {
     banner: kurtiSetsBanner,
     category: "Kurti Sets",
   },
+
+  "co-ord-sets": {
+    label: "Co-ord Sets",
+    tagline: "Perfectly matched. Effortlessly put together.",
+    banner: null, // optional, see below
+    category: "Co-ord Sets", // must exactly match what you saved via /add-product
+  },
 };
 
 // ── Add to Cart Toast ─────────────────────────────────────────────────────────
@@ -107,7 +114,7 @@ const CategoryPage = () => {
   // filters.priceRange.length +
   // (filters.discount ? 1 : 0) +
   // filters.colours.length
-  
+
 
   const {
     page,
