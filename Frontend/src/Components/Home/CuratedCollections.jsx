@@ -28,7 +28,13 @@ const collections = [
     image: "https://ik.imagekit.io/llcblwlng/naarisa/homepage-banners/Kurti%20Set%20Banner.png",
     accent: "#F5E6D0",
   },
-
+  // {
+  //   title: "Co-ord Sets",
+  //   path: "/categories/co-ord-sets",
+  //   // gradient: "linear-gradient(135deg, #0d1f1a 0%, #1a3d32 50%, #2D6B5A 100%)",
+  //   image: "https://ik.imagekit.io/llcblwlng/naarisa/homepage-banners/Kurti%20Set%20Banner.png",
+  //   accent: "#F5E6D0",
+  // },
 ];
 
 const CuratedCollections = () => {
@@ -93,7 +99,7 @@ const AnimatedCard = ({ col, index }) => {
     }
   }, [inView, animated]);
 
-  const delays = [0, 80, 80, 160];
+  const delays = [0, 80, 80, 160, 240];
 
   return (
     <div
