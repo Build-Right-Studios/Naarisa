@@ -93,7 +93,7 @@ const PaymentModeSelector = ({ mode, onChange, codAvailable, total, advance }) =
   const options = [
     { id: "Prepaid", label: "Pay Now", desc: "Pay full amount online" },
     { id: "COD", label: "Cash on Delivery", desc: "Pay full amount at your doorstep", disabled: !codAvailable },
-    { id: "PartialCOD", label: "Partial COD", desc: `Pay ₹${advance} now, rest (₹${(total - advance).toLocaleString("en-IN")}) on delivery`, disabled: !codAvailable },
+    // { id: "PartialCOD", label: "Partial COD", desc: `Pay ₹${advance} now, rest (₹${(total - advance).toLocaleString("en-IN")}) on delivery`, disabled: !codAvailable },
   ];
 
   return (
