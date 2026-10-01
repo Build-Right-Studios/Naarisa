@@ -25,6 +25,9 @@ const PRICE_SORTS = new Set(["price_asc", "price_desc"]);
 export const getBestSellers = async (req, res) => {
   try {
     const { availability, priceRange, discount, colours, sort, sizes } = req.query;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 12));
+    const skip = (page - 1) * limit;
 
     /* ── Base filter ─────────────────────────────────────────────────────── */
     const filter = { isBestSeller: true, isActive: true };
@@ -191,22 +194,28 @@ export const getBestSellers = async (req, res) => {
         : []),
 
       { $sort: resolvedSort },
-      { $limit: 50 },
+      // THE FIX: Count total + paginate
+      {
+        $facet: {
+          metadata: [{ $count: "total" }],
+          data: [{ $skip: skip }, { $limit: limit }]
+        }
+      }
     ];
 
-    const variants = await Variant.aggregate(pipeline);
+    const [result] = await Variant.aggregate(pipeline);
+    const variants = result.data || [];
+    const total = result.metadata[0]?.total || 0;
 
-    const optimized = variants.map((variant) => ({
-      ...variant,
-      images: variant.images.map((image) => ({
-        ...image,
-        url: imagekitTransform(image.url, "w-520,f-auto,q-75"),
-      })),
+    const optimized = variants.map(v => ({
+      ...v,
+      images: v.images.map(img => ({ ...img, url: imagekitTransform(img.url, "w-520,f-auto,q-75") }))
     }));
 
     return res.status(200).json({
       success: true,
       data: optimized,
+      pagination: { total, page, limit, totalPages: Math.ceil(total / limit) }
     });
   } catch (error) {
     console.error("getBestSellers error:", error);

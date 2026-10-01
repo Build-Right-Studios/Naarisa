@@ -28,8 +28,8 @@ export const getCategoryProducts = async (req, res) => {
       return res.status(400).json({ success: false, message: "Category is required" });
     }
 
-    const sort  = req.query.sort || "newest";
-    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const sort = req.query.sort || "newest";
+    const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(48, parseInt(req.query.limit) || 12);
 
     if (!VALID_SORTS.includes(sort)) {
@@ -40,24 +40,31 @@ export const getCategoryProducts = async (req, res) => {
     }
 
     const { products, total } = await getCategoryProductsService({
-      category:     category.trim(),
+      category: category.trim(),
       sort,
       page,
       limit,
       availability: req.query.availability,
-      priceRange:   req.query.priceRange,
-      discount:     req.query.discount,
-      colours:      req.query.colours,
-      sizes:        req.query.sizes,
+      priceRange: req.query.priceRange,
+      discount: req.query.discount,
+      colours: req.query.colours,
+      sizes: req.query.sizes,
     });
 
     return res.status(200).json({
       success: true,
-      data:    products,
+      data: products,
       total,
       page,
       limit,
       hasMore: page * limit < total,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasMore: page * limit < total
+      }
     });
   } catch (error) {
     console.error("getCategoryProducts error:", error);

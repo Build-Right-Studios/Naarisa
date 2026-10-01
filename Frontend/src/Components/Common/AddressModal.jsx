@@ -104,7 +104,12 @@ const AddressModal = ({ existing, onSave, onClose }) => {
         const e = {};
         if (!form.name.trim()) e.name = "Required";
         if (!/^[6-9]\d{9}$/.test(form.phone)) e.phone = "Valid 10-digit number";
-        if (!form.line1.trim()) e.line1 = "Required";
+        if (!form.line1.trim()) {
+            e.line1 = "Required";
+        } else if (!/\d/.test(form.line1)) {
+            e.line1 = "Please include a house/shop/flat number";
+        }
+        if (!form.line2.trim()) e.line2 = "Required";
         if (!form.city.trim()) e.city = "Required";
         if (!/^\d{6}$/.test(form.pincode)) e.pincode = "Valid 6-digit PIN";
         if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { e.email = "Enter a valid email"; }
@@ -186,20 +191,23 @@ const AddressModal = ({ existing, onSave, onClose }) => {
                         type="email"
                     />
                     <Field
-                        label="STREET ADDRESS"
+                        label="HOUSE / FLAT / SHOP NO."
                         k="line1"
                         form={form}
                         errors={errors}
                         set={set}
                         inp={inp}
-                        placeholder="House no. and street"
+                        placeholder="e.g. Shop No. 12, Building Name"
                     />
-                    <div>
-                        <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#8C7B6B", marginBottom: "5px" }}>LANDMARK / AREA <span style={{ fontWeight: 400 }}>(optional)</span></p>
-                        <input value={form.line2} onChange={set("line2")} placeholder="Landmark or area" style={inp(false)}
-                            onFocus={(e) => (e.target.style.borderColor = "#AB721E")}
-                            onBlur={(e) => (e.target.style.borderColor = "#E8DDD0")} />
-                    </div>
+                    <Field
+                        label="STREET / LOCALITY"
+                        k="line2"
+                        form={form}
+                        errors={errors}
+                        set={set}
+                        inp={inp}
+                        placeholder="Area, street name, landmark"
+                    />
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
                         <Field
                             label="CITY"
