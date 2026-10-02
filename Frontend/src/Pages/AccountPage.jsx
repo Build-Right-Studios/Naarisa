@@ -199,8 +199,10 @@ const OrdersSection = () => {
       .then((r) => {
         if (r.data.success) {
           console.log(r.data.data)
-          const paidOrders = r.data.data.filter(order => order.payment?.status === "paid");
-          setOrders(paidOrders);
+          const visibleOrders = r.data.data.filter(
+            (order) => order.status !== "payment_pending"
+          );
+          setOrders(visibleOrders);
         }
       })
       .catch(console.error)
@@ -247,10 +249,11 @@ const OrdersSection = () => {
               onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#C4A882")}
               onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#E8DDD0")}>
 
-              <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", flexWrap: "wrap", gap: "8px" }}
-                onClick={() => setExpanded(expanded === order._id ? null : order._id)}>
-                <div>
-                  {/* ✅ Changed: Display customOrderId instead of _id */}
+              <div
+                style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", flexWrap: "wrap", gap: "8px" }}
+                onClick={() => setExpanded(expanded === order._id ? null : order._id)}
+              >
+                <div style={{ flex: "1 1 220px", minWidth: 0 }}>
                   <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", color: "#8C7B6B", marginBottom: "4px" }}>
                     ORDER #{order.customOrderId || order._id?.slice(-6).toUpperCase()}
                   </p>
@@ -258,7 +261,8 @@ const OrdersSection = () => {
                     {fmtDate(order.createdAt)} · {order.items?.length} item{order.items?.length !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: "0 0 auto" }}>
                   <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "15px", fontWeight: 600, color: "#1f1b15" }}>{fmtPrice(order.pricing?.total)}</p>
                   <StatusBadge status={order.status} />
                   <span style={{ color: "#8C7B6B", display: "inline-flex", transform: expanded === order._id ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
