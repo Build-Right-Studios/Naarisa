@@ -451,13 +451,13 @@ const CategoryPage = () => {
                 <ProductCard
                   key={p._id}
                   product={p}
-                  badge={
-                    p.isBestSeller
-                      ? "Best Seller"
-                      : p.isNewArrival
-                        ? "New"
-                        : null
-                  }
+                  // badge={
+                  //   p.isBestSeller
+                  //     ? "Best Seller"
+                  //     : p.isNewArrival
+                  //       ? "New"
+                  //       : null
+                  // }
                 />
               ))
               : (
