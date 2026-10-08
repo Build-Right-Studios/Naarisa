@@ -161,6 +161,15 @@ ${itemsHtml}
 </td>
 </tr>
 
+${pricing.codCharge > 0 ? `
+<tr>
+<td style="padding:8px 0;">COD Charges</td>
+<td style="padding:8px 0;text-align:right;">
+₹${pricing.codCharge.toFixed(2)}
+</td>
+</tr>
+` : ""}
+
 <tr>
 <td style="padding-top:12px;font-weight:600;">
 Total

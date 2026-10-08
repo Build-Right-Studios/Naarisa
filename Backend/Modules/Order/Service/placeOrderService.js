@@ -10,8 +10,9 @@ import { generateOrderId } from "../../../Utils/generateOrderId.js";
 import { checkCodServiceabilityService } from "./checkCodServiceabilityService.js";
 import { notifyOrderConfirmed } from "../../Payment/Service/orderConfirmationService.js";
 
-const PARTIAL_COD_ADVANCE_AMOUNT = Number(process.env.PARTIAL_COD_ADVANCE_AMOUNT || 200);
-const PAYMENT_MODES = ["Prepaid", "COD", "PartialCOD"];
+// const PARTIAL_COD_ADVANCE_AMOUNT = Number(process.env.PARTIAL_COD_ADVANCE_AMOUNT || 200);
+const PAYMENT_MODES = ["Prepaid", "COD"];
+const COD_CHARGE = Number(process.env.COD_CHARGE || 100);
 
 const buildOrderItems = async (items) => {
   let subtotal = 0;
@@ -79,17 +80,17 @@ const resolvePaymentPlan = async ({ paymentMode, total, pincode }) => {
   }
 
   if (mode === "COD") {
-    return { mode, advanceAmount: 0, codAmount: total };
+    return { mode, advanceAmount: 0, codAmount: total + COD_CHARGE };
   }
 
   // PartialCOD — flat ₹200 advance, capped at the order total
-  const advanceAmount = Math.min(PARTIAL_COD_ADVANCE_AMOUNT, total);
-  if (advanceAmount >= total) {
-    // Advance would cover the whole order — a ₹0 COD leg makes no sense,
-    // fall back to full COD instead.
-    return { mode: "COD", advanceAmount: 0, codAmount: total };
-  }
-  return { mode: "PartialCOD", advanceAmount, codAmount: total - advanceAmount };
+  // const advanceAmount = Math.min(PARTIAL_COD_ADVANCE_AMOUNT, total);
+  // if (advanceAmount >= total) {
+  //   // Advance would cover the whole order — a ₹0 COD leg makes no sense,
+  //   // fall back to full COD instead.
+  //   return { mode: "COD", advanceAmount: 0, codAmount: total };
+  // }
+  // return { mode: "PartialCOD", advanceAmount, codAmount: total - advanceAmount };
 };
 
 const saveOrder = async ({
@@ -142,6 +143,9 @@ export const placeOrderService = async (orderData) => {
     pincode: deliveryAddress.pincode,
   });
 
+  const codCharge = paymentPlan.mode === "COD" ? COD_CHARGE : 0;
+  const finalTotal = total + codCharge;
+
   // Only hit Razorpay when money actually needs to move online.
   const razorpayOrder =
     paymentPlan.advanceAmount > 0 ? await createRazorpayOrder(paymentPlan.advanceAmount) : null;
@@ -157,7 +161,7 @@ export const placeOrderService = async (orderData) => {
       userId: user._id,
       orderItems,
       appliedCoupon,
-      pricing: { subtotal, discount, total },
+      pricing: { subtotal, discount, total: finalTotal },
       deliveryAddress,
       razorpayOrderId: razorpayOrder?.id,
       paymentPlan,
@@ -182,7 +186,7 @@ export const placeOrderService = async (orderData) => {
       amount: razorpayOrder?.amount || 0,
       currency: razorpayOrder?.currency || "INR",
       keyId: razorpayOrder ? process.env.RAZORPAY_KEY_ID : null,
-      pricing: { subtotal, discount, total },
+      pricing: { subtotal, discount, total: finalTotal },
       advanceAmount: paymentPlan.advanceAmount,
       codAmount: paymentPlan.codAmount,
       requiresPayment: Boolean(razorpayOrder),

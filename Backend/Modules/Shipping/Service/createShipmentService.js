@@ -6,7 +6,9 @@ export const createShipmentService = async (
     length,
     breadth,
     height,
-    weight
+    weight,
+    logistics = "", 
+    sType = ""
 ) => {
     // 1. Find Order
     const order = await Order.findById(orderId);
@@ -147,11 +149,9 @@ export const createShipmentService = async (
     // Optional courier configuration.
     // If ITHINK_LOGISTICS is present in .env, it will be sent to iThink.
     // If it is not present, iThink can handle courier selection according to your account.
-    if (process.env.ITHINK_LOGISTICS) {
-        body.data.logistics = process.env.ITHINK_LOGISTICS;
-    }
-    if (process.env.ITHINK_S_TYPE) {
-        body.data.s_type = process.env.ITHINK_S_TYPE;
+    if (logistics) {
+        body.data.logistics = logistics;
+        if (sType) body.data.s_type = sType;
     }
 
     // 8. Call iThink Logistics
