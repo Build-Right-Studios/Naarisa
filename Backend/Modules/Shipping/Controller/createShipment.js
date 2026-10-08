@@ -6,14 +6,6 @@ export const createShipment = async (req, res) => {
     const { orderId } = req.params;
     const { length, breadth, height, weight } = req.body;
 
-    console.log(process.env.ITHINK_BASE_URL);
-    console.log(process.env.ITHINK_PICKUP_ADDRESS_ID);
-    console.log(process.env.ITHINK_ACCESS_TOKEN);
-
-    console.log("Length : ", length);
-    console.log("breadth : ", breadth);
-    console.log("height : ", height);
-    console.log("weight : ", weight);
     const shipment = await createShipmentService(orderId, length, breadth, height, weight);
 
     return res.status(200).json({

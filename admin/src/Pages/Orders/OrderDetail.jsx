@@ -164,6 +164,21 @@ export default function OrderDetail() {
   const [shipmentError, setShipmentError] = useState("");
   const [showDimensionsModal, setShowDimensionsModal] = useState(false);
   const [dimensions, setDimensions] = useState({ length: "", breadth: "", height: "", weight: "" });
+  const [modalStep, setModalStep] = useState("dimensions"); // "dimensions" | "couriers"
+  const [rates, setRates] = useState(null);
+  const [loadingRates, setLoadingRates] = useState(false);
+  const [selectedKey, setSelectedKey] = useState("auto");
+  const [modalError, setModalError] = useState("");
+
+  const courierKey = (c) => `${c.logistics}|${c.serviceType}`;
+
+  const closeModal = () => {
+    setShowDimensionsModal(false);
+    setModalStep("dimensions");
+    setRates(null);
+    setSelectedKey("auto");
+    setModalError("");
+  };
 
   const width = useWindowWidth();
   const isMobile = width < 640;
@@ -194,37 +209,66 @@ export default function OrderDetail() {
     fetchOrder();
   }, [id]);
 
-  const handleCreateShipment = async () => {
+  const handleGetRates = async () => {
     const { length, breadth, height, weight } = dimensions;
     if (!length || !breadth || !height || !weight) return;
-
     try {
-      setCreatingShipment(true);
-      setShipmentError("");
-      setShowDimensionsModal(false);
-
-      const response = await axios.post(
-        `${BASE.ROUTE}${ORDER.CREATE_SHIPMENT(id)}`,
+      setLoadingRates(true);
+      setModalError("");
+      const res = await axios.post(
+        `${BASE.ROUTE}${ORDER.GET_COURIERS(id)}`,
         { length: Number(length), breadth: Number(breadth), height: Number(height), weight: Number(weight) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      const list = res.data.couriers || [];
+      setRates(list);
+      setSelectedKey(list.length ? courierKey(list[0]) : "auto"); // cheapest preselected
+      setModalStep("couriers");
+    } catch (err) {
+      setModalError(err.response?.data?.message || "Unable to fetch courier rates.");
+    } finally {
+      setLoadingRates(false);
+    }
+  };
 
+  const handleCreateShipment = async () => {
+    const { length, breadth, height, weight } = dimensions;
+    const chosen = rates?.find((c) => courierKey(c) === selectedKey);
+
+    try {
+      setCreatingShipment(true);
+      setModalError("");
+      const res = await axios.post(
+        `${BASE.ROUTE}${ORDER.CREATE_SHIPMENT(id)}`,
+        {
+          length: Number(length), breadth: Number(breadth),
+          height: Number(height), weight: Number(weight),
+          logistics: chosen?.logistics || "",   // blank = auto-allocate
+          sType: chosen?.serviceType || "",
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const s = res.data.shipment;
       setOrder((prev) => ({
         ...prev,
         delivery: {
           ...prev.delivery,
-          shipmentId: response.data.shipment_id,
-          shiprocketOrderId: response.data.order_id,
+          provider: "ithink",
+          shipmentId: s.shipmentId,
+          providerOrderId: s.providerOrderId,
+          awbCode: s.awbCode,
+          trackingNumber: s.awbCode,
+          courierName: s.courierName,
+          trackingUrl: s.trackingUrl,
+          package: s.package,
           status: "shipment_created",
         },
       }));
-
-      setCouriers(null);
-      setSelectedCourierId(null);
       setDimensions({ length: "", breadth: "", height: "", weight: "" });
+      closeModal();
     } catch (err) {
-      console.error(err);
-      setShipmentError(err.response?.data?.message || "Unable to create shipment.");
+      setModalError(err.response?.data?.message || "Unable to create shipment.");
     } finally {
       setCreatingShipment(false);
     }
@@ -711,7 +755,7 @@ export default function OrderDetail() {
           </div>
 
           {/* Shipping Card - Dynamic based on status */}
-          {hasShipment && (
+          {/* {hasShipment && (
             <ShippingCard
               delivery={delivery}
               couriers={couriers}
@@ -724,7 +768,8 @@ export default function OrderDetail() {
               error={shipmentError}
               onDismissError={() => setShipmentError("")}
             />
-          )}
+          )} */}
+          {hasShipment && <ShippingCard delivery={delivery} />}
 
           <ManualShipNotify
             order={order}
@@ -741,339 +786,53 @@ export default function OrderDetail() {
           )}
         </div>
       </div>
-      <DimensionsModal
+      {/* <DimensionsModal
         open={showDimensionsModal}
         onClose={() => setShowDimensionsModal(false)}
         dimensions={dimensions}
         onChange={(key, val) => setDimensions(prev => ({ ...prev, [key]: val }))}
         onSubmit={handleCreateShipment}
         loading={creatingShipment}
+      /> */}
+      <ShipmentModal
+        open={showDimensionsModal}
+        step={modalStep}
+        onClose={closeModal}
+        dimensions={dimensions}
+        onChange={(key, val) => setDimensions((prev) => ({ ...prev, [key]: val }))}
+        onGetRates={handleGetRates}
+        loadingRates={loadingRates}
+        rates={rates}
+        selectedKey={selectedKey}
+        onSelect={setSelectedKey}
+        courierKey={courierKey}
+        onBack={() => { setModalStep("dimensions"); setModalError(""); }}
+        onSubmit={handleCreateShipment}
+        creating={creatingShipment}
+        error={modalError}
       />
     </div>
   );
 }
 
 // ─── Shipping Card Component ───────────────────────────────────────────────────
-function ShippingCard({
-  delivery,
-  couriers,
-  selectedCourierId,
-  onSelectCourier,
-  onLoadCouriers,
-  onAssignCourier,
-  loadingCouriers,
-  assigningCourier,
-  error,
-  onDismissError,
-}) {
-  const isAwbGenerated = delivery.status === "awb_generated";
-
+function ShippingCard({ delivery }) {
   return (
     <div style={D.card}>
       <h2 style={D.cardTitle}>Shipping</h2>
-
-      {/* Error Message */}
-      {error && (
-        <div
-          style={{
-            background: "#fee2e2",
-            border: "1px solid #fecaca",
-            borderRadius: 8,
-            padding: "12px 14px",
-            marginBottom: 16,
-            fontSize: 13,
-            color: "#b91c1c",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span>{error}</span>
-          <button
-            style={{
-              background: "none",
-              border: "none",
-              color: "inherit",
-              cursor: "pointer",
-              fontSize: 16,
-              padding: 0,
-            }}
-            onClick={onDismissError}
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* State 1: Shipment Created, No Courier Selected */}
-      {!isAwbGenerated && !couriers && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <InfoRow label="Status" value="Shipment Created" />
-          <InfoRow label="Shipment ID" value={delivery.shipmentId || "—"} />
-          <button
-            style={{
-              ...D.courierBtn,
-              background: loadingCouriers ? "#e5e7eb" : "#111",
-              cursor: loadingCouriers ? "not-allowed" : "pointer",
-              opacity: loadingCouriers ? 0.6 : 1,
-            }}
-            onClick={onLoadCouriers}
-            disabled={loadingCouriers}
-          >
-            {loadingCouriers ? "Loading Couriers..." : "Load Couriers"}
-          </button>
-        </div>
-      )}
-
-      {/* State 2: Couriers Loaded, Awaiting Selection */}
-      {!isAwbGenerated && couriers && couriers.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <InfoRow label="Status" value="Shipment Created" />
-          <InfoRow label="Shipment ID" value={delivery.shipmentId || "—"} />
-
-          <div style={{ marginTop: 8 }}>
-            <label
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                color: "#888",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                display: "block",
-                marginBottom: 12,
-              }}
-            >
-              Available Couriers
-            </label>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {couriers.map((courier) => (
-                <div
-                  key={courier.courier_id}
-                  style={{
-                    border:
-                      selectedCourierId === courier.courier_id
-                        ? "2px solid #111"
-                        : "1px solid #e5e7eb",
-                    borderRadius: 10,
-                    padding: 12,
-                    cursor: "pointer",
-                    background:
-                      selectedCourierId === courier.courier_id
-                        ? "#f9fafb"
-                        : "#fff",
-                    transition: "all 0.15s ease",
-                  }}
-                  onClick={() => onSelectCourier(courier.courier_id)}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 10,
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="courier"
-                      value={courier.id}
-                      checked={selectedCourierId === courier.id}
-                      onChange={() => onSelectCourier(courier.id)}
-                      style={{ marginTop: 3, cursor: "pointer", flexShrink: 0 }}
-                    />
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: 10,
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontWeight: 600,
-                            fontSize: 14,
-                            color: "#111",
-                          }}
-                        >
-                          {courier.courier_name}
-                        </div>
-
-                        <div
-                          style={{
-                            fontWeight: 700,
-                            fontSize: 14,
-                            color: "#111",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          ₹{courier.rate}
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 8,
-                          marginTop: 8,
-                          fontSize: 12,
-                        }}
-                      >
-                        {courier.estimated_delivery_days && (
-                          <span
-                            style={{
-                              background: "#eef2ff",
-                              color: "#4338ca",
-                              padding: "4px 8px",
-                              borderRadius: 999,
-                              fontWeight: 500,
-                            }}
-                          >
-                            ETA {courier.estimated_delivery_days} Days
-                          </span>
-                        )}
-
-                        {courier.rating && (
-                          <span
-                            style={{
-                              background: "#fffbeb",
-                              color: "#b45309",
-                              padding: "4px 8px",
-                              borderRadius: 999,
-                              fontWeight: 500,
-                            }}
-                          >
-                            ⭐ {Number(courier.rating).toFixed(1)}
-                          </span>
-                        )}
-
-                        {courier.is_surface ? (
-                          <span
-                            style={{
-                              background: "#ecfdf5",
-                              color: "#047857",
-                              padding: "4px 8px",
-                              borderRadius: 999,
-                              fontWeight: 500,
-                            }}
-                          >
-                            Surface
-                          </span>
-                        ) : (
-                          <span
-                            style={{
-                              background: "#eff6ff",
-                              color: "#2563eb",
-                              padding: "4px 8px",
-                              borderRadius: 999,
-                              fontWeight: 500,
-                            }}
-                          >
-                            Air
-                          </span>
-                        )}
-
-                        {courier.realtime_tracking === "Real Time" && (
-                          <span
-                            style={{
-                              background: "#f3f4f6",
-                              color: "#374151",
-                              padding: "4px 8px",
-                              borderRadius: 999,
-                              fontWeight: 500,
-                            }}
-                          >
-                            Live Tracking
-                          </span>
-                        )}
-                      </div>
-
-                      {courier.reason && (
-                        <div
-                          style={{
-                            marginTop: 8,
-                            fontSize: 11,
-                            color: "#dc2626",
-                          }}
-                        >
-                          {courier.reason.replace(/_/g, " ")}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <button
-            style={{
-              ...D.courierBtn,
-              background: assigningCourier ? "#e5e7eb" : "#111",
-              cursor:
-                assigningCourier || !selectedCourierId
-                  ? "not-allowed"
-                  : "pointer",
-              opacity: assigningCourier || !selectedCourierId ? 0.6 : 1,
-            }}
-            onClick={onAssignCourier}
-            disabled={assigningCourier || !selectedCourierId}
-          >
-            {assigningCourier ? "Assigning..." : "Assign Courier"}
-          </button>
-        </div>
-      )}
-
-      {/* State 3: AWB Generated */}
-      {isAwbGenerated && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <InfoRow label="Status" value="AWB Generated" />
-          <InfoRow label="Courier" value={delivery.courierName || "—"} />
-          <InfoRow label="AWB" value={delivery.awbCode || "—"} mono />
-          {delivery.trackingUrl && (
-            <InfoRow label="Tracking URL" value={delivery.trackingUrl} />
-          )}
-          {delivery.estimatedDelivery && (
-            <InfoRow
-              label="Est. Delivery"
-              value={formatDate(delivery.estimatedDelivery)}
-            />
-          )}
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-            <button style={D.actionBtn}>
-              📄 Download Label
-            </button>
-            <button style={D.actionBtn}>
-              📋 Download Invoice
-            </button>
-            <button style={D.actionBtn}>
-              🔗 Track Shipment
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* State 4: No Couriers Available */}
-      {!isAwbGenerated && couriers && couriers.length === 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <InfoRow label="Status" value="Shipment Created" />
-          <InfoRow label="Shipment ID" value={delivery.shipmentId || "—"} />
-          <div
-            style={{
-              padding: 12,
-              background: "#fef3c7",
-              borderRadius: 8,
-              color: "#92400e",
-              fontSize: 13,
-            }}
-          >
-            No couriers available for this location.
-          </div>
-        </div>
-      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <InfoRow label="Status" value={delivery.status?.replace(/_/g, " ") || "—"} />
+        <InfoRow label="Courier" value={delivery.courierName || "—"} />
+        <InfoRow label="AWB" value={delivery.awbCode || "—"} mono />
+        <InfoRow label="Shipment ID" value={delivery.shipmentId || "—"} mono />
+        {delivery.trackingUrl && <InfoRow label="Tracking" value={delivery.trackingUrl} />}
+        {delivery.package && (
+          <InfoRow
+            label="Package"
+            value={`${delivery.package.length}×${delivery.package.breadth}×${delivery.package.height} cm · ${delivery.package.weight} kg`}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -1189,7 +948,91 @@ function avatarColor(name = "") {
   return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 }
 
-function DimensionsModal({ open, onClose, dimensions, onChange, onSubmit, loading }) {
+// function DimensionsModal({ open, onClose, dimensions, onChange, onSubmit, loading }) {
+//   if (!open) return null;
+
+//   const fields = [
+//     { key: "length", label: "Length", placeholder: "30", unit: "cm" },
+//     { key: "breadth", label: "Breadth", placeholder: "25", unit: "cm" },
+//     { key: "height", label: "Height", placeholder: "5", unit: "cm" },
+//     { key: "weight", label: "Weight", placeholder: "0.7", unit: "kg", step: "0.1" },
+//   ];
+
+//   const allFilled = fields.every(f => dimensions[f.key]);
+
+//   return (
+//     <div style={{
+//       position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
+//       display: "flex", alignItems: "center", justifyContent: "center",
+//       zIndex: 1000, padding: 16,
+//     }}>
+//       <div style={{
+//         background: "#fff", borderRadius: 16, padding: 28,
+//         width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+//       }}>
+//         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+//           <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111", margin: 0 }}>Package dimensions</h2>
+//           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#888", lineHeight: 1 }}>×</button>
+//         </div>
+
+//         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+//           {fields.map(f => (
+//             <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+//               <label style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+//                 {f.label}
+//               </label>
+//               <div style={{ position: "relative" }}>
+//                 <input
+//                   type="number"
+//                   placeholder={f.placeholder}
+//                   min="0.1"
+//                   step={f.step || "1"}
+//                   value={dimensions[f.key]}
+//                   onChange={e => onChange(f.key, e.target.value)}
+//                   style={{
+//                     width: "100%", border: "1px solid #e5e7eb", borderRadius: 8,
+//                     padding: "9px 36px 9px 12px", fontSize: 14, color: "#111",
+//                     outline: "none", fontFamily: "inherit",
+//                   }}
+//                 />
+//                 <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#aaa", fontWeight: 600 }}>
+//                   {f.unit}
+//                 </span>
+//               </div>
+//             </div>
+//           ))}
+//         </div>
+
+//         <p style={{ fontSize: 11, color: "#aaa", marginBottom: 24 }}>
+//           Used to calculate shipping rates and select the right courier.
+//         </p>
+
+//         <div style={{ display: "flex", gap: 10 }}>
+//           <button onClick={onClose} style={{ flex: 1, background: "none", border: "1px solid #e5e7eb", borderRadius: 10, padding: 10, fontSize: 14, fontWeight: 600, color: "#666", cursor: "pointer", fontFamily: "inherit" }}>
+//             Cancel
+//           </button>
+//           <button
+//             onClick={onSubmit}
+//             disabled={!allFilled || loading}
+//             style={{ flex: 2, background: !allFilled || loading ? "#e5e7eb" : "#111", border: "none", borderRadius: 10, padding: 10, fontSize: 14, fontWeight: 600, color: !allFilled || loading ? "#aaa" : "#fff", cursor: !allFilled || loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit" }}
+//           >
+//             <TruckIcon />
+//             {loading ? "Creating..." : "Create shipment"}
+//           </button>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+function ShipmentModal({
+  open, step, onClose, dimensions, onChange, onGetRates, loadingRates,
+  rates, selectedKey, onSelect, courierKey, onBack, onSubmit, creating, error,
+}) {
   if (!open) return null;
 
   const fields = [
@@ -1198,75 +1041,133 @@ function DimensionsModal({ open, onClose, dimensions, onChange, onSubmit, loadin
     { key: "height", label: "Height", placeholder: "5", unit: "cm" },
     { key: "weight", label: "Weight", placeholder: "0.7", unit: "kg", step: "0.1" },
   ];
+  const allFilled = fields.every((f) => dimensions[f.key]);
 
-  const allFilled = fields.every(f => dimensions[f.key]);
+  const btnPrimary = (disabled) => ({
+    flex: 2, border: "none", borderRadius: 10, padding: 10, fontSize: 14, fontWeight: 600,
+    background: disabled ? "#e5e7eb" : "#111", color: disabled ? "#aaa" : "#fff",
+    cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit",
+  });
+  const btnGhost = {
+    flex: 1, background: "none", border: "1px solid #e5e7eb", borderRadius: 10,
+    padding: 10, fontSize: 14, fontWeight: 600, color: "#666", cursor: "pointer", fontFamily: "inherit",
+  };
 
-  return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000, padding: 16,
-    }}>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: 28,
-        width: "100%", maxWidth: 440, boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111", margin: 0 }}>Package dimensions</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#888", lineHeight: 1 }}>×</button>
+  const CourierOption = ({ k, title, right, sub, badges }) => (
+    <div
+      onClick={() => onSelect(k)}
+      style={{
+        border: selectedKey === k ? "2px solid #111" : "1px solid #e5e7eb",
+        background: selectedKey === k ? "#f9fafb" : "#fff",
+        borderRadius: 10, padding: 12, cursor: "pointer",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <input type="radio" checked={selectedKey === k} onChange={() => onSelect(k)} />
+          <span style={{ fontWeight: 600, fontSize: 14, color: "#111" }}>{title}</span>
         </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
-          {fields.map(f => (
-            <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                {f.label}
-              </label>
-              <div style={{ position: "relative" }}>
-                <input
-                  type="number"
-                  placeholder={f.placeholder}
-                  min="0.1"
-                  step={f.step || "1"}
-                  value={dimensions[f.key]}
-                  onChange={e => onChange(f.key, e.target.value)}
-                  style={{
-                    width: "100%", border: "1px solid #e5e7eb", borderRadius: 8,
-                    padding: "9px 36px 9px 12px", fontSize: 14, color: "#111",
-                    outline: "none", fontFamily: "inherit",
-                  }}
-                />
-                <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#aaa", fontWeight: 600 }}>
-                  {f.unit}
-                </span>
-              </div>
-            </div>
+        <span style={{ fontWeight: 700, fontSize: 14, color: "#111" }}>{right}</span>
+      </div>
+      {sub && <div style={{ fontSize: 12, color: "#888", marginTop: 6, marginLeft: 26 }}>{sub}</div>}
+      {badges && (
+        <div style={{ display: "flex", gap: 6, marginTop: 8, marginLeft: 26, flexWrap: "wrap" }}>
+          {badges.map((b) => (
+            <span key={b} style={{ background: "#eef2ff", color: "#4338ca", padding: "3px 8px", borderRadius: 999, fontSize: 12, fontWeight: 500 }}>
+              {b}
+            </span>
           ))}
         </div>
+      )}
+    </div>
+  );
 
-        <p style={{ fontSize: 11, color: "#aaa", marginBottom: 24 }}>
-          Used to calculate shipping rates and select the right courier.
-        </p>
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, background: "none", border: "1px solid #e5e7eb", borderRadius: 10, padding: 10, fontSize: 14, fontWeight: 600, color: "#666", cursor: "pointer", fontFamily: "inherit" }}>
-            Cancel
-          </button>
-          <button
-            onClick={onSubmit}
-            disabled={!allFilled || loading}
-            style={{ flex: 2, background: !allFilled || loading ? "#e5e7eb" : "#111", border: "none", borderRadius: 10, padding: 10, fontSize: 14, fontWeight: 600, color: !allFilled || loading ? "#aaa" : "#fff", cursor: !allFilled || loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit" }}
-          >
-            <TruckIcon />
-            {loading ? "Creating..." : "Create shipment"}
-          </button>
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
+      <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#111", margin: 0 }}>
+            {step === "dimensions" ? "Package dimensions" : "Choose courier"}
+          </h2>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, color: "#888" }}>×</button>
         </div>
+
+        {error && (
+          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 8, padding: "10px 12px", fontSize: 13, marginBottom: 16 }}>
+            {error}
+          </div>
+        )}
+
+        {step === "dimensions" && (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 8 }}>
+              {fields.map((f) => (
+                <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em" }}>{f.label}</label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      type="number" placeholder={f.placeholder} min="0.1" step={f.step || "1"}
+                      value={dimensions[f.key]} onChange={(e) => onChange(f.key, e.target.value)}
+                      style={{ width: "100%", border: "1px solid #e5e7eb", borderRadius: 8, padding: "9px 36px 9px 12px", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+                    />
+                    <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: "#aaa", fontWeight: 600 }}>{f.unit}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: "#aaa", marginBottom: 24 }}>
+              Used to fetch live rates from all couriers serviceable for this pincode (max 10 kg).
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={onClose} style={btnGhost}>Cancel</button>
+              <button onClick={onGetRates} disabled={!allFilled || loadingRates} style={btnPrimary(!allFilled || loadingRates)}>
+                {loadingRates ? "Fetching rates..." : "Get courier rates"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === "couriers" && (
+          <>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+              {rates?.map((c) => (
+                <CourierOption
+                  key={courierKey(c)}
+                  k={courierKey(c)}
+                  title={c.logistics}
+                  right={`₹${c.rate}`}
+                  badges={[
+                    c.tat && `ETA ${c.tat} day${c.tat === "1" ? "" : "s"}`,
+                    c.serviceType && c.serviceType,
+                    c.zone && `Zone ${c.zone}`,
+                  ].filter(Boolean)}
+                />
+              ))}
+              <CourierOption
+                k="auto"
+                title="Auto-allocate"
+                right="—"
+                sub="Let iThink pick the courier based on your account settings"
+              />
+              {rates?.length === 0 && (
+                <div style={{ padding: 12, background: "#fef3c7", borderRadius: 8, color: "#92400e", fontSize: 13 }}>
+                  No couriers returned for this pincode and payment mode. You can still try auto-allocate.
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={onBack} style={btnGhost} disabled={creating}>Back</button>
+              <button onClick={onSubmit} disabled={creating} style={btnPrimary(creating)}>
+                {creating ? "Creating..." : "Create shipment"}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
 const D = {
   page: {
     background: "#f5f5f7",

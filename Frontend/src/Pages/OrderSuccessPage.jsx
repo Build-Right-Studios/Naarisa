@@ -96,7 +96,7 @@ const OrderSuccessPage = () => {
               fontFamily: "'Jost', sans-serif",
             }}
           >
-            Your payment has been received successfully.
+            {order.payment?.mode === "COD" ? "Your order has been placed successfully." : "Your payment has been received successfully."}
           </p>
         </div>
 
@@ -121,16 +121,27 @@ const OrderSuccessPage = () => {
               : "N/A"}
           </p>
 
-          <p>
-            <strong>Paid At:</strong>{" "}
-            {new Date(order.payment.paidAt).toLocaleString("en-IN")}
-          </p>
+          {order.payment?.paidAt && (
+            <p><strong>Paid At:</strong> {new Date(order.payment.paidAt).toLocaleString("en-IN")}</p>
+          )}
+
+          {order.pricing?.codCharge > 0 && (
+            <p><strong>COD Charges:</strong> ₹{order.pricing.codCharge}</p>
+          )}
 
           <p>
             <strong>Total:</strong> ₹
             {order.pricing.total.toLocaleString("en-IN")}
           </p>
         </div>
+
+        {order.payment?.mode === "Prepaid" && (
+          <div style={{ backgroundColor: "#F0FAF4", border: "1px solid #2D6B5A", padding: "14px 18px", marginBottom: "30px", textAlign: "center" }}>
+            <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "14px", color: "#2D6B5A", lineHeight: 1.5 }}>
+              Your ₹100 OFF coupon is on its way! Check your email and use it on your next order within 15 days.
+            </p>
+          </div>
+        )}
 
         {/* Items */}
 

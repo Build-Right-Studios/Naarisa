@@ -5,6 +5,7 @@ import useCheckoutStore from "../Store/useCheckoutStore.js";
 import api from "../utils/axiosInstance.js";
 import axios from "axios";
 import { ORDER, PAYMENT, USER, BASE, COUPON } from "../Constants/apiRoutes.js";
+const COD_CHARGE = 100;
 
 // ── Icons ─────────────────────────────────────────────────────────────────────
 const TagIcon = () => (
@@ -123,6 +124,11 @@ const PaymentModeSelector = ({ mode, onChange, codAvailable, total, advance }) =
             <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "12px", color: "#8C7B6B" }}>
               {opt.disabled ? "Not available for this pincode" : opt.desc}
             </p>
+            {opt.id === "COD" && !opt.disabled && (
+              <span style={{ display: "inline-block", marginTop: "6px", padding: "3px 8px", backgroundColor: "#FDECEC", border: "1px solid #E5A3A3", color: "#B3261E", fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em" }}>
+                Additional COD charges ₹{COD_CHARGE}
+              </span>
+            )}
           </div>
         </label>
       ))}
@@ -150,7 +156,7 @@ const inputStyle = (hasError) => ({
 });
 
 // ── Order Summary Sidebar ─────────────────────────────────────────────────────
-const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, total, onComplete, loading }) => (
+const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, codCharge, total, onComplete, loading }) => (
   <div style={{ backgroundColor: "#F5E6D0", border: "1px solid #E8DDD0", padding: "28px", position: "sticky", top: "24px" }}>
     <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: "22px", fontWeight: 400, color: "#1f1b15", marginBottom: "20px" }}>
       Order Summary
@@ -186,6 +192,9 @@ const OrderSummary = ({ items, subtotal, discountAmount, appliedCoupon, total, o
         { label: "Shipping", value: "FREE", accent: true },
         ...(appliedCoupon
           ? [{ label: `Discount (${appliedCoupon.code})`, value: `− ₹${Math.round(discountAmount).toLocaleString("en-IN")}`, accent: true }]
+          : []),
+        ...(codCharge > 0
+          ? [{ label: "COD Charges", value: `+ ₹${codCharge}`, accent: false }]
           : []),
       ].map(({ label, value, accent }) => (
         <div key={label} style={{ display: "flex", justifyContent: "space-between" }}>
@@ -376,7 +385,8 @@ const CheckoutPage = () => {
       : Math.min(appliedCoupon.discountValue, subtotal)
     : 0;
 
-  const total = subtotal - discountAmount;
+  const codCharge = paymentMode === "COD" ? COD_CHARGE : 0;
+  const total = subtotal - discountAmount + codCharge;
 
   useEffect(() => {
     api.get(ORDER.CONFIG)
@@ -1132,6 +1142,7 @@ const CheckoutPage = () => {
             subtotal={subtotal}
             discountAmount={discountAmount}
             appliedCoupon={appliedCoupon}
+            codCharge={codCharge}
             total={total}
             onComplete={handleCompleteOrder}
             loading={loading}
