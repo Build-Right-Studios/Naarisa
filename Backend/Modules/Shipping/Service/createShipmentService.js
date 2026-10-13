@@ -76,7 +76,7 @@ export const createShipmentService = async (orderId, length, breadth, height, we
 
         total_discount: order.pricing.discount,
 
-        sub_total: order.pricing.total,
+        sub_total: order.pricing.subtotal,
 
         length: Number(length),
 
