@@ -19,3 +19,8 @@ export const uploadBannerImages = multer({
   { name: "desktopImage", maxCount: 1 },
   { name: "mobileImage", maxCount: 1 },
 ]);
+
+export const uploadCategoryImage = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+}).single("image");

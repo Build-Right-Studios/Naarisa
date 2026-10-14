@@ -6,6 +6,7 @@ import connectMongoDB from "./config/mongodb.js";
 import { cleanupExpiredOtps, cleanupPendingOrders } from "./Utils/cleanupExpiredOtps.js";
 import { keepServerlive } from "./Utils/keepServerlive.js";
 import { startTrackingCron } from "./Modules/Shipping/initializeTrackingJobs.js";
+import { ensureDefaultCategories } from "./Modules/Category/defaultCategories.js";
 import { razorpayWebhook } from "./Modules/Payment/Controller/razorpayWebhookController.js";
 
 const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET"];
@@ -41,6 +42,7 @@ app.post(
 app.use(express.json());
 
 await connectMongoDB();
+await ensureDefaultCategories();
 
 app.use("/", routes);
 

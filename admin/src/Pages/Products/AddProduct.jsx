@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import { BASE, PRODUCT } from "../../Constants/apiroutes.js";
+import { BASE, PRODUCT, CATEGORY } from "../../Constants/apiroutes.js";
 
-const CATEGORIES = [
-  "Dresses",
-  "Short Kurti",
-  "Long Kurti",
-  "Kurti Sets",
-  "Co-ord Sets"
-];
+// Used only if the categories API can't be reached
+const FALLBACK_CATEGORIES = ["Dresses", "Short Kurti", "Long Kurti", "Kurti Sets", "Co-ord Sets"].map((name) => ({
+  name,
+  label: name,
+  isActive: true,
+}));
 
 const initialForm = {
   name: "",
@@ -40,6 +39,16 @@ export default function AddProduct() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+
+  useEffect(() => {
+    api
+      .get(CATEGORY.ALL)
+      .then((res) => {
+        if (res.data?.data?.length) setCategories(res.data.data);
+      })
+      .catch((err) => console.error("Could not load categories:", err));
+  }, []);
 
   const token = localStorage.getItem("token");
   const width = useWindowWidth();
@@ -166,9 +175,10 @@ export default function AddProduct() {
             >
               <option value="">Select Category</option>
 
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+              {categories.map((cat) => (
+                <option key={cat.name} value={cat.name}>
+                  {cat.label}
+                  {cat.isActive ? "" : " (hidden on website)"}
                 </option>
               ))}
             </select>

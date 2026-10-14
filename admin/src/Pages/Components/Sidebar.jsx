@@ -11,14 +11,18 @@ import {
   LogOut,
   Menu,
   X,
+  LayoutGrid,
+  Megaphone,
 } from "lucide-react";
 
 const menu = [
   { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { name: "Products", path: "/products", icon: Package },
+  { name: "Categories", path: "/categories", icon: LayoutGrid },
   { name: "Orders", path: "/orders", icon: ShoppingCart },
   { name: "Coupons", path: "/coupons", icon: Tag },
   { name: "Banners", path: "/banner", icon: ImageIcon },
+  { name: "Event Bar", path: "/event-bar", icon: Megaphone },
   { name: "Customers", path: "/customers", icon: UserCircle },
 ];
 

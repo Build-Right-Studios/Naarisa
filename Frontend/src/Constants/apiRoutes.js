@@ -11,6 +11,14 @@ export const BANNER = {
   GET_ACTIVE: "/api/banners/get-active-banners",
 };
 
+export const CATEGORY = {
+  LIST: "/api/category",
+};
+
+export const ANNOUNCEMENT = {
+  LIVE: "/api/announcement",
+};
+
 export const PRODUCT = {
   GET_ALL: "/api/product/products",
   GET_PRODUCTS: "/api/product/get-products",

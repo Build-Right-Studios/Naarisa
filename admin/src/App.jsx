@@ -17,6 +17,8 @@ import Navbar from "./Pages/Components/Navbar";
 import EditVariantPage from "./Pages/Products/EditVariantPage";
 import Customers from "./Pages/Customers/Customers";
 import CustomerDetail from "./Pages/Customers/CustomerDetail";
+import Categories from "./Pages/Categories/Categories";
+import Announcements from "./Pages/Announcements/Announcements";
 import api from "./services/api";
 import { AUTH } from "./Constants/apiroutes.js";
 
@@ -51,6 +53,8 @@ function AdminLayout() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/coupons" element={<Coupons />} />
           <Route path="/banner" element={<Banner />} />
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/event-bar" element={<Announcements />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/customers/:id" element={<CustomerDetail />} />
           <Route path="/" element={<Navigate to="/dashboard" />} />

@@ -45,6 +45,20 @@ export const BANNER = {
   DELETE: (id) => `/api/banners/${id}`,
 }
 
+export const CATEGORY = {
+  ALL: "/api/category/all",
+  CREATE: "/api/category",
+  UPDATE: (id) => `/api/category/${id}`,
+  DELETE: (id) => `/api/category/${id}`,
+};
+
+export const ANNOUNCEMENT = {
+  ALL: "/api/announcement/all",
+  CREATE: "/api/announcement",
+  UPDATE: (id) => `/api/announcement/${id}`,
+  DELETE: (id) => `/api/announcement/${id}`,
+};
+
 export const ADMIN_USERS = {
   GET_ALL:  "/api/user",
   GET_BY_ID: (id) => `/api/user/${id}`,

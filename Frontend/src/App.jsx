@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Navbar from "./Components/Common/Navbar";
+import AnnouncementBar from "./Components/Common/AnnouncementBar";
 import Footer from "./Components/Common/Footer";
 import ScrollToTop from "./ScrollToTop";
 
@@ -21,14 +23,22 @@ import ReturnRefundPage from "./Pages/ReturnRefundPage";
 import TermsPage from "./Pages/TermsPage";
 import PrivacyPolicyPage from "./Pages/PrivacyPolicyPage";
 import NamePromptGate from "./Components/Common/NamePromptGate";
+import useCategoryStore from "./Store/useCategoryStore";
 
 
 function App() {
+  const fetchCategories = useCategoryStore((s) => s.fetchCategories);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
   return (
     <BrowserRouter>
       <ScrollToTop />
 
       {/* Global Components */}
+      <AnnouncementBar />
       <Navbar />
 
       {/* Routes */}

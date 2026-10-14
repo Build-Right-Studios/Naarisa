@@ -9,6 +9,8 @@ import bannerSchema from "./Schema/bannerSchema.js";
 import couponUsageSchema from "./Schema/couponUsageSchema.js";
 import reviewSchema from "./Schema/reviewSchema.js";
 import returnSchema from "./Schema/returnSchema.js";
+import categorySchema from "./Schema/categorySchema.js";
+import announcementSchema from "./Schema/announcementSchema.js";
 
 const Admin = mongoose.model("Admin", adminSchema);
 const Product = mongoose.model("Product", productSchema);
@@ -20,5 +22,7 @@ const Order = mongoose.model("Order", orderSchema);
 const Banner = mongoose.model("Banner", bannerSchema);
 const Review = mongoose.model("Review", reviewSchema);
 const Return = mongoose.model("Return", returnSchema);
+const Category = mongoose.model("Category", categorySchema);
+const Announcement = mongoose.model("Announcement", announcementSchema);
 
-export { Admin, Product, Variant, Coupon, CouponUsage, User, Order, Banner, Review, Return };
+export { Admin, Product, Variant, Coupon, CouponUsage, User, Order, Banner, Review, Return, Category, Announcement };

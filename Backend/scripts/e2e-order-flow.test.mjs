@@ -68,7 +68,7 @@ razorpay.payments.refund = async (paymentId, body) => {
 
 // ── app modules ──────────────────────────────────────────────────────────────
 const { default: mongoose } = await import("mongoose");
-const { Product, Variant, User, Coupon, CouponUsage, Order, Admin } = await import("../MongoDB/models.js");
+const { Product, Variant, User, Coupon, CouponUsage, Order, Admin, Category } = await import("../MongoDB/models.js");
 const { placeOrderService } = await import("../Modules/Order/Service/placeOrderService.js");
 const { confirmOrderAndNotify } = await import("../Modules/Payment/Service/orderConfirmationService.js");
 const { verifyPaymentService } = await import("../Modules/Payment/Service/verifyPaymentService.js");
@@ -98,7 +98,7 @@ const sign = (orderId, paymentId) => crypto.createHmac("sha256", process.env.RAZ
 // ── seed ─────────────────────────────────────────────────────────────────────
 await mongoose.connect(process.env.MONGO_URI);
 await mongoose.connection.db.dropDatabase();
-await Promise.all([Order, Variant, Product, User, Coupon, CouponUsage, Admin].map((m) => m.init()));
+await Promise.all([Order, Variant, Product, User, Coupon, CouponUsage, Admin, Category].map((m) => m.init()));
 
 const product = await Product.create({ name: "E2E Kurti", category: "Short Kurti", basePrice: 1000, tags: ["cotton"] });
 const variant = await Variant.create({
@@ -328,6 +328,63 @@ await test("isAdmin rejects a validly-signed token for an admin that no longer e
   eq(await run(), "next", "existing admin");
   await Admin.deleteOne({ _id: admin._id });
   eq(await run(), 401, "deleted admin");
+});
+
+console.log("\nCategories and event bar");
+
+const { ensureDefaultCategories } = await import("../Modules/Category/defaultCategories.js");
+const categoryService = await import("../Modules/Category/Service/categoryService.js");
+const announcementService = await import("../Modules/Announcement/Service/announcementService.js");
+const expectStatus = async (promise, status) => {
+  try { await promise; throw new Error("did not throw"); } catch (e) { eq(e.status, status, e.message); }
+};
+
+let suits;
+await test("default categories are seeded once; a new category gets a slug, upper-case badge and sorts first", async () => {
+  await ensureDefaultCategories();
+  await ensureDefaultCategories();
+  eq((await categoryService.getAllCategoriesService()).length, 5, "seeded once");
+  suits = await categoryService.createCategoryService({ label: " Suits ", tagline: "Festive elegance", badge: "diwali", order: "0", showOnHome: "true" });
+  eq([suits.name, suits.label, suits.slug, suits.badge, suits.isActive], ["Suits", "Suits", "suits", "DIWALI", true]);
+  eq((await categoryService.getActiveCategoriesService()).map((c) => c.slug).slice(0, 2), ["suits", "short-kurtis"]);
+  await expectStatus(categoryService.createCategoryService({ label: "suits" }), 409);
+  await expectStatus(categoryService.createCategoryService({ label: "Short Kurtis" }), 409);
+  await expectStatus(categoryService.createCategoryService({ label: "   " }), 400);
+});
+
+await test("editing a category keeps name + slug (product links and URLs); hidden categories leave the storefront list", async () => {
+  const updated = await categoryService.updateCategoryService(String(suits._id), { label: "Festive Suits", isActive: "false" });
+  eq([updated.name, updated.slug, updated.label, updated.isActive], ["Suits", "suits", "Festive Suits", false]);
+  eq((await categoryService.getActiveCategoriesService()).some((c) => c.slug === "suits"), false);
+  await categoryService.updateCategoryService(String(suits._id), { isActive: "true" });
+});
+
+await test("a category with products can't be deleted (409); an empty one can; product counts are reported", async () => {
+  await Product.create({ name: "E2E Anarkali Suit", category: "Suits", basePrice: 2500 });
+  eq((await categoryService.getAllCategoriesService()).find((c) => c.slug === "suits").productCount, 1);
+  await expectStatus(categoryService.deleteCategoryService(String(suits._id)), 409);
+  const empty = await categoryService.createCategoryService({ label: "Lehengas" });
+  await categoryService.deleteCategoryService(String(empty._id));
+  eq(await Category.exists({ _id: empty._id }), null);
+});
+
+await test("event bar: unsafe links, bad colours and reversed dates are rejected", async () => {
+  await expectStatus(announcementService.createAnnouncementService({ message: "x", link: "javascript:alert(1)" }), 400);
+  await expectStatus(announcementService.createAnnouncementService({ message: "x", link: "http://insecure.example" }), 400);
+  await expectStatus(announcementService.createAnnouncementService({ message: "x", backgroundColor: "red" }), 400);
+  await expectStatus(announcementService.createAnnouncementService({ message: "x", startsAt: "2026-11-02", endsAt: "2026-11-01" }), 400);
+  await expectStatus(announcementService.createAnnouncementService({ message: "  " }), 400);
+});
+
+await test("event bar: only turned-on bars inside their schedule are live; turning one off hides it", async () => {
+  const day = 864e5, now = Date.now();
+  const live = await announcementService.createAnnouncementService({ message: "Diwali Special", link: "/categories/suits", linkText: "Shop now", endsAt: new Date(now + 7 * day) });
+  await announcementService.createAnnouncementService({ message: "Scheduled", startsAt: new Date(now + day) });
+  await announcementService.createAnnouncementService({ message: "Ended", endsAt: new Date(now - day) });
+  await announcementService.createAnnouncementService({ message: "Hidden", isActive: false });
+  eq((await announcementService.getLiveAnnouncementsService()).map((a) => a.message), ["Diwali Special"]);
+  await announcementService.updateAnnouncementService(String(live._id), { isActive: false });
+  eq((await announcementService.getLiveAnnouncementsService()).length, 0);
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);
