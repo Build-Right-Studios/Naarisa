@@ -1,10 +1,15 @@
-import axios from "axios";
 import { Order } from "../../../MongoDB/models.js";
+import { syncOrderTracking, deliveryStatusLabel } from "./trackingService.js";
 
-const BASE_URL = (process.env.ITHINK_BASE_URL || "https://pre-alpha.ithinklogistics.com/api_v3").replace(/\/$/, "");
+const REFRESH_AFTER_MS = 30 * 60 * 1000;
+const PENDING_PICKUP = ["shipment_created", "awb_generated", "pickup_requested", "pickup_scheduled"];
+const FINAL_DELIVERY = ["delivered", "rto_delivered", "returned", "cancelled"];
 
+// Customer-facing tracking. Shipments are booked through Shiprocket, so tracking comes
+// from the data kept up to date by the Shiprocket webhook / sync job; if that is stale,
+// refresh it from Shiprocket first (best effort).
 export const trackShipmentService = async (orderId, userId) => {
-    const order = await Order.findById(orderId);
+    let order = await Order.findById(orderId);
     if (!order) throw { status: 404, message: "Order not found" };
     if (userId && order.user?.toString() !== userId.toString()) {
         throw { status: 403, message: "Not authorized" };
@@ -13,80 +18,31 @@ export const trackShipmentService = async (orderId, userId) => {
     const awb = order.delivery?.awbCode?.trim();
     if (!awb) throw { status: 400, message: "Shipment not created yet" };
 
-    const url = `${BASE_URL}/order/track.json`;
-
-    const body = {
-        data: {
-            awb_number_list: awb,
-            access_token: process.env.ITHINK_ACCESS_TOKEN,
-            secret_key: process.env.ITHINK_SECRET_KEY
+    const lastUpdate = order.delivery.lastTrackingUpdate?.getTime() || 0;
+    const isShiprocketShipment = Boolean(order.delivery.shipmentId);
+    if (isShiprocketShipment && !FINAL_DELIVERY.includes(order.delivery.status) && Date.now() - lastUpdate > REFRESH_AFTER_MS) {
+        try {
+            order = await syncOrderTracking(order._id);
+        } catch (error) {
+            console.error(`Tracking refresh failed for ${order.customOrderId}:`, error?.message || error);
         }
-    };
-
-    console.log("TRACK URL:", url, "AWB:", awb);
-
-    let response;
-    try {
-        response = await axios.post(url, body, {
-            headers: { "Content-Type": "application/json" },
-            timeout: 20000
-        });
-    } catch (err) {
-        console.error("Track Error - Status:", err.response?.status, "Body:", err.response?.data);
-        throw {
-            status: err.response?.status || 500,
-            message: err.response?.data?.msg || err.message || "iThink track failed"
-        };
     }
 
-    console.log("RAW:", JSON.stringify(response.data, null, 2));
-
-    let container = response.data?.data ?? response.data;
-
-    if (!container) {
-        throw {
-            status: 502,
-            message: response.data?.msg || response.data?.message || "Unexpected response from iThink."
-        };
-    }
-
-    if (Array.isArray(container) && container.length === 0) {
-        return {
-            awbCode: awb,
-            courierName: order.delivery.courierName || "Courier partner",
-            currentStatus: "SHIPMENT_CREATED",
-            currentStatusText: "Shipped - Awaiting courier pickup",
-            scans: [],
-            isPendingPickup: true
-        };
-    }
-
-    // Try exact AWB match first (this is what production will use)
-    let trackInfo = container[awb];
-
-    // Staging/pre-alpha fallback: sandbox always returns dummy data under its own fixed key
-    if (!trackInfo && !Array.isArray(container) && typeof container === "object") {
-        const firstKey = Object.keys(container)[0];
-        trackInfo = firstKey ? container[firstKey] : null;
-    }
-
-    if (!trackInfo && Array.isArray(container)) {
-        trackInfo = container[0];
-    }
-
-    if (!trackInfo) {
-        throw { status: 404, message: `No tracking data found for AWB ${awb}` };
-    }
-
+    const status = order.delivery.status;
     return {
         awbCode: awb,
-        courierName: order.delivery.courierName || trackInfo.logistic || "",
-        currentStatus: trackInfo.current_status,
-        scans: (trackInfo.scan_details || trackInfo.scans || trackInfo.shipment_track || []).map((s) => ({
-            date: s.scan_date_time || s.date || "",
-            status: s.status || "",
-            location: s.scan_location || s.location || "",
-            remark: s.remark || ""
-        }))
+        courierName: order.delivery.courierName || "",
+        currentStatus: status,
+        currentStatusText: deliveryStatusLabel(status),
+        isPendingPickup: PENDING_PICKUP.includes(status),
+        trackingUrl: order.delivery.trackingUrl || "",
+        estimatedDelivery: order.delivery.estimatedDelivery || null,
+        scans: (order.delivery.trackingEvents || []).map((event) => ({
+            date: event.date
+                ? new Date(event.date).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })
+                : "",
+            status: event.activity || event.status || "",
+            location: event.location || "",
+        })),
     };
 };

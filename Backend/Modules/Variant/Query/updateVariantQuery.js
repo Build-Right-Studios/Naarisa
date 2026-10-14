@@ -5,7 +5,7 @@ export const updateVariantQuery = async (data) => {
     const updateVariant = await Variant.findByIdAndUpdate(
         id,
         updates,
-        { new: true }
+        { returnDocument: "after" }
     );
     return updateVariant;
 };

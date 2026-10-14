@@ -5,8 +5,10 @@ export const getWebsiteCoupons = async (req, res) => {
         let hasOrders = false;
 
         if (req.user) {
+            // Only paid orders count — abandoned checkouts are kept as cancelled orders
             hasOrders = await Order.exists({
-                user: req.user._id
+                user: req.user._id,
+                "payment.status": "paid"
             });
         }
 

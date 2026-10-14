@@ -16,7 +16,7 @@ const footerLinks = {
     { title: "All Products", path: "/all-products" },
     { title: "Long Kurtis", path: "/categories/long-kurtis" },
     { title: "Short Kurtis", path: "/categories/short-kurtis" },
-    { title: "Kurta Sets", path: "/categories/kurta-sets" },
+    { title: "Kurti Sets", path: "/categories/kurti-sets" },
     { title: "Dresses", path: "/categories/dresses" },
     { title: "Co-ord Sets", path: "/categories/co-ord-sets" },
   ],

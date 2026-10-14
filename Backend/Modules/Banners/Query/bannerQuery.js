@@ -17,9 +17,9 @@ export const findBannerByIdQuery = async (id) => {
 };
 
 export const updateBannerQuery = async (id, data) => {
-  return await Banner.findByIdAndUpdate(id, data, { new: true });
+  return await Banner.findByIdAndUpdate(id, data, { returnDocument: "after" });
 };
 
 export const deleteBannerQuery = async (id) => {
-  return await Banner.findByIdAndUpdate(id, { isDeleted: true, deletedAt: new Date() }, { new: true }); // ✅ soft delete
+  return await Banner.findByIdAndUpdate(id, { isDeleted: true, deletedAt: new Date() }, { returnDocument: "after" }); // ✅ soft delete
 };

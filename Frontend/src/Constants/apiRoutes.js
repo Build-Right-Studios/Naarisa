@@ -17,7 +17,7 @@ export const PRODUCT = {
   NEW_ARRIVALS: "/api/product/new-arrivals",
   BEST_SELLERS: "/api/product/best-sellers",
   GET_BY_SLUG: (slug) => `/api/product/${slug}`,
-  BY_CATEGORY: (category) => `/api/product/category/${category}?`,
+  BY_CATEGORY: (category) => `/api/product/category/${category}`,
   SEARCH_PRODUCTS: "/api/product/search",
 };
 

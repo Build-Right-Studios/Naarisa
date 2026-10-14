@@ -129,7 +129,7 @@ const CategoryPage = () => {
     updateParam,
     buildApiParams,
   } = useProductQueryState({
-    fixedCategory: config.category,
+    fixedCategory: config?.category,
     defaultSort: "newest",
     limit: LIMIT,
   });

@@ -57,7 +57,7 @@ const AllProductsPage = () => {
 
   // ── All category/sort/page/filter <-> URL logic lives in this hook now ──
   const {
-    category, sort, page,
+    category, sort, page, search, clearSearch,
     filters, appliedFilters,
     setFilterKey, resetDraftToApplied,
     applyFilters, clearFilters, removeFilterValue,
@@ -101,10 +101,20 @@ const AllProductsPage = () => {
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
 
       <PageHero
-        eyebrow="Explore"
-        title="All Products"
-        subtitle="Discover every Naarisa style"
+        eyebrow={search ? "Search" : "Explore"}
+        title={search ? `Results for "${search}"` : "All Products"}
+        subtitle={search ? `${pagination.total} matching ${pagination.total === 1 ? "style" : "styles"}` : "Discover every Naarisa style"}
       />
+      {search && (
+        <div style={{ textAlign: "center", paddingTop: "16px" }}>
+          <button
+            onClick={clearSearch}
+            style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.12em", color: "#AB721E", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+          >
+            CLEAR SEARCH
+          </button>
+        </div>
+      )}
 
       {/* ── Filter Panel ── */}
       <FilterPanel

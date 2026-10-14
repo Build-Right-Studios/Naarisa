@@ -16,10 +16,10 @@ router.post("/:orderId/couriers", isAdmin, getCouriers);
 router.post("/:orderId/assign-courier", isAdmin, assignCourier);
 
 
-// Shiprocket Tracking Webhook
-router.post("/tracking/webhook", isAdmin, trackingWebhook);
+// Shiprocket Tracking Webhook — authenticated by the x-api-key token, not an admin JWT
+router.post("/tracking/webhook", trackingWebhook);
 
-// Customer/Admin - Get tracking details
+// Admin - Get tracking details
 router.get("/tracking/:orderId", isAdmin, getTracking);
 
 // Admin - Manually sync tracking from Shiprocket

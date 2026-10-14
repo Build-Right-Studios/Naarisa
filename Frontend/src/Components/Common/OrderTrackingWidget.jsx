@@ -72,7 +72,7 @@ export const OrderTrackingWidget = ({ orderId }) => {
         );
     }
 
-    const { currentStatus, currentStatusText, awbCode, courierName, scans = [], isPendingPickup } = trackingData;
+    const { currentStatus, currentStatusText, awbCode, courierName, scans = [], isPendingPickup, trackingUrl } = trackingData;
 
     return (
         <div style={{ backgroundColor: "#F9F3EB", overflow: "hidden", marginTop: 14 }}>
@@ -126,6 +126,11 @@ export const OrderTrackingWidget = ({ orderId }) => {
                         <div style={{ marginBottom: 12 }}>
                             <p style={{ fontFamily: "'Jost', sans-serif", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#8C7B6B", marginBottom: 4 }}>TRACKING NUMBER</p>
                             <p style={{ fontFamily: "monospace", fontSize: "13px", color: "#1f1b15", margin: 0 }}>{awbCode}</p>
+                            {trackingUrl && (
+                                <a href={trackingUrl} target="_blank" rel="noopener noreferrer" style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.08em", color: "#AB721E", display: "inline-block", marginTop: 6 }}>
+                                    TRACK ON COURIER WEBSITE →
+                                </a>
+                            )}
                         </div>
                     )}
 

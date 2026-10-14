@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "../utils/axiosInstance.js";
 import OrderTrackingWidget from "../Components/Common/OrderTrackingWidget.jsx";
 import AddressModal from "../Components/Common/AddressModal.jsx";
-// import ReturnModal from "../Components/Common/ReturnModal.jsx";
 import { ORDER, USER } from "../Constants/apiRoutes.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -189,7 +188,6 @@ const OrdersSection = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
-  const [returnOrder, setReturnOrder] = useState(null);
   const [tracking, setTracking] = useState(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const navigate = useNavigate();
@@ -346,7 +344,15 @@ const OrdersSection = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setReturnOrder(order);
+                        // Returns are handled by the support team until a self-serve returns flow exists
+                        navigate("/contact", {
+                          state: {
+                            subject: "Returns & Exchange",
+                            message: `I'd like to request a return for order ${order.customOrderId}.
+
+Reason: `,
+                          },
+                        });
                       }}
                       style={{
                         padding: "11px 20px",
@@ -411,7 +417,6 @@ const OrdersSection = () => {
         </div>
       )}
 
-      {returnOrder && (<div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(43,33,18,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px", }} onClick={() => setReturnOrder(null)} > <ReturnModal order={returnOrder} onClose={() => setReturnOrder(null)} onSubmitted={(returnDoc) => { console.log("Return submitted:", returnDoc); setReturnOrder(null); }} /> </div>)}
     </div>
   );
 };

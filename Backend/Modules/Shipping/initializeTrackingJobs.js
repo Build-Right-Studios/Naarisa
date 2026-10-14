@@ -10,10 +10,14 @@ export const startTrackingCron = () => {
     try {
       console.log("🔄 [Tracking Sync] Starting...");
 
-      // Find all active orders
+      // Paid Shiprocket shipments that are still moving (the webhook is the primary
+      // source; this catches anything it missed)
       const activeOrders = await Order.find({
+        "payment.status": "paid",
+        "delivery.shipmentId": { $nin: [null, ""] },
+        "delivery.awbCode": { $nin: [null, ""] },
         "delivery.status": {
-          $nin: ["delivered", "cancelled", "returned"],
+          $nin: ["delivered", "cancelled", "returned", "rto_delivered"],
         },
       }).select("_id");
 

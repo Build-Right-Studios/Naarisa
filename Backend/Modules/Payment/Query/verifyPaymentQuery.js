@@ -19,6 +19,6 @@ export const confirmOrder = async (orderId, razorpayPaymentId, session) => {
         }
       }
     },
-    { new: true, session }
+    { returnDocument: "after", session }
   );
 };

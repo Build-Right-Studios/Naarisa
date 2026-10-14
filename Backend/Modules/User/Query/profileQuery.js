@@ -8,6 +8,6 @@ export const updateUserProfile = async (userId, data) => {
   return await User.findByIdAndUpdate(
     userId,
     data,
-    { new: true }
+    { returnDocument: "after" }
   ).select("-otp");
 };

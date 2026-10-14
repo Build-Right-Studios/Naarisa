@@ -1,13 +1,19 @@
+import "dotenv/config";
 import express from "express";
 import routes from "./routes.js";
-import dotenv from "dotenv";
 import cors from "cors";
 import connectMongoDB from "./config/mongodb.js";
 import { cleanupExpiredOtps, cleanupPendingOrders } from "./Utils/cleanupExpiredOtps.js";
 import { keepServerlive } from "./Utils/keepServerlive.js";
+import { startTrackingCron } from "./Modules/Shipping/initializeTrackingJobs.js";
 import { razorpayWebhook } from "./Modules/Payment/Controller/razorpayWebhookController.js";
 
-dotenv.config();
+const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET"];
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missingEnv.length) {
+  console.error(`Missing required env vars: ${missingEnv.join(", ")}`);
+  process.exit(1);
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -49,3 +55,4 @@ app.get("/", (req, res) => {
 keepServerlive();
 cleanupExpiredOtps();
 cleanupPendingOrders();
+startTrackingCron();

@@ -1,4 +1,5 @@
 import { Variant } from "../../../MongoDB/models.js";
+import { buildSearchConditions } from "../../../Utils/searchConditions.js";
 
 /**
  * Uses aggregation so we can:
@@ -20,7 +21,10 @@ export const getAllProductsQuery = async (data) => {
       category,
       discountPercent,
       priceRange,
+      search,
     } = data;
+
+    const searchConditions = buildSearchConditions(search, "productId");
 
     const needsNumericPrice = PRICE_SORTS.has(sort);
 
@@ -44,6 +48,8 @@ export const getAllProductsQuery = async (data) => {
 
       // Stage 3: unwind (lookup returns array)
       { $unwind: "$productId" },
+
+      ...(searchConditions.length ? [{ $match: { $and: searchConditions } }] : []),
 
       ...(priceRange
         ? [

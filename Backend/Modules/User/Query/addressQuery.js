@@ -10,7 +10,7 @@ export const addAddressQuery = async (userId, address) => {
   return await User.findByIdAndUpdate(
     userId,
     { $push: { addresses: address } },
-    { new: true }
+    { returnDocument: "after" }
   ).select("addresses");
 };
 
@@ -18,7 +18,7 @@ export const updateAddressQuery = async (userId, addressId, data) => {
   return await User.findOneAndUpdate(
     { _id: userId, "addresses._id": addressId },
     { $set: { "addresses.$": { ...data, _id: addressId } } },
-    { new: true }
+    { returnDocument: "after" }
   ).select("addresses");
 };
 
@@ -26,7 +26,7 @@ export const deleteAddressQuery = async (userId, addressId) => {
   return await User.findByIdAndUpdate(
     userId,
     { $pull: { addresses: { _id: addressId } } },
-    { new: true }
+    { returnDocument: "after" }
   ).select("addresses");
 };
 
@@ -39,6 +39,6 @@ export const setDefaultAddressQuery = async (userId, addressId) => {
   return await User.findOneAndUpdate(
     { _id: userId, "addresses._id": addressId },
     { $set: { "addresses.$.isDefault": true } },
-    { new: true }
+    { returnDocument: "after" }
   ).select("addresses");
 };

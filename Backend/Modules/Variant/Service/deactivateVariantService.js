@@ -4,7 +4,7 @@ export const deactivateVariantService = async (id) => {
   const variant = await Variant.findByIdAndUpdate(
     id,
     { isActive: false },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   if (!variant) throw new Error("Variant not found");
