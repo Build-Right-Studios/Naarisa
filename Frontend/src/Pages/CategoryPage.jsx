@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import FilterPanel, { FilterTriggerButton, FILTER_DEFAULTS, countActiveFilters } from "./FilterPanel";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../utils/axiosInstance.js";
@@ -7,55 +7,7 @@ import ProductCard from "../Components/Common/ProductCard.jsx";
 import { BASE, PRODUCT } from "../Constants/apiRoutes.js";
 import useCartStore from "../Store/useCartStore.js";
 import { useProductQueryState } from "../Components/Common/useProductQueryState";
-
-// ── Banner imports ────────────────────────────────────────────────────────────
-import shortKurtisBanner from "../assets/Short Kurtis Banner.png";
-import longKurtisBanner from "../assets/Long Kurtis Banner.png";
-import dressesBanner from "../assets/Dresses Banner.png";
-import kurtiSetsBanner from "../assets/Kurti Set Banner.png"
-
-// ── Category config ───────────────────────────────────────────────────────────
-// slug must match the URL: /categories/:slug
-// slug  = URL segment (/categories/:slug)
-// apiParam = value stored in product.category field in your DB
-// Make sure these match exactly what you used when adding products via /add-product
-const CATEGORY_CONFIG = {
-  "short-kurtis": {
-    label: "Short Kurtis",
-    tagline: "Chic, versatile and effortlessly yours.",
-    banner: shortKurtisBanner,
-    category: "Short Kurti",
-  },
-
-  "long-kurtis": {
-    label: "Long Kurtis",
-    tagline: "Timeless silhouettes. Effortless elegance.",
-    banner: longKurtisBanner,
-    category: "Long Kurti",
-  },
-
-  dresses: {
-    label: "Dresses",
-    tagline:
-      "Flowy silhouettes, timeless prints and elegance in every detail.",
-    banner: dressesBanner,
-    category: "Dresses",
-  },
-
-  "kurti-sets": {
-    label: "Kurti Sets",
-    tagline: "Complete ensembles. Grace in every detail.",
-    banner: kurtiSetsBanner,
-    category: "Kurti Sets",
-  },
-
-  "co-ord-sets": {
-    label: "Co-ord Sets",
-    tagline: "Perfectly matched. Effortlessly put together.",
-    banner: null, // optional, see below
-    category: "Co-ord Sets", // must exactly match what you saved via /add-product
-  },
-};
+import useCategoryStore from "../Store/useCategoryStore.js";
 
 // ── Add to Cart Toast ─────────────────────────────────────────────────────────
 const Toast = ({ visible }) => (
@@ -98,7 +50,14 @@ const CategoryPage = () => {
   const navigate = useNavigate();
   const addItem = useCartStore((s) => s.addItem);
 
-  const config = CATEGORY_CONFIG[slug];
+  // Categories are managed in the admin panel; `category` is the value stored on products
+  const categories = useCategoryStore((s) => s.categories);
+  const categoriesLoaded = useCategoryStore((s) => s.loaded);
+  const current = categories.find((c) => c.slug === slug);
+  const config = useMemo(
+    () => current && { label: current.label, tagline: current.tagline, category: current.name },
+    [current]
+  );
 
   const LIMIT = 12;
 
@@ -129,7 +88,7 @@ const CategoryPage = () => {
     updateParam,
     buildApiParams,
   } = useProductQueryState({
-    fixedCategory: config.category,
+    fixedCategory: config?.category,
     defaultSort: "newest",
     limit: LIMIT,
   });
@@ -222,7 +181,9 @@ const CategoryPage = () => {
   if (!config) {
     return (
       <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#F9F3EB" }}>
-        <p style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>Category not found.</p>
+        <p style={{ fontFamily: "'Jost', sans-serif", color: "#8C7B6B" }}>
+          {categoriesLoaded ? "Category not found." : "Loading…"}
+        </p>
       </div>
     );
   }

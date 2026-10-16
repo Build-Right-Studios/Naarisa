@@ -10,7 +10,7 @@ export const commitCouponUsage = async (couponId, userId, session) => {
       ]
     },
     { $inc: { usedCount: 1 } },
-    { new: true, session }
+    { returnDocument: "after", session }
   );
 
   if (!updated) {

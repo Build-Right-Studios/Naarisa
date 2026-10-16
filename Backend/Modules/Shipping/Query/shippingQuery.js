@@ -15,7 +15,7 @@ export const updateDelivery = async (orderId, deliveryData, timeline) => {
       }
     },
     {
-      new: true
+      returnDocument: "after"
     }
   );
 };

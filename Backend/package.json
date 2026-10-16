@@ -4,10 +4,16 @@
   "type": "module",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "admins": "node scripts/admins.js",
+    "test:e2e": "node scripts/e2e-order-flow.test.mjs",
+    "smoke": "node scripts/smoke-test.mjs"
   },
   "keywords": [],
   "author": "",

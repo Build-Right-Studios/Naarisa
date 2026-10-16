@@ -7,7 +7,8 @@ import { isAdmin } from "../../Middleware/isAdmin.js";
 
 const router = express.Router();
 
-router.post("/signup", signup);
+// Only an existing admin may create another admin. Bootstrap the first admin with `npm run create-admin`.
+router.post("/signup", isAdmin, signup);
 router.post("/login", login);
 
 router.post("/send-otp", sendOtp);

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import useCategoryStore, { categoryPath } from "../../Store/useCategoryStore.js";
 import { FiInstagram } from "react-icons/fi";
 import { IoLogoWhatsapp } from "react-icons/io";
 import {
@@ -14,11 +15,7 @@ const footerLinks = {
     { title: "New Arrivals", path: "/new-in" },
     { title: "Bestsellers", path: "/best-sellers" },
     { title: "All Products", path: "/all-products" },
-    { title: "Long Kurtis", path: "/categories/long-kurtis" },
-    { title: "Short Kurtis", path: "/categories/short-kurtis" },
-    { title: "Kurta Sets", path: "/categories/kurta-sets" },
-    { title: "Dresses", path: "/categories/dresses" },
-    { title: "Co-ord Sets", path: "/categories/co-ord-sets" },
+    // followed by the admin-managed categories (see Footer)
   ],
   customerCare: [
     { title: "Contact Us", path: "/contact" },
@@ -57,6 +54,12 @@ const FooterLink = ({ to, children }) => (
 );
 
 const Footer = () => {
+  const categories = useCategoryStore((state) => state.categories);
+  const shopLinks = [
+    ...footerLinks.shop,
+    ...categories.map((c) => ({ title: c.label, path: categoryPath(c) })),
+  ];
+
   return (
     <footer className="w-full bg-[#2B2112]">
       {/* Main footer grid */}
@@ -100,7 +103,7 @@ const Footer = () => {
           <div className="flex flex-col">
             <ColumnHeading>Shop</ColumnHeading>
             <ul className="flex flex-col gap-3">
-              {footerLinks.shop.map((link, i) => (
+              {shopLinks.map((link, i) => (
                 <FooterLink key={i} to={link.path}>
                   {link.title}
                 </FooterLink>

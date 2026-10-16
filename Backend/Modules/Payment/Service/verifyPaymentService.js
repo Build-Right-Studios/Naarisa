@@ -1,13 +1,15 @@
 import crypto from "crypto";
-import { findOrderByRazorpayOrderId, confirmOrder } from "../Query/verifyPaymentQuery.js";
-import { sendSMS } from "../../../config/twilio.js";
-import { sendSMSTemplate } from "../../../config/msg91.js";
-import { sendOrderConfirmationEmail } from "../../../config/emailService.js";
+import { findOrderByRazorpayOrderId } from "../Query/verifyPaymentQuery.js";
 import { confirmOrderAndNotify } from "./orderConfirmationService.js";
+import { isPaymentConfirmedByRazorpay, orderAmountInPaise } from "./razorpayPaymentCheck.js";
+
+export const safeEqualHex = (a, b) => {
+  const bufA = Buffer.from(String(a), "utf8");
+  const bufB = Buffer.from(String(b), "utf8");
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+};
 
 export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId, razorpaySignature }) => {
-  console.log("Verify Payment Service called.")
-
   // Step 1 — Recreate the signature
   const body = razorpayOrderId + "|" + razorpayPaymentId;
   const expectedSignature = crypto
@@ -16,7 +18,7 @@ export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId,
     .digest("hex");
 
   // Step 2 — Compare signatures
-  if (expectedSignature !== razorpaySignature) {
+  if (!safeEqualHex(expectedSignature, razorpaySignature)) {
     throw { status: 400, message: "Invalid payment signature" };
   }
 
@@ -26,21 +28,35 @@ export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId,
     throw { status: 404, message: "Order not found" };
   }
 
-  // Step 4 — Check order isn't already confirmed
-  if (order.status !== "payment_pending") {
-    if (order.status === "confirmed") {
-      // console.log("Order already confirmed (likely by webhook) — returning success");
-      return buildResponse(order);
-    }
-    // any other unexpected status (e.g. "cancelled", "failed") is a genuine problem
-    throw { status: 400, message: `Order in unexpected status: ${order.status}` };
+  // Step 4 — Make sure Razorpay really has this payment for this order and amount
+  const confirmedByRazorpay = await isPaymentConfirmedByRazorpay({
+    razorpayOrderId,
+    razorpayPaymentId,
+    amount: orderAmountInPaise(order),
+    allowAuthorized: true,
+  });
+  if (!confirmedByRazorpay) {
+    throw {
+      status: 400,
+      message: "We couldn't confirm your payment yet. If you were charged, your order will be confirmed automatically within a few minutes."
+    };
   }
 
+  // Step 5 — Confirm (idempotent: a no-op if the webhook already confirmed it, and
+  // handles payments that arrive after the order expired)
+  const current = await confirmOrderAndNotify(order._id, razorpayPaymentId);
 
-  // Step 5 — Confirm the order + fire notifications in background
-  const confirmedOrder = await confirmOrderAndNotify(order._id, razorpayPaymentId);
-  console.log("Verify Payment Service ending.");
-  return buildResponse(confirmedOrder);
+  if (current?.status === "refund_initiated") {
+    throw {
+      status: 409,
+      message: "Your payment was received after the order expired and the items are no longer in stock. A full refund has been initiated."
+    };
+  }
+  if (!current || current.payment.status !== "paid") {
+    throw { status: 400, message: `Order in unexpected status: ${current?.status}` };
+  }
+
+  return buildResponse(current);
 };
 
 const buildResponse = (confirmedOrder) => ({

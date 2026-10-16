@@ -13,6 +13,7 @@ export const getAllProducts = async (req, res) => {
       discount,
       colours,
       sizes,
+      search,
     } = req.query;
 
     const data = await getAllProductsService({
@@ -25,6 +26,7 @@ export const getAllProducts = async (req, res) => {
       discount,
       colours,
       sizes,
+      search,
     });
 
     return res.status(200).json({

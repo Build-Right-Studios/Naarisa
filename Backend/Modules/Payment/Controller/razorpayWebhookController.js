@@ -21,7 +21,8 @@ export const razorpayWebhook = async (req, res) => {
 
     return res.status(200).json({ received: true });
   } catch (error) {
+    // Non-2xx makes Razorpay retry the webhook; confirmation is idempotent, so retries are safe.
     console.error("Webhook processing error:", error);
-    return res.status(200).json({ received: true, note: "processed with errors, check logs" });
+    return res.status(500).json({ received: false });
   }
 };

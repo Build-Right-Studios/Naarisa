@@ -12,7 +12,7 @@ export const updateUserOtp = async (phone, otp, expiresAt) => {
   return await User.findOneAndUpdate(
     { phone },
     { otp: { code: otp, expiresAt } },
-    { new: true }
+    { returnDocument: "after" }
   );
 };
 
@@ -20,7 +20,7 @@ export const clearUserOtp = async (userId) => {
   return await User.findByIdAndUpdate(
     userId,
     { $unset: { otp: 1 } },
-    { new: true }
+    { returnDocument: "after" }
   );
 };
 
@@ -28,6 +28,6 @@ export const updateUserName = async (userId, name) => {
   return await User.findByIdAndUpdate(
     userId,
     { name },
-    { new: true }
+    { returnDocument: "after" }
   );
 };

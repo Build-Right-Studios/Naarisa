@@ -6,32 +6,147 @@ import { getShiprocketToken } from "../../../config/shiprocket.js";
 // Shiprocket Status Mapping
 // ======================================================
 
-const mapStatus = (status = "") => {
-    const map = {
-        pending: "shipment_created",
-        ready_to_ship: "pickup_scheduled",
-        pickup_scheduled: "pickup_scheduled",
-        pickup_generated: "pickup_scheduled",
-        pickup_queued: "pickup_scheduled",
-        picked_up: "picked_up",
-        shipped: "in_transit",
-        in_transit: "in_transit",
-        reached_destination_hub: "in_transit",
-        misroute: "in_transit",
-        delayed: "in_transit",
-        out_for_delivery: "out_for_delivery",
-        delivered: "delivered",
-        undelivered: "delivery_failed",
-        failed: "delivery_failed",
-        cancelled: "cancelled",
-        rto_initiated: "rto_initiated",
-        rto_in_transit: "rto_initiated",
-        rto_delivered: "rto_delivered",
-        returned: "returned"
-    };
-
-    return map[status.toLowerCase()] || "in_transit";
+// Shiprocket status labels (normalised: "Out For Delivery" → "out_for_delivery") → delivery.status
+const LABEL_MAP = {
+    awb_assigned: "awb_generated",
+    pickup_generated: "pickup_scheduled",
+    pickup_scheduled: "pickup_scheduled",
+    pickup_queued: "pickup_scheduled",
+    pickup_rescheduled: "pickup_scheduled",
+    out_for_pickup: "pickup_scheduled",
+    ready_to_ship: "pickup_scheduled",
+    picked_up: "picked_up",
+    shipped: "in_transit",
+    in_transit: "in_transit",
+    reached_destination_hub: "in_transit",
+    reached_at_destination_hub: "in_transit",
+    misrouted: "in_transit",
+    delayed: "in_transit",
+    out_for_delivery: "out_for_delivery",
+    delivered: "delivered",
+    undelivered: "delivery_failed",
+    delivery_failed: "delivery_failed",
+    canceled: "cancelled",
+    cancelled: "cancelled",
+    rto_initiated: "rto_initiated",
+    rto_in_transit: "rto_initiated",
+    rto_ndr: "rto_initiated",
+    rto_ofd: "rto_initiated",
+    rto_acknowledged: "rto_initiated",
+    rto_delivered: "rto_delivered",
+    returned: "returned",
 };
+
+// Shiprocket numeric shipment status codes, used only when there is no recognisable label
+const CODE_MAP = {
+    6: "in_transit",       // Shipped
+    7: "delivered",
+    8: "cancelled",
+    9: "rto_initiated",
+    10: "rto_delivered",
+    17: "out_for_delivery",
+    18: "in_transit",
+    19: "pickup_scheduled", // Out for pickup
+    21: "delivery_failed",  // Undelivered
+    38: "in_transit",       // Reached destination hub
+    42: "picked_up",
+};
+
+const normaliseLabel = (label) =>
+    String(label ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+
+// Returns a delivery.status enum value, or null when the status is unknown (→ leave unchanged).
+export const mapShiprocketStatus = (label, code) =>
+    LABEL_MAP[normaliseLabel(label)] || CODE_MAP[Number(code)] || CODE_MAP[Number(label)] || null;
+
+// Order statuses that tracking updates must never overwrite
+const FINAL_ORDER_STATUSES = [
+    "delivered", "cancelled", "return_requested", "return_approved", "return_rejected",
+    "return_received", "refund_initiated", "refund_completed",
+];
+
+const STATUS_LABELS = {
+    not_dispatched: "Preparing your order",
+    shipment_created: "Shipment created",
+    awb_generated: "Courier assigned",
+    pickup_requested: "Awaiting courier pickup",
+    pickup_scheduled: "Awaiting courier pickup",
+    picked_up: "Picked up by courier",
+    in_transit: "In transit",
+    out_for_delivery: "Out for delivery",
+    delivered: "Delivered",
+    delivery_failed: "Delivery attempt failed",
+    rto_initiated: "Returning to seller",
+    rto_delivered: "Returned to seller",
+    returned: "Returned",
+    cancelled: "Shipment cancelled",
+};
+export const deliveryStatusLabel = (status) => STATUS_LABELS[status] || "Shipped";
+
+// Applies a new delivery status to the order document (does not save).
+const applyDeliveryStatus = (order, newStatus, message) => {
+    if (!newStatus) return;
+
+    order.delivery.status = newStatus;
+
+    const lastHistory = order.delivery.statusHistory[order.delivery.statusHistory.length - 1];
+    if (!lastHistory || lastHistory.status !== newStatus) {
+        order.delivery.statusHistory.push({
+            status: newStatus,
+            message: message || `Shipment ${newStatus.replaceAll("_", " ")}`,
+            timestamp: new Date(),
+        });
+    }
+
+    // Only paid, still-active orders follow the shipment's progress
+    if (order.payment?.status !== "paid" || FINAL_ORDER_STATUSES.includes(order.status)) return;
+
+    let orderStatus = null;
+    switch (newStatus) {
+        case "picked_up":
+        case "in_transit":
+            order.delivery.pickedUpAt ??= new Date();
+            orderStatus = "dispatched";
+            break;
+        case "out_for_delivery":
+            orderStatus = "out_for_delivery";
+            break;
+        case "delivered":
+            order.delivery.deliveredAt ??= new Date();
+            orderStatus = "delivered";
+            break;
+        case "rto_delivered":
+            orderStatus = "return_received";
+            break;
+        case "cancelled":
+            // A cancelled *shipment* doesn't cancel a paid order — keep it visible to the admin.
+            order.delivery.cancelledAt ??= new Date();
+            break;
+    }
+
+    if (orderStatus && order.status !== orderStatus) {
+        order.status = orderStatus;
+        order.timeline.push({ status: orderStatus, description: message || "", timestamp: new Date() });
+    }
+};
+
+// Shiprocket sends IST timestamps without a zone ("2023-05-19 11:59:16"); the server runs in UTC.
+const parseShiprocketDate = (value) => {
+    if (!value) return null;
+    const text = String(value).trim();
+    const date = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(text)
+        ? new Date(text.replace(" ", "T") + "+05:30")
+        : new Date(text);
+    return isNaN(date) ? null : date;
+};
+
+const toTrackingEvents = (scans = []) =>
+    (scans || []).map((scan) => ({
+        status: scan["sr-status-label"] || scan.status || "Unknown",
+        activity: scan.activity || scan["sr-status-label"] || scan.status || "",
+        location: scan.location || "",
+        date: parseShiprocketDate(scan.date) || new Date(),
+    }));
 
 // ======================================================
 // Get Tracking from Shiprocket
@@ -76,78 +191,28 @@ export const syncOrderTracking = async (orderId) => {
             status: 400,
             message: "Tracking not available.",
         };
-    const trackingEvents = (shipment.shipment_track || []).map((event) => ({
-        status: event.status || "Unknown",
-        activity:
-            event.activity ||
-            event.activity_status ||
-            event.status ||
-            "",
-        location: event.location || "",
-        date: event.date ? new Date(event.date) : new Date(),
-    }));
-
-    const latestEvent =
-        trackingEvents.length > 0
-            ? trackingEvents[trackingEvents.length - 1]
-            : null;
-
-    const newStatus = mapStatus(shipment.shipment_status);
-
-    order.delivery.status = newStatus;
-    order.delivery.trackingEvents = trackingEvents;
-    order.delivery.trackingNumber =
-        shipment.awb_code ||
-        shipment.awb ||
-        order.delivery.trackingNumber ||
-        order.delivery.awbCode;
 
     order.delivery.lastTrackingUpdate = new Date();
-    order.delivery.estimatedDelivery =
-        shipment.etd ? new Date(shipment.etd) : order.delivery.estimatedDelivery;
-    switch (newStatus) {
+    order.delivery.trackingSyncedAt = new Date();
+    if (shipment.track_url) order.delivery.trackingUrl ||= shipment.track_url;
+    if (shipment.etd) order.delivery.estimatedDelivery = parseShiprocketDate(shipment.etd) || order.delivery.estimatedDelivery;
 
-        case "picked_up":
-            order.delivery.pickedUpAt ??= new Date();
-            order.status = "dispatched";
-            break;
-
-        case "in_transit":
-            order.status = "dispatched";
-            break;
-
-        case "out_for_delivery":
-            order.status = "out_for_delivery";
-            break;
-
-        case "delivered":
-            order.delivery.deliveredAt ??= new Date();
-            order.status = "delivered";
-            break;
-
-        case "cancelled":
-            order.delivery.cancelledAt ??= new Date();
-            order.status = "cancelled";
-            break;
-
-        case "rto_delivered":
-            order.status = "return_received";
-            break;
+    // track_status 0 = courier has no scans yet; keep the current status
+    if (shipment.track_status === 0 || shipment.error) {
+        await order.save();
+        return order;
     }
 
-    const lastHistory =
-        order.delivery.statusHistory[
-        order.delivery.statusHistory.length - 1
-        ];
-
-    if (!lastHistory || lastHistory.status !== newStatus) {
-        order.delivery.statusHistory.push({
-            status: newStatus,
-            message:
-                latestEvent?.activity || `Shipment ${newStatus.replaceAll("_", " ")}`,
-            timestamp: new Date(),
-        });
+    const trackingEvents = toTrackingEvents(shipment.shipment_track_activities);
+    if (trackingEvents.length) {
+        // Shiprocket returns newest first; store oldest first
+        order.delivery.trackingEvents = trackingEvents.sort((a, b) => a.date - b.date);
     }
+
+    const label = shipment.shipment_track?.[0]?.current_status;
+    const newStatus = mapShiprocketStatus(label, shipment.shipment_status);
+    const latestEvent = order.delivery.trackingEvents[order.delivery.trackingEvents.length - 1];
+    applyDeliveryStatus(order, newStatus, latestEvent?.activity);
 
     await order.save();
     return order;
@@ -157,106 +222,37 @@ export const syncOrderTracking = async (orderId) => {
 // Process Shiprocket Webhook
 // ======================================================
 
+// Returns null (and changes nothing) when the payload doesn't match one of our orders.
 export const processTrackingWebhook = async (payload) => {
-  try {
-    console.log("========== WEBHOOK PAYLOAD ==========");
-    console.log(JSON.stringify(payload, null, 2));
-    console.log("====================================");
+    const awbCode = payload?.awb ? String(payload.awb) : null;
+    const srOrderId = payload?.sr_order_id ? String(payload.sr_order_id) : null;
 
-    // ✅ Extract from Shiprocket webhook
-    const srOrderId = payload?.sr_order_id;  // Shiprocket Order ID
-    const awbCode = payload?.awb;            // AWB code
-    const currentStatus = payload?.current_status; // Status
-    const scans = payload?.scans || [];       // Tracking events
-
-    if (!srOrderId && !awbCode) {
-      throw {
-        status: 400,
-        message: "Missing sr_order_id or awb in webhook",
-      };
+    let order = awbCode ? await Order.findOne({ "delivery.awbCode": awbCode }) : null;
+    if (!order && srOrderId) {
+        order = await Order.findOne({ "delivery.shiprocketOrderId": srOrderId });
     }
-
-    // ✅ Find order by shiprocketOrderId or awbCode
-    let order = await Order.findOne({
-      "delivery.shiprocketOrderId": srOrderId,
-    });
-
-    if (!order && awbCode) {
-      order = await Order.findOne({
-        "delivery.awbCode": awbCode,
-      });
-    }
-
     if (!order) {
-      console.warn(`Order not found for sr_order_id: ${srOrderId} or awb: ${awbCode}`);
-      throw {
-        status: 404,
-        message: `Order not found for this shipment`,
-      };
+        console.warn(`Shiprocket webhook: no order for awb ${awbCode} / sr_order_id ${srOrderId}`);
+        return null;
     }
 
-    console.log(`✅ Found order: ${order.customOrderId}`);
-
-    // ✅ Update delivery status
-    order.delivery.status = currentStatus?.toLowerCase().replace(/ /g, "_") || "in_transit";
     order.delivery.lastTrackingUpdate = new Date();
     order.delivery.lastWebhookReceivedAt = new Date();
-    order.delivery.lastWebhookPayload = payload; // Save for debugging
+    order.delivery.lastWebhookPayload = payload;
+    if (payload.etd) order.delivery.estimatedDelivery = parseShiprocketDate(payload.etd) || order.delivery.estimatedDelivery;
 
-    // ✅ Add tracking events from scans (MATCH YOUR SCHEMA)
-    if (!order.delivery.trackingEvents) {
-      order.delivery.trackingEvents = [];
+    // Each webhook carries the full scan history, so replace rather than append
+    const trackingEvents = toTrackingEvents(payload.scans);
+    if (trackingEvents.length) {
+        order.delivery.trackingEvents = trackingEvents.sort((a, b) => a.date - b.date);
     }
 
-    // Add scans as tracking events - using your schema field names
-    scans.forEach((scan) => {
-      order.delivery.trackingEvents.push({
-        status: scan.status,
-        activity: scan.activity,  // ✅ Your schema uses 'activity'
-        location: scan.location,
-        date: new Date(scan.date),  // ✅ Your schema uses 'date'
-      });
-    });
+    const label = payload.shipment_status || payload.current_status;
+    const newStatus = mapShiprocketStatus(label, payload.shipment_status_id ?? payload.current_status_id);
+    if (!newStatus) console.warn(`Shiprocket webhook: unmapped status "${label}" for ${order.customOrderId}`);
+    applyDeliveryStatus(order, newStatus, payload.current_status);
 
-    // ✅ Add to status history
-    if (!order.delivery.statusHistory) {
-      order.delivery.statusHistory = [];
-    }
-
-    order.delivery.statusHistory.push({
-      status: currentStatus,
-      message: `Updated to ${currentStatus}`,
-      timestamp: new Date(),
-    });
-
-    // ✅ Map status to main order status if needed
-    const statusMap = {
-      "Delivered": "delivered",
-      "Out for Delivery": "out_for_delivery",
-      "Picked up": "picked_up",
-      "In Transit": "in_transit",
-      "Delivery Failed": "delivery_failed",
-    };
-
-    if (statusMap[currentStatus]) {
-      order.status = statusMap[currentStatus];
-    }
-
-    // ✅ Save order
     await order.save();
-
-    console.log(`✅ Order updated: ${order.customOrderId}`);
-
-    return {
-      success: true,
-      message: "Tracking updated successfully",
-      orderId: order._id,
-      customOrderId: order.customOrderId,
-      status: order.delivery.status,
-      awb: awbCode,
-    };
-  } catch (error) {
-    console.error("processTrackingWebhook Error:", error);
-    throw error;
-  }
+    console.log(`Shiprocket webhook: ${order.customOrderId} → ${order.delivery.status}`);
+    return order;
 };

@@ -15,6 +15,7 @@ export const getAllProductsService = async (data) => {
       discount,      // "20"  (minimum discount %)
       colours,       // "Red,Blue"
       sizes,
+      search,        // free-text search from the navbar
     } = data;
 
     const skip = (page - 1) * limit;
@@ -118,6 +119,7 @@ export const getAllProductsService = async (data) => {
       category: category || null,
       discountPercent: discount ? Number(discount) : null,
       priceRange,
+      search,
     });
 
     /* ── Shape response ── */

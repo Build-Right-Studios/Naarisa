@@ -5,6 +5,7 @@ export const resolveAddress = async (user, address, addressId) => {
     return {
       name: saved.name,
       phone: saved.phone,
+      email: saved.email || "",
       line1: saved.line1,
       line2: saved.line2 || "",
       city: saved.city,

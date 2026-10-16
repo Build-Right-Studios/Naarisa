@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { CONTACT } from "../Constants/apiRoutes";
 import api from "../utils/axiosInstance.js"
 
@@ -104,8 +104,12 @@ const inputStyle = (hasError) => ({
 const ContactPage = () => {
   const navigate = useNavigate();
 
+  const location = useLocation();
+  // Other pages can pre-fill the form, e.g. Account → "Request Return"
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", subject: "", message: "",
+    name: "", email: "", phone: "",
+    subject: location.state?.subject || "",
+    message: location.state?.message || "",
   });
   const [errors, setErrors] = useState({});
   const [focused, setFocused] = useState(null);

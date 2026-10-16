@@ -1,4 +1,5 @@
 import { Variant } from "../../../MongoDB/models.js";
+import { buildSearchConditions } from "../../../Utils/searchConditions.js";
 
 export const searchProducts = async (req, res) => {
   try {
@@ -10,16 +11,7 @@ export const searchProducts = async (req, res) => {
     }
 
     // split "red kurta" -> ["red", "kurta"], each must match SOMEWHERE
-    const tokens = query.split(/\s+/).filter(Boolean).map((t) => new RegExp(t, "i"));
-
-    const andConditions = tokens.map((token) => ({
-      $or: [
-        { "product.name": token },
-        { "product.category": token },
-        { "product.tags": token },
-        { "color.name": token },
-      ],
-    }));
+    const andConditions = buildSearchConditions(query, "product");
 
     const variants = await Variant.aggregate([
       { $match: { isActive: true } },

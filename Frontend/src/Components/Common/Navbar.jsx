@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import useCartStore from "../../Store/useCartStore.js";
+import useCategoryStore, { categoryPath } from "../../Store/useCategoryStore.js";
 
 import {
   FiSearch,
@@ -26,28 +27,7 @@ const navLinks = [
   },
   {
     title: "CATEGORIES",
-    dropdown: [
-      {
-        title: "Short Kurti",
-        path: "/categories/short-kurtis",
-      },
-      {
-        title: "Long Kurti",
-        path: "/categories/long-kurtis",
-      },
-      {
-        title: "Kurti Sets",
-        path: "/categories/kurti-sets",
-      },
-      {
-        title: "Dresses",
-        path: "/categories/dresses",
-      },
-      {
-        title: "Co-ord Sets",
-        path: "/categories/co-ord-sets",
-      },
-    ],
+    dropdown: [], // filled from the admin-managed categories (useCategoryStore)
   },
   {
     title: "BEST SELLERS",
@@ -58,6 +38,12 @@ const navLinks = [
     path: "/about",
   },
 ];
+
+const CategoryBadge = ({ text }) => (
+  <span className="ml-2 inline-block rounded-full bg-[#AB721E] px-2 py-[2px] align-middle font-['Jost'] text-[9px] font-bold tracking-[0.12em] text-white">
+    {text}
+  </span>
+);
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,6 +56,12 @@ const Navbar = () => {
   const [suggestions, setSuggestions] = useState([]);
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.reduce((sum, item) => sum + item.qty, 0);
+  const categories = useCategoryStore((state) => state.categories);
+  const links = navLinks.map((link) =>
+    link.title === "CATEGORIES"
+      ? { ...link, dropdown: categories.map((c) => ({ title: c.label, path: categoryPath(c), badge: c.badge })) }
+      : link
+  );
 
   useEffect(() => {
     if (!searchQuery.trim()) { setSuggestions([]); return; }
@@ -220,7 +212,7 @@ const Navbar = () => {
               2xl:gap-12
             "
             >
-              {navLinks.map((link, index) => (
+              {links.map((link, index) => (
                 <li
                   key={index}
                   className="group relative"
@@ -345,6 +337,7 @@ const Navbar = () => {
                             "
                             >
                               {item.title}
+                              {item.badge && <CategoryBadge text={item.badge} />}
                             </Link>
                           ))}
                         </div>
@@ -518,7 +511,7 @@ const Navbar = () => {
 
         {/* MOBILE NAVIGATION */}
         <ul className="flex flex-col gap-10">
-          {navLinks.map((link, index) => (
+          {links.map((link, index) => (
             <li key={index}>
               {!link.dropdown ? (
                 <NavLink
@@ -609,7 +602,7 @@ const Navbar = () => {
                       transition-all
                       duration-300
                       ${mobileCategoryOpen
-                        ? "max-h-[300px] opacity-100"
+                        ? "max-h-[640px] opacity-100"
                         : "max-h-0 opacity-0"
                       }
                     `}
@@ -633,6 +626,7 @@ const Navbar = () => {
                         "
                         >
                           {item.title}
+                          {item.badge && <CategoryBadge text={item.badge} />}
                         </Link>
                       ))}
                     </div>
@@ -741,7 +735,7 @@ const Navbar = () => {
               {/* Empty state hints */}
               {!searchQuery && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {(navLinks.find((item) => item.title === "CATEGORIES")?.dropdown || [])
+                  {(links.find((item) => item.title === "CATEGORIES")?.dropdown || [])
                     .map((tag) => (
                       <Link
                         key={tag.title}

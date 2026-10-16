@@ -30,10 +30,6 @@ const TruckIcon = () => (
   </svg>
 );
 
-const handleProductClick = () => {
-  navigate(`/product/${item.slug}`);
-};
-
 // ── Cart Item ─────────────────────────────────────────────────────────────────
 const CartItem = ({ item, onRemove, onQtyChange, navigate }) => (
   <div style={{ border: "1px solid #E8DDD0", backgroundColor: "#fff", padding: "16px", marginBottom: "12px" }}>

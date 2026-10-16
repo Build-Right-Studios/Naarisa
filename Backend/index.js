@@ -1,16 +1,26 @@
+import "dotenv/config";
 import express from "express";
 import routes from "./routes.js";
-import dotenv from "dotenv";
 import cors from "cors";
 import connectMongoDB from "./config/mongodb.js";
 import { cleanupExpiredOtps, cleanupPendingOrders } from "./Utils/cleanupExpiredOtps.js";
 import { keepServerlive } from "./Utils/keepServerlive.js";
+import { startTrackingCron } from "./Modules/Shipping/initializeTrackingJobs.js";
+import { ensureDefaultCategories } from "./Modules/Category/defaultCategories.js";
 import { razorpayWebhook } from "./Modules/Payment/Controller/razorpayWebhookController.js";
 
-dotenv.config();
+const REQUIRED_ENV = ["MONGO_URI", "JWT_SECRET"];
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missingEnv.length) {
+  console.error(`Missing required env vars: ${missingEnv.join(", ")}`);
+  process.exit(1);
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Extra allowed sites (comma-separated) without a code change, e.g. a new Vercel URL
+const extraOrigins = (process.env.CORS_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean);
 
 app.use(cors({
   origin: [
@@ -19,7 +29,8 @@ app.use(cors({
     'https://naarisa-frontend-git-dev-aryeshs-projects.vercel.app',
     'https://naarisa-admin-git-dev-aryeshs-projects.vercel.app',
     'https://naarisa-admin.vercel.app',
-    'https://www.naarisa.com'
+    'https://www.naarisa.com',
+    ...extraOrigins
   ],
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -35,6 +46,7 @@ app.post(
 app.use(express.json());
 
 await connectMongoDB();
+await ensureDefaultCategories();
 
 app.use("/", routes);
 
@@ -49,3 +61,4 @@ app.get("/", (req, res) => {
 keepServerlive();
 cleanupExpiredOtps();
 cleanupPendingOrders();
+startTrackingCron();

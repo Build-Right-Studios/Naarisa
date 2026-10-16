@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { Order } from "../../../MongoDB/models.js";
 import {syncOrderTracking, processTrackingWebhook} from "../Service/trackingService.js";
 
@@ -29,6 +30,9 @@ export const getTracking = async (req, res) => {
         estimatedDelivery:
           order.delivery.estimatedDelivery,
         trackingEvents:
+          order.delivery.trackingEvents || [],
+        // the admin TrackingCard reads `events`
+        events:
           order.delivery.trackingEvents || [],
         statusHistory:
           order.delivery.statusHistory || [],
@@ -87,36 +91,28 @@ export const syncTracking = async (req, res) => {
 // Shiprocket Webhook
 // ======================================================
 
-export const trackingWebhook = async (
-  req,
-  res
-) => {
+// Shiprocket sends the token configured in its dashboard (Settings → API → Webhooks)
+// in the x-api-key header; it must match SHIPROCKET_WEBHOOK_TOKEN.
+const isValidWebhookToken = (received) => {
+  const expected = process.env.SHIPROCKET_WEBHOOK_TOKEN;
+  if (!expected || typeof received !== "string") return false;
+  const a = Buffer.from(received);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+};
+
+export const trackingWebhook = async (req, res) => {
+  if (!isValidWebhookToken(req.headers["x-api-key"])) {
+    if (!process.env.SHIPROCKET_WEBHOOK_TOKEN) console.error("Shiprocket webhook rejected: SHIPROCKET_WEBHOOK_TOKEN is not set");
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
+
   try {
-
-    console.log(
-      "========== SHIPROCKET WEBHOOK =========="
-    );
-
-    console.log(
-      JSON.stringify(req.body, null, 2)
-    );
-
-    const result =
-      await processTrackingWebhook(
-        req.body
-      );
-
-    return res.status(200).json(result);
-
+    const order = await processTrackingWebhook(req.body);
+    // Always 200 for payloads we can't match, so Shiprocket doesn't keep retrying them
+    return res.status(200).json({ success: true, matched: Boolean(order) });
   } catch (error) {
-
-    console.error(error);
-
-    return res.status(500).json({
-      success: false,
-      message:
-        "Webhook processing failed.",
-    });
-
+    console.error("Shiprocket webhook processing failed:", error);
+    return res.status(500).json({ success: false, message: "Webhook processing failed." });
   }
 };

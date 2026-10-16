@@ -212,7 +212,7 @@ const CheckoutPage = () => {
     const lastName = user?.name?.split(" ").slice(1).join(" ") || "";
     const phone = user?.phone || "";
     const email = user?.email || "";
-    return { firstName, lastName, email, street: "", city: "", state: "Maharashtra", pinCode: "", phone, saveInfo: false };
+    return { firstName, lastName, email, street: "", line2: "", city: "", state: "Maharashtra", pinCode: "", phone, saveInfo: false };
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -365,6 +365,7 @@ const CheckoutPage = () => {
             firstName: nameParts[0] || "",
             lastName: nameParts.slice(1).join(" ") || "",
             street: defaultAddress.line1 || "",
+            line2: defaultAddress.line2 || "",
             city: defaultAddress.city || "",
             state: defaultAddress.state || "Maharashtra",
             pinCode: defaultAddress.pincode || "",
@@ -463,6 +464,7 @@ const CheckoutPage = () => {
       firstName: nameParts[0] || "",
       lastName: nameParts.slice(1).join(" ") || "",
       street: address.line1 || "",
+      line2: address.line2 || "",
       city: address.city || "",
       state: address.state || "Maharashtra",
       pinCode: address.pincode || "",
@@ -533,7 +535,7 @@ const CheckoutPage = () => {
             email: form.email.toLowerCase().trim(),
             phone: form.phone.replace(/\s/g, ""),
             line1: form.street,
-            line2: "",
+            line2: form.line2 || "",
             city: form.city,
             state: form.state,
             pincode: form.pinCode,
@@ -572,7 +574,7 @@ const CheckoutPage = () => {
           phone: form.phone.replace(/\s/g, ""),
           email: form.email.toLowerCase().trim(),
           line1: form.street,
-          line2: "",
+          line2: form.line2 || "",
           city: form.city,
           state: form.state,
           pincode: form.pinCode,
@@ -597,6 +599,8 @@ const CheckoutPage = () => {
           email: user?.email || "",
         },
         theme: { color: "#AB721E" },
+        // Close checkout well before the 30-minute stock reservation expires on the server
+        timeout: 900,
 
         handler: async (response) => {
           try {
@@ -615,7 +619,7 @@ const CheckoutPage = () => {
           } catch (verifyErr) {
             console.error("Payment verification failed:", verifyErr);
             setLoading(false);
-            alert("Payment received but verification failed. Please contact support.");
+            alert(verifyErr.response?.data?.message || "Payment received but verification failed. Please contact support.");
           }
         },
 
@@ -764,7 +768,7 @@ const CheckoutPage = () => {
                     </button>
                   </div>
                   <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#4A3728" }}>
-                    {form.street}, {form.city}, {form.state} – {form.pinCode}
+                    {form.street}{form.line2 ? `, ${form.line2}` : ""}, {form.city}, {form.state} – {form.pinCode}
                   </div>
                   <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#8C7B6B", marginTop: "4px" }}>
                     +91 {form.phone}
@@ -789,7 +793,7 @@ const CheckoutPage = () => {
                       setForm({
                         firstName: user?.name?.split(" ")[0] || "",
                         lastName: user?.name?.split(" ").slice(1).join(" ") || "",
-                        street: "", city: "", state: "Maharashtra", pinCode: "",
+                        street: "", line2: "", city: "", state: "Maharashtra", pinCode: "",
                         phone: user?.phone || "", saveInfo: false,
                         email: user?.email || ""
                       });
@@ -834,7 +838,7 @@ const CheckoutPage = () => {
                         )}
                       </div>
                       <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#4A3728" }}>
-                        {address.line1}, {address.city}, {address.state} – {address.pincode}
+                        {address.line1}{address.line2 ? `, ${address.line2}` : ""}, {address.city}, {address.state} – {address.pincode}
                       </div>
                       <div style={{ fontFamily: "'Jost', sans-serif", fontSize: "13px", color: "#8C7B6B", marginTop: "4px" }}>
                         +91 {address.phone}

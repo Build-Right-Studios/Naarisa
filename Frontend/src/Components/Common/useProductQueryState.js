@@ -17,6 +17,7 @@ export function useProductQueryState({ fixedCategory, defaultSort = "newest", li
   const category = fixedCategory || searchParams.get("category") || "All";
   const sort = searchParams.get("sort") || defaultSort;
   const page = parseInt(searchParams.get("page") || "1", 10);
+  const search = searchParams.get("search") || "";
 
   // ── Applied filters: ALWAYS derived directly from the URL, same as sort/category/page.
   // No local state here → nothing to go stale after a remount or nav-back.
@@ -47,6 +48,13 @@ export function useProductQueryState({ fixedCategory, defaultSort = "newest", li
     f.colours?.length ? next.set("colours", f.colours.join(",")) : next.delete("colours");
     f.sizes?.length ? next.set("sizes", f.sizes.join(",")) : next.delete("sizes");
     if (resetPage) next.set("page", "1");
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  const clearSearch = useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("search");
+    next.set("page", "1");
     setSearchParams(next);
   }, [searchParams, setSearchParams]);
 
@@ -86,6 +94,7 @@ export function useProductQueryState({ fixedCategory, defaultSort = "newest", li
   const buildApiParams = useCallback(() => {
     const p = new URLSearchParams();
     if (category !== "All") p.set("category", category);
+    if (search) p.set("search", search);
     p.set("sort", sort);
     p.set("page", page);
     p.set("limit", limit);
@@ -101,7 +110,7 @@ export function useProductQueryState({ fixedCategory, defaultSort = "newest", li
   }, [category, sort, page, limit, searchParams]);
 
   return {
-    category, sort, page,
+    category, sort, page, search, clearSearch,
     filters: draftFilters,        // pass this to <FilterPanel filters={...} />
     appliedFilters,                // use this for chips + activeFilterCount
     setFilterKey,

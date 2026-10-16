@@ -8,7 +8,7 @@ export const loginService = async ({ email, password }) => {
     if (!user) {
       return {
         success: false,
-        message: "Admin not found",
+        message: "Invalid email or password",
       };
     }
 
@@ -16,7 +16,7 @@ export const loginService = async ({ email, password }) => {
     if (!isMatch) {
       return {
         success: false,
-        message: "Invalid password",
+        message: "Invalid email or password",
       };
     }
 

@@ -83,7 +83,7 @@ const saveOrder = async ({
     email: userEmail,
     coupon: appliedCoupon,
     pricing,
-    address: { ...deliveryAddress, email: deliveryAddress.email || null },
+    address: { ...deliveryAddress, email: deliveryAddress.email || userEmail || null },
     payment: {
       razorpayOrderId,
       status: "pending"

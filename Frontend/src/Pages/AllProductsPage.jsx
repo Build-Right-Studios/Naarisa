@@ -6,18 +6,12 @@ import ProductCard from "../Components/Common/ProductCard.jsx";
 import api from "../utils/axiosInstance.js";
 import { PRODUCT } from "../Constants/apiRoutes.js";
 import { useProductQueryState } from "../Components/Common/useProductQueryState.js";
+import useCategoryStore from "../Store/useCategoryStore.js";
 
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                   */
 /* -------------------------------------------------------------------------- */
 
-const CATEGORIES = [
-  "All",
-  "Dresses",
-  "Short Kurti",
-  "Long Kurti",
-  "Kurti Sets"
-];
 
 const SORT_OPTIONS = [
   { label: "Newest First", value: "newest" },
@@ -48,6 +42,9 @@ const SkeletonCard = () => (
 /* -------------------------------------------------------------------------- */
 
 const AllProductsPage = () => {
+  const categories = useCategoryStore((s) => s.categories);
+  // value = what products store (and the API filters on); label = what customers see
+  const categoryPills = [{ value: "All", label: "All" }, ...categories.map((c) => ({ value: c.name, label: c.label }))];
   const navigate = useNavigate();
 
   const [products, setProducts] = useState([]);
@@ -57,7 +54,7 @@ const AllProductsPage = () => {
 
   // ── All category/sort/page/filter <-> URL logic lives in this hook now ──
   const {
-    category, sort, page,
+    category, sort, page, search, clearSearch,
     filters, appliedFilters,
     setFilterKey, resetDraftToApplied,
     applyFilters, clearFilters, removeFilterValue,
@@ -101,10 +98,20 @@ const AllProductsPage = () => {
     <div style={{ backgroundColor: "#F9F3EB", minHeight: "100vh" }}>
 
       <PageHero
-        eyebrow="Explore"
-        title="All Products"
-        subtitle="Discover every Naarisa style"
+        eyebrow={search ? "Search" : "Explore"}
+        title={search ? `Results for "${search}"` : "All Products"}
+        subtitle={search ? `${pagination.total} matching ${pagination.total === 1 ? "style" : "styles"}` : "Discover every Naarisa style"}
       />
+      {search && (
+        <div style={{ textAlign: "center", paddingTop: "16px" }}>
+          <button
+            onClick={clearSearch}
+            style={{ fontFamily: "'Jost', sans-serif", fontSize: "11px", fontWeight: 600, letterSpacing: "0.12em", color: "#AB721E", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}
+          >
+            CLEAR SEARCH
+          </button>
+        </div>
+      )}
 
       {/* ── Filter Panel ── */}
       <FilterPanel
@@ -166,7 +173,7 @@ const AllProductsPage = () => {
         >
           {/* Category pills — desktop */}
           <div className="hidden md:flex" style={{ gap: "8px", flexWrap: "wrap" }}>
-            {CATEGORIES.map((cat) => (
+            {categoryPills.map(({ value: cat, label }) => (
               <button
                 key={cat}
                 onClick={() => updateParam("category", cat)}
@@ -184,7 +191,7 @@ const AllProductsPage = () => {
                   fontWeight: category === cat ? 600 : 400,
                 }}
               >
-                {cat}
+                {label}
               </button>
             ))}
           </div>

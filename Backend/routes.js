@@ -9,6 +9,8 @@ import bannerRoutes from "./Modules/Banners/banners.routes.js";
 import paymentRoutes from "./Modules/Payment/payments.routes.js";
 import contactRoute from "./Modules/Contact/contact.routes.js";
 import shipmentRoutes from "./Modules/Shipping/shipment.routes.js";
+import categoryRoutes from "./Modules/Category/category.routes.js";
+import announcementRoutes from "./Modules/Announcement/announcement.routes.js";
 
 const router = express.Router();
 
@@ -22,5 +24,7 @@ router.use("/api/banners", bannerRoutes);
 router.use("/api/payment", paymentRoutes);
 router.use("/api/contact", contactRoute);
 router.use("/api/shipment", shipmentRoutes);
+router.use("/api/category", categoryRoutes);
+router.use("/api/announcement", announcementRoutes);
 
 export default router;
