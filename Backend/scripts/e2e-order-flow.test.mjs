@@ -66,6 +66,17 @@ razorpay.payments.refund = async (paymentId, body) => {
   return refund;
 };
 
+// What Razorpay's API reports for a payment id (payments not recorded here "don't exist")
+const rzpPaymentRecords = {};
+const recordPayment = (razorpayOrderId, paymentId, amount, status = "captured") => {
+  rzpPaymentRecords[paymentId] = { id: paymentId, order_id: razorpayOrderId, amount, status };
+};
+razorpay.payments.fetch = async (paymentId) => {
+  const record = rzpPaymentRecords[paymentId];
+  if (!record) throw { statusCode: 400, error: { description: "The id provided does not exist" } };
+  return record;
+};
+
 // ── app modules ──────────────────────────────────────────────────────────────
 const { default: mongoose } = await import("mongoose");
 const { Product, Variant, User, Coupon, CouponUsage, Order, Admin, Category } = await import("../MongoDB/models.js");
@@ -90,6 +101,9 @@ const test = async (name, fn) => {
 };
 const eq = (actual, expected, label = "") => {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`${label} expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+};
+const expectStatus = async (promise, status) => {
+  try { await promise; throw new Error("did not throw"); } catch (e) { eq(e.status, status, e.message); }
 };
 const settle = () => new Promise((r) => setTimeout(r, 150)); // let fire-and-forget notifications run
 const stockOf = async (variantId, size = "M") => (await Variant.findById(variantId)).sizes.find((s) => s.size === size).quantity;
@@ -142,6 +156,7 @@ await test("saved address keeps its email (resolveAddress)", async () => {
 
 await test("verify-payment + webhook racing on one order → confirmed once, coupon counted once, one SMS + one email", async () => {
   const before = { ...calls };
+  recordPayment(first.razorpayOrderId, "pay_1", 144000);
   const event = { event: "payment.captured", payload: { payment: { entity: { order_id: first.razorpayOrderId, id: "pay_1" } } } };
   const [verified] = await Promise.all([
     verifyPaymentService({ razorpayOrderId: first.razorpayOrderId, razorpayPaymentId: "pay_1", razorpaySignature: sign(first.razorpayOrderId, "pay_1") }),
@@ -172,6 +187,29 @@ await test("webhook signature check (constant-time) accepts the right HMAC only"
   const body = Buffer.from('{"a":1}');
   const good = crypto.createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET).update(body).digest("hex");
   eq([verifyWebhookSignature(body, good), verifyWebhookSignature(body, "x"), verifyWebhookSignature(body, good.slice(0, -1) + "0")], [true, false, false]);
+});
+
+await test("forged payments: correctly signed events for payments Razorpay doesn't confirm are ignored", async () => {
+  const r = await place({ qty: 1 });
+  const err = console.error; console.error = () => {};
+  try {
+    // signed webhook for a payment id Razorpay has never seen
+    await handleRazorpayWebhook({ event: "payment.captured", payload: { payment: { entity: { order_id: r.razorpayOrderId, id: "pay_forged" } } } });
+    eq((await Order.findById(r.orderId)).status, "payment_pending", "forged webhook");
+    // signed checkout callback for a payment id Razorpay has never seen
+    await expectStatus(verifyPaymentService({ razorpayOrderId: r.razorpayOrderId, razorpayPaymentId: "pay_forged", razorpaySignature: sign(r.razorpayOrderId, "pay_forged") }), 400);
+    // a real payment, but for the wrong amount
+    recordPayment(r.razorpayOrderId, "pay_short", 100);
+    await expectStatus(verifyPaymentService({ razorpayOrderId: r.razorpayOrderId, razorpayPaymentId: "pay_short", razorpaySignature: sign(r.razorpayOrderId, "pay_short") }), 400);
+    // a payment that was never completed
+    recordPayment(r.razorpayOrderId, "pay_created", 80000, "created");
+    await handleRazorpayWebhook({ event: "order.paid", payload: { payment: { entity: { order_id: r.razorpayOrderId, id: "pay_created" } } } });
+    eq((await Order.findById(r.orderId)).status, "payment_pending", "uncaptured payment");
+    // the checkout callback may arrive while the payment is still "authorized" (auto-capture pending)
+    recordPayment(r.razorpayOrderId, "pay_auth_ok", 80000, "authorized");
+    const ok = await verifyPaymentService({ razorpayOrderId: r.razorpayOrderId, razorpayPaymentId: "pay_auth_ok", razorpaySignature: sign(r.razorpayOrderId, "pay_auth_ok") });
+    eq(ok.status, "confirmed", "authorized payment via checkout callback");
+  } finally { console.error = err; }
 });
 
 console.log("\nPending-order cleanup");
@@ -221,11 +259,13 @@ await test("late payment, stock still available → order revived and confirmed,
 });
 
 await test("late payment, stock gone, webhook + verify racing → exactly one refund, status refund_initiated", async () => {
+  await Variant.updateOne({ _id: variant._id, "sizes.size": "M" }, { $set: { "sizes.$.quantity": 10 } });
   const r = await place();
   await makeStale(r.orderId);
   await expirePendingOrder(await Order.findById(r.orderId));
   await Variant.updateOne({ _id: variant._id, "sizes.size": "M" }, { $set: { "sizes.$.quantity": 0 } });
   const refundsBefore = calls.refunds.length;
+  recordPayment(r.razorpayOrderId, "pay_oos", 160000);
   const results = await Promise.allSettled([
     verifyPaymentService({ razorpayOrderId: r.razorpayOrderId, razorpayPaymentId: "pay_oos", razorpaySignature: sign(r.razorpayOrderId, "pay_oos") }),
     confirmOrderAndNotify(r.orderId, "pay_oos"),
@@ -335,9 +375,6 @@ console.log("\nCategories and event bar");
 const { ensureDefaultCategories } = await import("../Modules/Category/defaultCategories.js");
 const categoryService = await import("../Modules/Category/Service/categoryService.js");
 const announcementService = await import("../Modules/Announcement/Service/announcementService.js");
-const expectStatus = async (promise, status) => {
-  try { await promise; throw new Error("did not throw"); } catch (e) { eq(e.status, status, e.message); }
-};
 
 let suits;
 await test("default categories are seeded once; a new category gets a slug, upper-case badge and sorts first", async () => {

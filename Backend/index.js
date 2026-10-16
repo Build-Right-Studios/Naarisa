@@ -19,6 +19,9 @@ if (missingEnv.length) {
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Extra allowed sites (comma-separated) without a code change, e.g. a new Vercel URL
+const extraOrigins = (process.env.CORS_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean);
+
 app.use(cors({
   origin: [
     'http://localhost:5173',
@@ -26,7 +29,8 @@ app.use(cors({
     'https://naarisa-frontend-git-dev-aryeshs-projects.vercel.app',
     'https://naarisa-admin-git-dev-aryeshs-projects.vercel.app',
     'https://naarisa-admin.vercel.app',
-    'https://www.naarisa.com'
+    'https://www.naarisa.com',
+    ...extraOrigins
   ],
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],

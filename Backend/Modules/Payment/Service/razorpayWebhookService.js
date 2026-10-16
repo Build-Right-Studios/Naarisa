@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { findOrderByRazorpayOrderId } from "../Query/verifyPaymentQuery.js";
 import { confirmOrderAndNotify } from "./orderConfirmationService.js";
 import { safeEqualHex } from "./verifyPaymentService.js";
+import { isPaymentConfirmedByRazorpay, orderAmountInPaise } from "./razorpayPaymentCheck.js";
 
 export const verifyWebhookSignature = (rawBody, signatureHeader) => {
   const expected = crypto
@@ -33,6 +34,17 @@ export const handleRazorpayWebhook = async (event) => {
   const order = await findOrderByRazorpayOrderId(razorpayOrderId);
   if (!order) {
     console.error(`Webhook: no matching order for razorpayOrderId ${razorpayOrderId}`);
+    return;
+  }
+
+  // Don't trust the event alone (the webhook secret may be known to others) — ask Razorpay
+  const captured = await isPaymentConfirmedByRazorpay({
+    razorpayOrderId,
+    razorpayPaymentId,
+    amount: orderAmountInPaise(order),
+  });
+  if (!captured) {
+    console.error(`Webhook: payment ${razorpayPaymentId} for ${order.customOrderId} not captured at Razorpay — ignored`);
     return;
   }
 

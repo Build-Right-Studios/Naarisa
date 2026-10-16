@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { findOrderByRazorpayOrderId } from "../Query/verifyPaymentQuery.js";
 import { confirmOrderAndNotify } from "./orderConfirmationService.js";
+import { isPaymentConfirmedByRazorpay, orderAmountInPaise } from "./razorpayPaymentCheck.js";
 
 export const safeEqualHex = (a, b) => {
   const bufA = Buffer.from(String(a), "utf8");
@@ -27,7 +28,21 @@ export const verifyPaymentService = async ({ razorpayOrderId, razorpayPaymentId,
     throw { status: 404, message: "Order not found" };
   }
 
-  // Step 4 — Confirm (idempotent: a no-op if the webhook already confirmed it, and
+  // Step 4 — Make sure Razorpay really has this payment for this order and amount
+  const confirmedByRazorpay = await isPaymentConfirmedByRazorpay({
+    razorpayOrderId,
+    razorpayPaymentId,
+    amount: orderAmountInPaise(order),
+    allowAuthorized: true,
+  });
+  if (!confirmedByRazorpay) {
+    throw {
+      status: 400,
+      message: "We couldn't confirm your payment yet. If you were charged, your order will be confirmed automatically within a few minutes."
+    };
+  }
+
+  // Step 5 — Confirm (idempotent: a no-op if the webhook already confirmed it, and
   // handles payments that arrive after the order expired)
   const current = await confirmOrderAndNotify(order._id, razorpayPaymentId);
 
