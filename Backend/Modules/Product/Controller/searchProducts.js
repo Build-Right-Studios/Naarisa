@@ -1,5 +1,6 @@
 import { Variant } from "../../../MongoDB/models.js";
 import { buildSearchConditions } from "../../../Utils/searchConditions.js";
+import { excludeHiddenCategoriesStages } from "../../Category/Service/hiddenCategoriesService.js";
 
 export const searchProducts = async (req, res) => {
   try {
@@ -24,6 +25,7 @@ export const searchProducts = async (req, res) => {
         },
       },
       { $unwind: "$product" },
+      ...(await excludeHiddenCategoriesStages("product")),
       { $match: { $and: andConditions } },
       { $sort: { createdAt: -1 } },
       { $limit: Number(limit) },

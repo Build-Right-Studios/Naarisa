@@ -17,7 +17,8 @@ const handleError = (res, error, label) => {
 export const getLiveAnnouncements = async (req, res) => {
   try {
     const announcements = await getLiveAnnouncementsService();
-    res.set("Cache-Control", "public, max-age=60");
+    // Revalidate every time (cheap 304 via ETag) so admin changes show on the next page load
+    res.set("Cache-Control", "no-cache");
     return res.status(200).json({ success: true, data: announcements });
   } catch (error) {
     return handleError(res, error, "getLiveAnnouncements");

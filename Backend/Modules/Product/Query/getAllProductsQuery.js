@@ -1,5 +1,6 @@
 import { Variant } from "../../../MongoDB/models.js";
 import { buildSearchConditions } from "../../../Utils/searchConditions.js";
+import { excludeHiddenCategoriesStages } from "../../Category/Service/hiddenCategoriesService.js";
 
 /**
  * Uses aggregation so we can:
@@ -48,6 +49,8 @@ export const getAllProductsQuery = async (data) => {
 
       // Stage 3: unwind (lookup returns array)
       { $unwind: "$productId" },
+
+      ...(await excludeHiddenCategoriesStages("productId")),
 
       ...(searchConditions.length ? [{ $match: { $and: searchConditions } }] : []),
 

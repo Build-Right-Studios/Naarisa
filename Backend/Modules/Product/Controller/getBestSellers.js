@@ -1,4 +1,5 @@
 import { Variant } from "../../../MongoDB/models.js";
+import { excludeHiddenCategoriesStages } from "../../Category/Service/hiddenCategoriesService.js";
 // import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
 import { imagekitTransform } from "../../../Utils/cloudinaryTransform.js";
 
@@ -115,6 +116,7 @@ export const getBestSellers = async (req, res) => {
         },
       },
       { $unwind: "$productId" },
+      ...(await excludeHiddenCategoriesStages("productId")),
 
       {
         $addFields: {

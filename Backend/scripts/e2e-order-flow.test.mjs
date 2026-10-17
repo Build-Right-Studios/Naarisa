@@ -88,6 +88,8 @@ const { expirePendingOrder } = await import("../Utils/cleanupExpiredOtps.js");
 const { processTrackingWebhook, syncOrderTracking } = await import("../Modules/Shipping/Service/trackingService.js");
 const { trackShipmentService } = await import("../Modules/Shipping/Service/trackShipmentService.js");
 const { getAllProductsQuery } = await import("../Modules/Product/Query/getAllProductsQuery.js");
+const { getCategoryProductsService } = await import("../Modules/Product/Service/Getcategoryproductsservice.js");
+const { searchProducts } = await import("../Modules/Product/Controller/searchProducts.js");
 const { isAdmin } = await import("../Middleware/isAdmin.js");
 const { generateAccessToken } = await import("../Utils/jwt.js");
 const { getWebsiteCoupons } = await import("../Modules/Coupons/Controller/getWebsiteCoupons.js");
@@ -102,6 +104,7 @@ const test = async (name, fn) => {
 const eq = (actual, expected, label = "") => {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`${label} expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
 };
+const expect = (condition, message) => { if (!condition) throw new Error(message); };
 const expectStatus = async (promise, status) => {
   try { await promise; throw new Error("did not throw"); } catch (e) { eq(e.status, status, e.message); }
 };
@@ -394,6 +397,19 @@ await test("editing a category keeps name + slug (product links and URLs); hidde
   eq([updated.name, updated.slug, updated.label, updated.isActive], ["Suits", "suits", "Festive Suits", false]);
   eq((await categoryService.getActiveCategoriesService()).some((c) => c.slug === "suits"), false);
   await categoryService.updateCategoryService(String(suits._id), { isActive: "true" });
+});
+
+await test("hiding a category also hides its products from listings, category pages and search", async () => {
+  const listed = async () => (await getAllProductsQuery({ filter: { isActive: true }, skip: 0, limit: 50, sortOption: { createdAt: -1 }, sort: "newest" })).total;
+  const inCategory = async () => (await getCategoryProductsService({ category: "Short Kurti", sort: "newest", page: 1, limit: 12 })).total;
+  const searched = async () => { let body; await searchProducts({ query: { q: "e2e kurti" } }, { status: () => ({ json: (b) => { body = b; } }) }); return body.data.length; };
+  const shortKurti = (await categoryService.getAllCategoriesService()).find((c) => c.slug === "short-kurtis");
+  const before = [await listed(), await inCategory(), await searched()];
+  expect(before.every((n) => n > 0), `expected the E2E kurti to be visible first, got ${before}`);
+  await categoryService.updateCategoryService(String(shortKurti._id), { isActive: "false" });
+  eq([await listed(), await inCategory(), await searched()], [before[0] - 1, 0, 0], "[listed, category page, search] while hidden");
+  await categoryService.updateCategoryService(String(shortKurti._id), { isActive: "true" });
+  eq([await listed(), await inCategory(), await searched()], before, "visible again");
 });
 
 await test("a category with products can't be deleted (409); an empty one can; product counts are reported", async () => {

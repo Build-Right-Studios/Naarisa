@@ -22,4 +22,7 @@ export const countProductsByCategoryQuery = async () => {
   return Object.fromEntries(rows.map((row) => [row._id, row.count]));
 };
 
+export const findHiddenCategoryNamesQuery = async () =>
+  (await Category.find({ isActive: false }).select("name").lean()).map((c) => c.name);
+
 export const countProductsInCategoryQuery = (name) => Product.countDocuments({ category: name });

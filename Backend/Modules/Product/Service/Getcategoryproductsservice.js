@@ -1,4 +1,5 @@
 import { Variant } from "../../../MongoDB/models.js";
+import { excludeHiddenCategoriesStages } from "../../Category/Service/hiddenCategoriesService.js";
 // import { cloudinaryTransform } from "../../../Utils/cloudinaryTransform.js";
 import { imagekitTransform } from "../../../Utils/cloudinaryTransform.js";
 
@@ -127,6 +128,7 @@ export const getCategoryProductsService = async ({
     { $lookup: { from: "products", localField: "productId", foreignField: "_id", as: "productId" } },
 
     { $unwind: "$productId" },
+    ...(await excludeHiddenCategoriesStages("productId")),
 
     {
       $addFields: {

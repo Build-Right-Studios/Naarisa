@@ -140,7 +140,7 @@ export default function Categories() {
     data.append("isActive", String(!category.isActive));
     try {
       await api.patch(CATEGORY.UPDATE(category._id), data);
-      showToast(category.isActive ? `"${category.label}" hidden from the website` : `"${category.label}" is now live`);
+      showToast(category.isActive ? `"${category.label}" and its products are hidden from the website` : `"${category.label}" and its products are now live`);
       fetchCategories();
     } catch (err) {
       showToast(errorMessage(err, "Could not update the category"), "error");
@@ -176,8 +176,8 @@ export default function Categories() {
         <div>
           <h1 className="text-[28px] font-extrabold tracking-tight text-[#111] sm:text-[32px]">Categories</h1>
           <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-[#666]">
-            Collections shown in the website menu, footer, home page tiles and filters. Add one for a launch (for
-            example "Suits"), add its products, then make it visible.
+            Collections shown in the website menu, footer, home page tiles and filters. Hiding a category also hides
+            its products from the website. For a launch (e.g. "Suits"): create it hidden, add its products, then click Show.
           </p>
         </div>
         <button
@@ -230,7 +230,7 @@ export default function Categories() {
                   <button
                     onClick={() => toggleVisible(c)}
                     className="flex items-center gap-1.5 rounded-lg border border-[#e5e5e5] px-3 py-2 text-xs font-semibold text-[#444] hover:bg-[#fafafa]"
-                    title={c.isActive ? "Hide from the website" : "Show on the website"}
+                    title={c.isActive ? "Hide this category and its products from the website" : "Show this category and its products on the website"}
                   >
                     {c.isActive ? <EyeOff size={14} /> : <Eye size={14} />}
                     {c.isActive ? "Hide" : "Show"}
